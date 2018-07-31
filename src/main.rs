@@ -1,3 +1,8 @@
+#![allow(dead_code)]
+mod cpu;
+
+use cpu::CPU;
+
 fn main() {
-    println!("Hello Game Boy!");
+    CPU::new();
 }
