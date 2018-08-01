@@ -8,7 +8,7 @@ piece. In the process not only will we learn more about the Game Boy itself,
 but we'll also get a good glimpse into how computers work in general as well as
 how to build emulators for other computer systems as well.
 
-## What you need to know
+## What You Need to Know
 
 We'll be assuming only basic programming knowledge. If you've programmed in any
 language before you should be good to go. The particular language we'll be
@@ -18,6 +18,11 @@ best to link to relevant learning material as things come up. If you want to
 get a head start on learning the basics of Rust, the amazing [Rust
 book](https://doc.rust-lang.org/book/second-edition/index.html) is a great way
 to learn.
+
+If you've already build emulators before, and are just looking for a reference
+specific to the Game Boy, you might find this book to be too detailed. I
+recommend the [Pan Docs](http://bgb.bircd.org/pandocs.htm) as a great place to
+quickly learn the nity-grity of the Game Boy.
 
 ## Why Rust?
 
