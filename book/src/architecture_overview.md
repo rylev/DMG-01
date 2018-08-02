@@ -14,8 +14,6 @@ The CPU is the "brains" of a computer. The CPU is responsible for the following:
 * Reacting to "events" (known as interrupts) that come from the I/O (input/output) hardware such as the screen and the gamepad controls
 * Keeping track of very small pieces of data in "registers" that it manipulates when it runs instructions
 
-The Game Boy's CPU is a custom chip similar to the [Intel 8080](https://en.wikipedia.org/wiki/Intel_8080), itself similar to the [Zilog Z80](https://en.wikipedia.org/wiki/Zilog_Z80).
-
 #### RAM (Random Access Memory)
 
 This is the piece of hardware that allows the Game Boy to remember data while it is running. Without the RAM, the Gameboy's CPU could still execute instructions and keep track of small pieces of data in its registers, but if the data no longer fits in its registers, the CPU would have to throw it away.
@@ -34,6 +32,10 @@ The Gameboy has several pieces of I/O hardware:
 * A gamepad that the player uses to interact with the game through pushing various buttons.
 
 We'll discuss how the CPU can interface with this hardware much later in the book.
+
+> **Learn More**
+>
+> If you're interested in learning more about how computers work all the way down to the electrical level, I suggest watching Ben Eater's series on [making an 8-bit Breadboard Computer](https://www.youtube.com/user/eaterbc). Ben does an absolutely wonderful job of explaining how CPUs, RAM, ROM and even I/O devices are built from the ground up!
 
 
 Now that we have a small overview of the pieces we'll be talking about, let's take a closer look at the CPU!
