@@ -1,0 +1,7 @@
+[book]
+authors = ["Ryan Levick"]
+multilingual = false
+src = "src"
+title = "Emulating a Gameboy"
+[output.html]
+theme = "src/theme"
