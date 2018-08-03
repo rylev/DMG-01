@@ -25,8 +25,6 @@ struct Registers {
 }
 ```
 
-There we have it - a collection of 8 8-bit numbers.
-
 We use the type `u8` for our registers. `u8` are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the [guide on numbers](./appendix/numbers.md).
 
 While the CPU only has 8 bit registers, there are instructions that allow the Game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as `u16` in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these "virtual" 16 bit registers. These registers are refered to as "af" ("a" and "f" combined), "bc" ("b" and "c" combined), "de" ("d" and "e" combinded), and finally "hl" ("h" and "l" combined). Let's implement "bc":
