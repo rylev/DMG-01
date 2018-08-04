@@ -1,0 +1,302 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>CPU Registers - Emulating a Gameboy</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu_registers.html" class="active"><strong aria-hidden="true">3.</strong> CPU Registers</a></li><li><a href="appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Emulating a Gameboy</h1> 
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#cpu-registers" id="cpu-registers"><h1>CPU Registers</h1></a>
+<p>In the previous chapter we outlined some of things that the CPU is responsible for. In this chapter we'll be focusing on just one of them: saving small amounts of data into registers.</p>
+<a class="header" href="#overview" id="overview"><h2>Overview</h2></a>
+<p>The Game Boy's CPU is a custom chip made just for the Game Boy. The chip is extremely similar to the <a href="https://en.wikipedia.org/wiki/Intel_8080">Intel 8080</a> which is itself similar to the <a href="https://en.wikipedia.org/wiki/Zilog_Z80">Zilog Z80</a>. While the Intel 8080 and Zilog Z80 were used in many different computers in the 70s and 80s, the chip inside the Game Boy was just used for the Game Boy. Most of what's true about how the 8080 and Z80 work is also true of the Game Boy's chip. We won't go into details on how exactly they differ, but it's important to be aware that while they're similar to the Game Boy's chip, they're not exactly the same.</p>
+<a class="header" href="#registers" id="registers"><h2>Registers</h2></a>
+<p>The CPU is composed of 8 different &quot;registers&quot;. Registers are responsible for holding on to little pieces of data that the CPU can manipulate when it executes various instructions. The Game Boy's CPU is an 8-Bit CPU, meaning that each of its registers can hold 8 bits (a.k.a 1 byte) of data. The CPU has 8 different registers labled as &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;, &quot;f&quot;, &quot;h&quot;, &quot;l&quot;.</p>
+<p>Let's get started building our CPU by specing out the registers in code:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+struct Registers {
+  a: u8,
+  b: u8,
+  c: u8,
+  d: u8,
+  e: u8,
+  f: u8,
+  h: u8,
+  l: u8,
+}
+#}</code></pre></pre>
+<p>We use the type <code>u8</code> for our registers. <code>u8</code> are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the <a href="./appendix/numbers.html">guide on numbers</a>.</p>
+<p>While the CPU only has 8 bit registers, there are instructions that allow the Game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as <code>u16</code> in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these &quot;virtual&quot; 16 bit registers. These registers are refered to as &quot;af&quot; (&quot;a&quot; and &quot;f&quot; combined), &quot;bc&quot; (&quot;b&quot; and &quot;c&quot; combined), &quot;de&quot; (&quot;d&quot; and &quot;e&quot; combinded), and finally &quot;hl&quot; (&quot;h&quot; and &quot;l&quot; combined). Let's implement &quot;bc&quot;:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+impl Registers {
+  fn get_bc(&amp;self) -&gt; u16 {
+    (self.b as u16) &lt;&lt; 8
+    | self.c as u16
+  }
+
+  fn set_bc(&amp;mut self, value: u16) {
+    self.b = ((value &amp; 0xFF00) &gt;&gt; 8) as u8;
+    self.c = (value &amp; 0xFF) as u8;
+  }
+}
+#}</code></pre></pre>
+<p>Here we see our first instance of &quot;bit manipulation&quot; through the use of four bitwise operators: &quot;&gt;&gt;&quot;, &quot;&lt;&lt;&quot;, &quot;&amp;&quot;, and &quot;|&quot;. If you're unfamiliar with or feel a bit rusty using these types of operators, check out the <a href="./appendix/bit_manipulation.html">guide on bit manipulation</a>.</p>
+<p>We're almost done with our registers, but there's one thing we way we can improve our registers for use later. The &quot;f&quot; register is a special register called the &quot;flags&quot; register. The lower four bits of the register are <em>always</em> 0s and the CPU automatically writes to the upper four bits when certain things happen. In other words, the CPU &quot;flags&quot; certain states. We won't go into the specific meanings of the flags just yet, but for now just know that they have the following names and positions:</p>
+<ul>
+<li>Bit 7: &quot;zero&quot;</li>
+<li>Bit 6: &quot;subtraction&quot;</li>
+<li>Bit 5: &quot;half carry&quot;</li>
+<li>Bit 4: &quot;carry&quot;</li>
+</ul>
+<p>Here's a diagram of the flags register:</p>
+<pre><code>   ┌-&gt; Carry
+ ┌-+&gt; Subtraction
+ | |
+1111 0000
+| |
+└-+&gt; Zero
+  └-&gt; Half Carry
+</code></pre>
+<p>So while we could continue modeling our flags register as a simple 8-bit number (after all, that's all it is), it might be less error prone to explicitly model the fact that the upper 4 bits (a.k.a the upper &quot;nibble&quot;) has specific meaning and the lower 4 bits (a.k.a the lower nibble) must always be zeros.</p>
+<p>For this reason we'll make a struct called the <code>FlagsRegister</code>:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+struct FlagsRegister {
+    zero: bool,
+    subtract: bool,
+    half_carry: bool,
+    carry: bool
+}
+#}</code></pre></pre>
+<p>Since we might need to look at this register as an 8-bit number, we can implement some traits from the standard library that make this easy:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+const ZERO_FLAG_BYTE_POSITION: u8 = 7;
+const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
+const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
+const CARRY_FLAG_BYTE_POSITION: u8 = 4;
+
+impl std::convert::From&lt;FlagsRegister&gt; for u8  {
+    fn from(flag: FlagsRegister) -&gt; u8 {
+        (if flag.zero       { 1 } else { 0 }) &lt;&lt; ZERO_FLAG_BYTE_POSITION |
+        (if flag.subtract   { 1 } else { 0 }) &lt;&lt; SUBTRACT_FLAG_BYTE_POSITION |
+        (if flag.half_carry { 1 } else { 0 }) &lt;&lt; HALF_CARRY_FLAG_BYTE_POSITION |
+        (if flag.carry      { 1 } else { 0 }) &lt;&lt; CARRY_FLAG_BYTE_POSITION
+    }
+}
+
+impl std::convert::From&lt;u8&gt; for FlagsRegister {
+    fn from(byte: u8) -&gt; Self {
+        let zero = ((byte &gt;&gt; ZERO_FLAG_BYTE_POSITION) &amp; 0b1) != 0;
+        let subtract = ((byte &gt;&gt; SUBTRACT_FLAG_BYTE_POSITION) &amp; 0b1) != 0;
+        let half_carry = ((byte &gt;&gt; HALF_CARRY_FLAG_BYTE_POSITION) &amp; 0b1) != 0;
+        let carry = ((byte &gt;&gt; CARRY_FLAG_BYTE_POSITION) &amp; 0b1) != 0;
+
+        FlagsRegister {
+            zero,
+            subtract,
+            half_carry,
+            carry
+        }
+    }
+}
+#}</code></pre></pre>
+<p>Now that we have our special <code>FlagsRegister</code>, we can replace the <code>u8</code> in our <code>Registers</code> struct's <code>f</code> field.</p>
+<p>And that's it! We have all the functionality we need for our registers. Next we'll be looking at different instructions for manipulating the registers.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="architecture_overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="appendix/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="architecture_overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="appendix/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

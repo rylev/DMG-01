@@ -1,0 +1,234 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Number Notations - Emulating a Gameboy</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "../";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu_registers.html"><strong aria-hidden="true">3.</strong> CPU Registers</a></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html" class="active"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Emulating a Gameboy</h1> 
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#number-notations" id="number-notations"><h1>Number Notations</h1></a>
+<p>In this guide we'll deal with the various ways that we can think about and write down numbers.</p>
+<a class="header" href="#number-notations-1" id="number-notations-1"><h2>Number Notations</h2></a>
+<a class="header" href="#binary" id="binary"><h3>Binary</h3></a>
+<p>The smallest amount of data that computers, including the Game Boy, deal with are bits. A bit is either one of two values. When we talk about bits we say that a bit is one of two distinct values: &quot;1&quot; or &quot;0&quot;. Bits in other words are &quot;binary&quot; (i.e. relating to, composed of, or involving two things - &quot;bi&quot; is a latin prefix meaning two).</p>
+<p>So we can talk about bits by using either the symbol &quot;1&quot; or the symbol &quot;0&quot;. This way of talking about numbers is called &quot;binary notation&quot;. This is different from the way we normally talk about numbers where we have ten different possibilities composed of ten distinct symbols: &quot;0&quot;, &quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, or &quot;9&quot; - a.k.a. decimal notation (&quot;deci&quot; is a latin prefix meaning ten). When talking binary we'll never need any other symbols besides &quot;0&quot; and &quot;1&quot;.</p>
+<blockquote>
+<p><strong>Side Note</strong></p>
+<p>We don't <em>have</em> to use the symbols &quot;1&quot; and &quot;0&quot; for binary. People sometimes use other ways of representing the two distinct values including: &quot;yes&quot; or &quot;no&quot;, true or false, on or off, high or low, and more! In fact, computers normally represent bits as either one voltage (e.g. five volts) or as some other, typically lower, voltage (e.g. zero volts). Again, a great resource for learning about how computers actually deal with bits, check out Ben Eater's series on <a href="https://www.youtube.com/user/eaterbc">making an 8-bit Breadboard Computer</a>.</p>
+</blockquote>
+<p>So in binary notation we can represent the number zero with the symbol &quot;0&quot; and the number one with the symbol &quot;1&quot;. What if we want to represent the number two? We just said we don't have the symbol &quot;2&quot; in binary - we only have either &quot;1&quot; or &quot;0&quot;. Well let's think about what we do in our &quot;normal&quot; decimal system when we run out of symbols to use? In other words what happens when we're going from nine (represented by &quot;9&quot;) to ten? Well, we reset the first digit to &quot;0&quot; and add a new one starting with &quot;1&quot;  and we end up with &quot;10&quot; for ten.</p>
+<p>This is exactly what we do in binary. So, to represent the number two, we reset the first digit to &quot;0&quot; and a &quot;1&quot; to the left of it. The number two is therefore &quot;10&quot;.</p>
+<p>So what's the number three then? You guessed it! &quot;11&quot;. Let's count to ten in binary!</p>
+<p>Zero   &quot;0&quot;
+One    &quot;1&quot;
+Two    &quot;10&quot;
+Three  &quot;11&quot;
+Four   &quot;100&quot;
+Five   &quot;101&quot;
+Six    &quot;110&quot;
+Seven  &quot;111&quot;
+Eight  &quot;1000&quot;
+Nine   &quot;1001&quot;
+Ten    &quot;1010&quot;</p>
+<p>We can now count as high as we want in binary!</p>
+<p>Since binary numbers can look an awful lot like decimal numbers, it's helpful to have a way to say &quot;this number is written in binary not in decimal!&quot;. A common way this is done (and how both we will do it in this book and how Rust also does it) is by prefixing numbers written in binary with &quot;0b&quot;. So, the number three would be written &quot;0b11&quot;</p>
+<blockquote>
+<p><strong>Side Note</strong></p>
+<p>In order to avoid confusion, the best way to read binary numbers outloud (or in your head) is by reading each digit instead of using the decimal name for the number. So the number &quot;0b1001&quot; should either be read as &quot;nine&quot; or as &quot;one zero zero one&quot; never as &quot;one thousand and one&quot;.</p>
+</blockquote>
+<a class="header" href="#hexidecimal" id="hexidecimal"><h3>Hexidecimal</h3></a>
+<p>One interesting and important thing to note is at what numbers we add an extra digit when using binary. Let's list them: two, four, eight, sixteen, etc. Can you spot the pattern? Each number is a power two! Another way to call a counting system that works like this is a &quot;base two&quot; counting system. Our decimal system on the other hand gains a digit at every number that is a power of ten - so it is a &quot;base ten&quot; counting system.</p>
+<p>The natural question might arise: &quot;are there any other types of counting systems besides base two and base ten&quot;. And the answer is yes! While there are many different systems, the only other one we'll make use of in our emulator is hexadecimal - base sixteen!</p>
+<p>So, base two has two different symbols and base ten has ten different symbols, which means base sixteen should have sixteen different symbols. And here they are: &quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;, &quot;f&quot;. So, instead of writing &quot;10&quot; for ten, we would now write &quot;a&quot; and eleven would be &quot;b&quot; and so on. Once we run out of symbols (i.e. after fifteen - &quot;f&quot;), we do what we've always done: reset our number to &quot;0&quot; and add a digit. Sixteen is written &quot;10&quot;.</p>
+<p>Just like how in binary, we use &quot;0b&quot; to make it obvious we're talking binary and not decimal, we use &quot;0x&quot;for hexdecimal. So &quot;0x18&quot; is twenty-four not eighteen.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../appendix/numbers.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../appendix/bit_manipulation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../appendix/numbers.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../appendix/bit_manipulation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
