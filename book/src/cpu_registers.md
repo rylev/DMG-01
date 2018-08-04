@@ -25,11 +25,9 @@ struct Registers {
 }
 ```
 
-There we have it - a collection of 8 8-bit numbers.
-
 We use the type `u8` for our registers. `u8` are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the [guide on numbers](./appendix/numbers.md).
 
-While the CPU only has 8 bit registers, there are instructions that allow the Game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as `u16` in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these "virtual" 16 bit registers. These registers are refered to as "af" ("a" and "f" combined), "bc" ("b" and "c" combined), "de" ("d" and "e" combinded), and finally "hl" ("h" and "l" combined). Let's implement "bc":
+While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as `u16` in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these "virtual" 16 bit registers. These registers are refered to as "af" ("a" and "f" combined), "bc" ("b" and "c" combined), "de" ("d" and "e" combinded), and finally "hl" ("h" and "l" combined). Let's implement "bc":
 
 ```rust
 impl Registers {
@@ -46,6 +44,10 @@ impl Registers {
 ```
 
 Here we see our first instance of "bit manipulation" through the use of four bitwise operators: ">>", "<<", "&", and "|". If you're unfamiliar with or feel a bit rusty using these types of operators, check out the [guide on bit manipulation](./appendix/bit_manipulation.md).
+
+For reading the "bc" register we first treat the "b" register as a `u16` (this effectively just adds a byte of all 0s to the most significant position of the number). We then shift the "b" register 8 positions so that it's occupying the most signficant byte position. Finally, we bitwise OR the "c" register. The result is a two byte number with the contents of "b" in the most signficant byte position and the contents of "c" in the least signficant byte position.
+
+## Flags Register
 
 We're almost done with our registers, but there's one thing we way we can improve our registers for use later. The "f" register is a special register called the "flags" register. The lower four bits of the register are _always_ 0s and the CPU automatically writes to the upper four bits when certain things happen. In other words, the CPU "flags" certain states. We won't go into the specific meanings of the flags just yet, but for now just know that they have the following names and positions:
 * Bit 7: "zero"
@@ -64,7 +66,7 @@ Here's a diagram of the flags register:
   └-> Half Carry
 ```
 
-So while we could continue modeling our flags register as a simple 8-bit number (after all, that's all it is), it might be less error prone to explicitly model the fact that the upper 4 bits (a.k.a the upper "nibble") has specific meaning and the lower 4 bits (a.k.a the lower nibble) must always be zeros.
+So while we could continue modeling our flags register as a simple 8-bit number (after all, that's all it is in reality), it might be less error prone to explicitly model the fact that the upper 4 bits (a.k.a the upper "nibble") has specific meaning and the lower 4 bits (a.k.a the lower "nibble") must always be zeros.
 
 For this reason we'll make a struct called the `FlagsRegister`:
 
@@ -110,6 +112,8 @@ impl std::convert::From<u8> for FlagsRegister {
     }
 }
 ```
+
+The `std::convert::From` trait allows us to easily convert our FlagsRegister from a `u8` and back.
 
 Now that we have our special `FlagsRegister`, we can replace the `u8` in our `Registers` struct's `f` field.
 
