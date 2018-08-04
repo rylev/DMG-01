@@ -1,5 +1,5 @@
 [package]
-name = "gameboy"
+name = "dmg-01"
 version = "0.1.0"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 
