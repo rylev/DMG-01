@@ -1,6 +1,6 @@
 # Numbers in Computers
 
-In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexidecimal. If you're unfamiliar with these different ways of writing numbers, check out our [guide on number notations](./number_notations.md).
+In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexadecimal. If you're unfamiliar with these different ways of writing numbers, check out our [guide on number notations](./number_notations.md).
 
 ## Bits
 
@@ -22,7 +22,7 @@ Bytes are defined as a collection of 8 bits. Our Gameboy, as an 8-bit machine, t
 >
 > Some times we'll actually only deal with half a byte (i.e., 4 bits) at a time. This is usually referred to as a "nibble".
 
-Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexidecimal notation: So while we could write out the byte representing the number 134 as "0b10000110" we typically write it as "0x86". These two notations specify the same number, "0x86" is just shorter so it's more often used.
+Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexadecimal notation: So while we could write out the byte representing the number 134 as "0b10000110" we typically write it as "0x86". These two notations specify the same number, "0x86" is just shorter so it's more often used.
 
 When disucssing numbers composed of multiple bytes, for example 0xFFA1 (composed of three bytes), we'll often need to talk about which byte is "most significant" (MSB - most significant byte) and which is "least significant" (LSB - least significant byte). Going back to math class, you may remember that when writing numbers like "178", the digit on the right (i.e., the "8") is the least sigificant, it adds the least amount to the total sum of the number (just eight) while the digit on the left (i.e., the "1") is the most significant since it adds the most to the sum of the number (one hundred!). Bytes work the same way - in 0xFFA1, 0xFF is the most significant byte and 0xA1 is the least significant.
 

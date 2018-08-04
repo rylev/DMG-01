@@ -292,7 +292,7 @@ impl std::convert::From&lt;u8&gt; for FlagsRegister {
 <p>And that's it! We have all the functionality we need for our registers. Next we'll be looking at different instructions for manipulating the registers.</p>
 <a class="header" href="#appendix" id="appendix"><h1>Appendix</h1></a>
 <a class="header" href="#numbers-in-computers" id="numbers-in-computers"><h1>Numbers in Computers</h1></a>
-<p>In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexidecimal. If you're unfamiliar with these different ways of writing numbers, check out our <a href="./number_notations.html">guide on number notations</a>.</p>
+<p>In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexadecimal. If you're unfamiliar with these different ways of writing numbers, check out our <a href="./number_notations.html">guide on number notations</a>.</p>
 <a class="header" href="#bits" id="bits"><h2>Bits</h2></a>
 <p>At a very basic level, computers can only read and write two different values that we'll call 1 and 0. This piece of data is called a bit. Computer memory is really just a long array of bits that the computer can read or write.</p>
 <blockquote>
@@ -307,7 +307,7 @@ impl std::convert::From&lt;u8&gt; for FlagsRegister {
 <p><strong>Learn More</strong></p>
 <p>Some times we'll actually only deal with half a byte (i.e., 4 bits) at a time. This is usually referred to as a &quot;nibble&quot;.</p>
 </blockquote>
-<p>Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexidecimal notation: So while we could write out the byte representing the number 134 as &quot;0b10000110&quot; we typically write it as &quot;0x86&quot;. These two notations specify the same number, &quot;0x86&quot; is just shorter so it's more often used.</p>
+<p>Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexadecimal notation: So while we could write out the byte representing the number 134 as &quot;0b10000110&quot; we typically write it as &quot;0x86&quot;. These two notations specify the same number, &quot;0x86&quot; is just shorter so it's more often used.</p>
 <p>When disucssing numbers composed of multiple bytes, for example 0xFFA1 (composed of three bytes), we'll often need to talk about which byte is &quot;most significant&quot; (MSB - most significant byte) and which is &quot;least significant&quot; (LSB - least significant byte). Going back to math class, you may remember that when writing numbers like &quot;178&quot;, the digit on the right (i.e., the &quot;8&quot;) is the least sigificant, it adds the least amount to the total sum of the number (just eight) while the digit on the left (i.e., the &quot;1&quot;) is the most significant since it adds the most to the sum of the number (one hundred!). Bytes work the same way - in 0xFFA1, 0xFF is the most significant byte and 0xA1 is the least significant.</p>
 <a class="header" href="#endianess" id="endianess"><h2>Endianess</h2></a>
 <p>Let's take the example of two bytes sitting next to each other in memory: first at address 0 there is 0xFF and then at address 1 there is 0x16. If we want to read these two bytes together as a 16 bit number, should it be read as 0xFF16 or as 0x16FF? Even if one way or the other makes more sense to you, the answer is: it depends on the machine. In the case of the Game Boy the order is 0xFF16 - in other words the least significant byte is first in memory. This scheme is known as little-endian and its opposite is known as big-endian.</p>
@@ -359,13 +359,13 @@ Ten    &quot;1010&quot;</p>
 <p><strong>Side Note</strong></p>
 <p>In order to avoid confusion, the best way to read binary numbers outloud (or in your head) is by reading each digit instead of using the decimal name for the number. So the number &quot;0b1001&quot; should either be read as &quot;nine&quot; or as &quot;one zero zero one&quot; never as &quot;one thousand and one&quot;.</p>
 </blockquote>
-<a class="header" href="#hexidecimal" id="hexidecimal"><h3>Hexidecimal</h3></a>
+<a class="header" href="#hexadecimal" id="hexadecimal"><h3>Hexadecimal</h3></a>
 <p>One interesting and important thing to note is at what numbers we add an extra digit when using binary. Let's list them: two, four, eight, sixteen, etc. Can you spot the pattern? Each number is a power two! Another way to call a counting system that works like this is a &quot;base two&quot; counting system. Our decimal system on the other hand gains a digit at every number that is a power of ten - so it is a &quot;base ten&quot; counting system.</p>
 <p>The natural question might arise: &quot;are there any other types of counting systems besides base two and base ten&quot;. And the answer is yes! While there are many different systems, the only other one we'll make use of in our emulator is hexadecimal - base sixteen!</p>
 <p>So, base two has two different symbols and base ten has ten different symbols, which means base sixteen should have sixteen different symbols. And here they are: &quot;1&quot;, &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;5&quot;, &quot;6&quot;, &quot;7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;, &quot;f&quot;. So, instead of writing &quot;10&quot; for ten, we would now write &quot;a&quot; and eleven would be &quot;b&quot; and so on. Once we run out of symbols (i.e. after fifteen - &quot;f&quot;), we do what we've always done: reset our number to &quot;0&quot; and add a digit. Sixteen is written &quot;10&quot;.</p>
 <p>Just like how in binary, we use &quot;0b&quot; to make it obvious we're talking binary and not decimal, we use &quot;0x&quot;for hexdecimal. So &quot;0x18&quot; is twenty-four not eighteen.</p>
 <a class="header" href="#bit-and-byte-manipulation" id="bit-and-byte-manipulation"><h1>Bit and Byte Manipulation</h1></a>
-<p>In this guide, we'll be discussing bit and byte manipulation through different bit-wise operators. If you're a little rusty on bits, bytes, binary and hexidecimal, check out our <a href="./number_notations.html">guide on number notation</a> and our <a href="./numbers.html">guide on numbers</a></p>
+<p>In this guide, we'll be discussing bit and byte manipulation through different bit-wise operators. If you're a little rusty on bits, bytes, binary and hexadecimal, check out our <a href="./number_notations.html">guide on number notation</a> and our <a href="./numbers.html">guide on numbers</a></p>
 <p>CPUs normally do very simple operations on their registers. Most of these operations should be familiar to everyone, but some involve manipulating the bits of a byte in some structured way. Let's take a look.</p>
 <a class="header" href="#and-" id="and-"><h2>AND (&amp;)</h2></a>
 <p>Bitwise AND (&amp;) is similiar to the boolean AND (&amp;&amp;) operator you're probably already familiar with except that it operates on each bit of a byte or set of bytes. It's important to remember that boolean values are equivalent to a single bit: 1 is true and 0 is false.</p>
@@ -382,7 +382,7 @@ false &amp;&amp; false == false
 ------
   1000
 </code></pre>
-<p>Of course, we can do the same thing with hexidecimal numbers. The best way to think of these when you're getting used to them is to convert the hexidecimal number to binary and then do the AND:</p>
+<p>Of course, we can do the same thing with hexadecimal numbers. The best way to think of these when you're getting used to them is to convert the hexadecimal number to binary and then do the AND:</p>
 <pre><code>  0x8  1000
 &amp; 0x3  0011
 ------ ----
@@ -403,7 +403,7 @@ false || false == false
 ------
   1101
 </code></pre>
-<p>The same advice around hexidecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.</p>
+<p>The same advice around hexadecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.</p>
 <p>Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least signficant bit set to 1, you can OR it with 0b1.</p>
 <a class="header" href="#shift--" id="shift--"><h2>Shift (&lt;&lt; &gt;&gt;)</h2></a>
 <p>Bit shifting is the practice of moving bits in order to different digit positions.</p>

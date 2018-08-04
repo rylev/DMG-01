@@ -1,6 +1,6 @@
 # Bit and Byte Manipulation
 
-In this guide, we'll be discussing bit and byte manipulation through different bit-wise operators. If you're a little rusty on bits, bytes, binary and hexidecimal, check out our [guide on number notation](./number_notations.md) and our [guide on numbers](./numbers.md)
+In this guide, we'll be discussing bit and byte manipulation through different bit-wise operators. If you're a little rusty on bits, bytes, binary and hexadecimal, check out our [guide on number notation](./number_notations.md) and our [guide on numbers](./numbers.md)
 
 CPUs normally do very simple operations on their registers. Most of these operations should be familiar to everyone, but some involve manipulating the bits of a byte in some structured way. Let's take a look.
 
@@ -28,7 +28,7 @@ Let's take a look at an example:
   1000
 ```
 
-Of course, we can do the same thing with hexidecimal numbers. The best way to think of these when you're getting used to them is to convert the hexidecimal number to binary and then do the AND:
+Of course, we can do the same thing with hexadecimal numbers. The best way to think of these when you're getting used to them is to convert the hexadecimal number to binary and then do the AND:
 
 ```
   0x8  1000
@@ -61,7 +61,7 @@ Let's take a look at a bitwise example:
   1101
 ```
 
-The same advice around hexidecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.
+The same advice around hexadecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.
 
 Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least signficant bit set to 1, you can OR it with 0b1.
 

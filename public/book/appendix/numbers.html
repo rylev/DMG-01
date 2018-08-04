@@ -137,7 +137,7 @@
                 <div id="content" class="content">
                     <main>
                         <a class="header" href="#numbers-in-computers" id="numbers-in-computers"><h1>Numbers in Computers</h1></a>
-<p>In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexidecimal. If you're unfamiliar with these different ways of writing numbers, check out our <a href="./number_notations.html">guide on number notations</a>.</p>
+<p>In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexadecimal. If you're unfamiliar with these different ways of writing numbers, check out our <a href="./number_notations.html">guide on number notations</a>.</p>
 <a class="header" href="#bits" id="bits"><h2>Bits</h2></a>
 <p>At a very basic level, computers can only read and write two different values that we'll call 1 and 0. This piece of data is called a bit. Computer memory is really just a long array of bits that the computer can read or write.</p>
 <blockquote>
@@ -152,7 +152,7 @@
 <p><strong>Learn More</strong></p>
 <p>Some times we'll actually only deal with half a byte (i.e., 4 bits) at a time. This is usually referred to as a &quot;nibble&quot;.</p>
 </blockquote>
-<p>Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexidecimal notation: So while we could write out the byte representing the number 134 as &quot;0b10000110&quot; we typically write it as &quot;0x86&quot;. These two notations specify the same number, &quot;0x86&quot; is just shorter so it's more often used.</p>
+<p>Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexadecimal notation: So while we could write out the byte representing the number 134 as &quot;0b10000110&quot; we typically write it as &quot;0x86&quot;. These two notations specify the same number, &quot;0x86&quot; is just shorter so it's more often used.</p>
 <p>When disucssing numbers composed of multiple bytes, for example 0xFFA1 (composed of three bytes), we'll often need to talk about which byte is &quot;most significant&quot; (MSB - most significant byte) and which is &quot;least significant&quot; (LSB - least significant byte). Going back to math class, you may remember that when writing numbers like &quot;178&quot;, the digit on the right (i.e., the &quot;8&quot;) is the least sigificant, it adds the least amount to the total sum of the number (just eight) while the digit on the left (i.e., the &quot;1&quot;) is the most significant since it adds the most to the sum of the number (one hundred!). Bytes work the same way - in 0xFFA1, 0xFF is the most significant byte and 0xA1 is the least significant.</p>
 <a class="header" href="#endianess" id="endianess"><h2>Endianess</h2></a>
 <p>Let's take the example of two bytes sitting next to each other in memory: first at address 0 there is 0xFF and then at address 1 there is 0x16. If we want to read these two bytes together as a 16 bit number, should it be read as 0xFF16 or as 0x16FF? Even if one way or the other makes more sense to you, the answer is: it depends on the machine. In the case of the Game Boy the order is 0xFF16 - in other words the least significant byte is first in memory. This scheme is known as little-endian and its opposite is known as big-endian.</p>

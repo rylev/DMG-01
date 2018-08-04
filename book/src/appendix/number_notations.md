@@ -40,7 +40,7 @@ Since binary numbers can look an awful lot like decimal numbers, it's helpful to
 >
 > In order to avoid confusion, the best way to read binary numbers outloud (or in your head) is by reading each digit instead of using the decimal name for the number. So the number "0b1001" should either be read as "nine" or as "one zero zero one" never as "one thousand and one".
 
-### Hexidecimal
+### Hexadecimal
 
 One interesting and important thing to note is at what numbers we add an extra digit when using binary. Let's list them: two, four, eight, sixteen, etc. Can you spot the pattern? Each number is a power two! Another way to call a counting system that works like this is a "base two" counting system. Our decimal system on the other hand gains a digit at every number that is a power of ten - so it is a "base ten" counting system.
 
