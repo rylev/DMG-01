@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>CPU Registers - Emulating a Gameboy</title>
+        <title>CPU Registers - DMG-01: How to Emulate a Game Boy</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -102,7 +102,7 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Emulating a Gameboy</h1> 
+                        <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
 
                         <div class="right-buttons">
                             <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -158,7 +158,7 @@ struct Registers {
 }
 #}</code></pre></pre>
 <p>We use the type <code>u8</code> for our registers. <code>u8</code> are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the <a href="./appendix/numbers.html">guide on numbers</a>.</p>
-<p>While the CPU only has 8 bit registers, there are instructions that allow the Game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as <code>u16</code> in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these &quot;virtual&quot; 16 bit registers. These registers are refered to as &quot;af&quot; (&quot;a&quot; and &quot;f&quot; combined), &quot;bc&quot; (&quot;b&quot; and &quot;c&quot; combined), &quot;de&quot; (&quot;d&quot; and &quot;e&quot; combinded), and finally &quot;hl&quot; (&quot;h&quot; and &quot;l&quot; combined). Let's implement &quot;bc&quot;:</p>
+<p>While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as <code>u16</code> in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these &quot;virtual&quot; 16 bit registers. These registers are refered to as &quot;af&quot; (&quot;a&quot; and &quot;f&quot; combined), &quot;bc&quot; (&quot;b&quot; and &quot;c&quot; combined), &quot;de&quot; (&quot;d&quot; and &quot;e&quot; combinded), and finally &quot;hl&quot; (&quot;h&quot; and &quot;l&quot; combined). Let's implement &quot;bc&quot;:</p>
 <pre><pre class="playpen"><code class="language-rust">
 # #![allow(unused_variables)]
 #fn main() {
@@ -175,6 +175,8 @@ impl Registers {
 }
 #}</code></pre></pre>
 <p>Here we see our first instance of &quot;bit manipulation&quot; through the use of four bitwise operators: &quot;&gt;&gt;&quot;, &quot;&lt;&lt;&quot;, &quot;&amp;&quot;, and &quot;|&quot;. If you're unfamiliar with or feel a bit rusty using these types of operators, check out the <a href="./appendix/bit_manipulation.html">guide on bit manipulation</a>.</p>
+<p>For reading the &quot;bc&quot; register we first treat the &quot;b&quot; register as a <code>u16</code> (this effectively just adds a byte of all 0s to the most significant position of the number). We then shift the &quot;b&quot; register 8 positions so that it's occupying the most signficant byte position. Finally, we bitwise OR the &quot;c&quot; register. The result is a two byte number with the contents of &quot;b&quot; in the most signficant byte position and the contents of &quot;c&quot; in the least signficant byte position.</p>
+<a class="header" href="#flags-register" id="flags-register"><h2>Flags Register</h2></a>
 <p>We're almost done with our registers, but there's one thing we way we can improve our registers for use later. The &quot;f&quot; register is a special register called the &quot;flags&quot; register. The lower four bits of the register are <em>always</em> 0s and the CPU automatically writes to the upper four bits when certain things happen. In other words, the CPU &quot;flags&quot; certain states. We won't go into the specific meanings of the flags just yet, but for now just know that they have the following names and positions:</p>
 <ul>
 <li>Bit 7: &quot;zero&quot;</li>
@@ -191,7 +193,7 @@ impl Registers {
 └-+&gt; Zero
   └-&gt; Half Carry
 </code></pre>
-<p>So while we could continue modeling our flags register as a simple 8-bit number (after all, that's all it is), it might be less error prone to explicitly model the fact that the upper 4 bits (a.k.a the upper &quot;nibble&quot;) has specific meaning and the lower 4 bits (a.k.a the lower nibble) must always be zeros.</p>
+<p>So while we could continue modeling our flags register as a simple 8-bit number (after all, that's all it is in reality), it might be less error prone to explicitly model the fact that the upper 4 bits (a.k.a the upper &quot;nibble&quot;) has specific meaning and the lower 4 bits (a.k.a the lower &quot;nibble&quot;) must always be zeros.</p>
 <p>For this reason we'll make a struct called the <code>FlagsRegister</code>:</p>
 <pre><pre class="playpen"><code class="language-rust">
 # #![allow(unused_variables)]
@@ -237,6 +239,7 @@ impl std::convert::From&lt;u8&gt; for FlagsRegister {
     }
 }
 #}</code></pre></pre>
+<p>The <code>std::convert::From</code> trait allows us to easily convert our FlagsRegister from a <code>u8</code> and back.</p>
 <p>Now that we have our special <code>FlagsRegister</code>, we can replace the <code>u8</code> in our <code>Registers</code> struct's <code>f</code> field.</p>
 <p>And that's it! We have all the functionality we need for our registers. Next we'll be looking at different instructions for manipulating the registers.</p>
 

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Architecture Overview - Emulating a Gameboy</title>
+        <title>Architecture Overview - DMG-01: How to Emulate a Game Boy</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -102,7 +102,7 @@
                             
                         </div>
 
-                        <h1 class="menu-title">Emulating a Gameboy</h1> 
+                        <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
 
                         <div class="right-buttons">
                             <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -137,13 +137,13 @@
                 <div id="content" class="content">
                     <main>
                         <a class="header" href="#architecture-overview" id="architecture-overview"><h1>Architecture Overview</h1></a>
-<p>Before we can begin we need to have a basic understanding of what is needed to build a Game Boy emulator. This starts by having a basic understanding of the Game Boy computer architecture.</p>
+<p>Before we can begin we need to have a basic understanding of what is needed to build a Game Boy emulator. This starts by having a basic understanding of the Game Boy computer architecture. If you're already familiar with the very basics of CPUs, computer memory and I/O devices, you can skip to the next page.</p>
 <a class="header" href="#at-a-high-level" id="at-a-high-level"><h2>At a High Level</h2></a>
 <p>The Gameboy can be thought to contain the following pieces:</p>
 <a class="header" href="#cpu-central-processing-unit" id="cpu-central-processing-unit"><h4>CPU (Central Processing Unit)</h4></a>
 <p>The CPU is the &quot;brains&quot; of a computer. The CPU is responsible for the following:</p>
 <ul>
-<li>Executing the game's instructions</li>
+<li>Executing instructions defined by the game the Game Boy is running</li>
 <li>Reading and writting to memory</li>
 <li>Reacting to &quot;events&quot; (known as interrupts) that come from the I/O (input/output) hardware such as the screen and the gamepad controls</li>
 <li>Keeping track of very small pieces of data in &quot;registers&quot; that it manipulates when it runs instructions</li>
@@ -152,7 +152,7 @@
 <p>This is the piece of hardware that allows the Game Boy to remember data while it is running. Without the RAM, the Gameboy's CPU could still execute instructions and keep track of small pieces of data in its registers, but if the data no longer fits in its registers, the CPU would have to throw it away.</p>
 <a class="header" href="#rom-read-only-memory" id="rom-read-only-memory"><h3>ROM (Read Only Memory)</h3></a>
 <p>This is memory that has been &quot;hardcoded&quot; into the machine (hence it being read only). This memory is used to tell the machine how to set itself up (a.k.a bootstrap) to be able to begin accepting instructions as well as to play the <a href="https://www.youtube.com/watch?v=ClJWTR_lCL4">iconic splash screen</a> on boot.</p>
-<p>Game cartridges are also known as ROMs as they are mostly read only memory as well. The truth is a bit fuzzier than this, but we won't be working with cartridges until much later in the book.</p>
+<p>Game cartridges are also known as ROMs as they are mostly read only memory as well.</p>
 <a class="header" href="#io-inputoutput" id="io-inputoutput"><h3>I/O (Input/Output)</h3></a>
 <p>The Gameboy has several pieces of I/O hardware:</p>
 <ul>
