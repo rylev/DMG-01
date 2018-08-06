@@ -3,7 +3,7 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecTarget};
+use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget};
 
 pub struct CPU {
     registers: Registers
@@ -88,6 +88,40 @@ impl CPU {
                     IncDecTarget::HL => change_16bit_register!(self, get_hl => dec_16bit => set_hl),
                 }
             },
+            Instruction::Add(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => add_without_carry => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => add_without_carry => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => add_without_carry => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => add_without_carry => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => add_without_carry => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => add_without_carry => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => add_without_carry => a),
+                    // Direct target
+                    ArithmeticTarget::D8(amount) => {
+                        let result = self.add_without_carry(amount);
+                        self.registers.a = result;
+                    }
+                }
+            },
+            Instruction::AddC(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => add_with_carry => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => add_with_carry => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => add_with_carry => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => add_with_carry => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => add_with_carry => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => add_with_carry => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => add_with_carry => a),
+                    // Direct target
+                    ArithmeticTarget::D8(amount) => {
+                        let result = self.add_with_carry(amount);
+                        self.registers.a = result;
+                    }
+                }
+            },
         }
     }
 
@@ -123,6 +157,28 @@ impl CPU {
     #[inline(always)]
     fn dec_16bit(&mut self, value: u16) -> u16 {
         value.wrapping_sub(1)
+    }
+
+    #[inline(always)]
+    fn add_without_carry(&mut self, value: u8) -> u8 {
+        self.add(value, false)
+    }
+
+    #[inline(always)]
+    fn add_with_carry(&mut self, value: u8) -> u8 {
+        self.add(value, true)
+    }
+
+    #[inline(always)]
+    fn add(&mut self, value: u8, add_carry: bool) -> u8 {
+        let additional_carry = if add_carry && self.registers.f.carry { 1 } else { 0 };
+        let (add, carry) = self.registers.a.overflowing_add(value);
+        let (add2, carry2) = add.overflowing_add(additional_carry);
+        self.registers.f.zero = add2 == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.carry = carry || carry2;
+        self.registers.f.half_carry = ((self.registers.a & 0xf) + (value & 0xf) + additional_carry) > 0xf;
+        add2
     }
 }
 
