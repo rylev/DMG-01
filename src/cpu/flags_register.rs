@@ -3,13 +3,13 @@ use std;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FlagsRegister {
     // set if the the last operation produced a result of 0
-    zero: bool,
+    pub zero: bool,
     // set if the last operation was a subtraction
-    subtract: bool,
+    pub subtract: bool,
     // set if lower half of the result overflowed
-    half_carry: bool,
+    pub half_carry: bool,
     // set if the result overflowed
-    carry: bool
+    pub carry: bool
 }
 const ZERO_FLAG_BYTE_POSITION: u8 = 7;
 const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;

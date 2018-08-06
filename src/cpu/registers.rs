@@ -28,94 +28,94 @@ impl Registers {
         }
     }
 
-    fn get_a(&self) -> u8 {
+    pub fn get_a(&self) -> u8 {
         self.a
     }
-    fn set_a(&mut self, value: u8) {
+    pub fn set_a(&mut self, value: u8) {
         self.a = value;
     }
 
-    fn get_b(&self) -> u8 {
+    pub fn get_b(&self) -> u8 {
         self.b
     }
-    fn set_b(&mut self, value: u8) {
+    pub fn set_b(&mut self, value: u8) {
         self.b = value;
     }
 
-    fn get_c(&self) -> u8 {
+    pub fn get_c(&self) -> u8 {
         self.c
     }
-    fn set_c(&mut self, value: u8) {
+    pub fn set_c(&mut self, value: u8) {
         self.c = value;
     }
 
-    fn get_d(&self) -> u8 {
+    pub fn get_d(&self) -> u8 {
         self.d
     }
-    fn set_d(&mut self, value: u8) {
+    pub fn set_d(&mut self, value: u8) {
         self.d = value;
     }
 
-    fn get_e(&self) -> u8 {
+    pub fn get_e(&self) -> u8 {
         self.e
     }
-    fn set_e(&mut self, value: u8) {
+    pub fn set_e(&mut self, value: u8) {
         self.e = value;
     }
 
-    fn get_f(&self) -> FlagsRegister {
+    pub fn get_f(&self) -> FlagsRegister {
         self.f
     }
-    fn set_f<T: std::convert::Into<FlagsRegister>>(&mut self, value: T) {
+    pub fn set_f<T: std::convert::Into<FlagsRegister>>(&mut self, value: T) {
         self.f = value.into();
     }
 
-    fn get_h(&self) -> u8 {
+    pub fn get_h(&self) -> u8 {
         self.h
     }
-    fn set_h(&mut self, value: u8) {
+    pub fn set_h(&mut self, value: u8) {
         self.h = value;
     }
 
-    fn get_l(&self) -> u8 {
+    pub fn get_l(&self) -> u8 {
         self.l
     }
-    fn set_l(&mut self, value: u8) {
+    pub fn set_l(&mut self, value: u8) {
         self.l = value;
     }
 
-    fn get_af(&self) -> u16 {
+    pub fn get_af(&self) -> u16 {
         (self.a as u16) << 8
         | u8::from(self.f) as u16
     }
-    fn set_af(&mut self, value: u16) {
+    pub fn set_af(&mut self, value: u16) {
         self.a = ((value & 0xFF00) >> 8) as u8;
         self.f = FlagsRegister::from((value & 0xF) as u8);
     }
 
-    fn get_bc(&self) -> u16 {
+    pub fn get_bc(&self) -> u16 {
         (self.b as u16) << 8
         | self.c as u16
     }
-    fn set_bc(&mut self, value: u16) {
+    pub fn set_bc(&mut self, value: u16) {
         self.b = ((value & 0xFF00) >> 8) as u8;
         self.c = (value & 0xFF) as u8;
     }
 
-    fn get_de(&self) -> u16 {
+    pub fn get_de(&self) -> u16 {
         (self.d as u16) << 8
         | self.e as u16
     }
-    fn set_de(&mut self, value: u16) {
+    pub fn set_de(&mut self, value: u16) {
         self.d = ((value & 0xFF00) >> 8) as u8;
         self.e = (value & 0xFF) as u8;
     }
 
-    fn get_hl(&self) -> u16 {
+    pub fn get_hl(&self) -> u16 {
         (self.h as u16) << 8
         | self.l as u16
     }
-    fn set_hl(&mut self, value: u16) {
+    pub fn set_hl(&mut self, value: u16) {
         self.h = ((value & 0xFF00) >> 8) as u8;
         self.l = (value & 0xFF) as u8;
     }
