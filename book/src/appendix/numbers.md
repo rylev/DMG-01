@@ -42,6 +42,10 @@ Let's say we have the number 0b00111011 a.k.a. 59 and we want to represent -59 i
 
 So -59 is 0b11000101. But wait is 0b11000101 already 197? Yes it is! Whether we chose to interpret a byte as a number from 0 to 255 or as two's complement number capable of representing -128 to 127 is up to programmer! Interpreting a number as only positive means it is "unsigned" and interpeting as being possibly negative with two's complement means it is "signed".
 
+### Overflow and underflow
+
+When doing arithmetic on numbers, sometimes the result is too large or small to be represented. For example if you add two 8 bit numbers 253 and 9 together you would expect to get 262. But 262 cannot be represented by 8 bits (it requires 9 bits). When this happens the number simply is what the first 8 bits of 262 would be just with the final 9th bit missing: 0b0000_0110 a.k.a 6. This phenomenon is called overflow. The opposite can occur when subtracting. This is called underflow
+
 ### Rust
 
 In Rust, the various number types tell us both how many bits are used to represent that particular integer and whether the integer is in two's complement or not. For example, the number type `u8` is a number composed of 8 bits (i.e., 1 byte) and is unsigned while `i64` is a number composed of 64 bits (i.e., 8 bytes) and is signed.

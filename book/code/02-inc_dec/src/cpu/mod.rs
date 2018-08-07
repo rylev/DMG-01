@@ -202,4 +202,51 @@ mod tests {
         assert_eq!(cpu.registers.c, 0x00);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
+
+    // Dec
+    #[test]
+    fn execute_dec_8bit_non_overflow() {
+        let instruction = Instruction::Dec(IncDecTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0x6);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_dec_8bit_half_carry() {
+        let instruction = Instruction::Dec(IncDecTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x80;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0x7f);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => false);
+    }
+
+    #[test]
+    fn execute_dec_8bit_underflow() {
+        let instruction = Instruction::Dec(IncDecTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x0;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xFF);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => false);
+    }
+
+    #[test]
+    fn execute_dec_16bit_underflow() {
+        let instruction = Instruction::Dec(IncDecTarget::BC);
+        let mut cpu = CPU::new();
+        cpu.registers.set_bc(0x0000);
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.get_bc(), 0xFFFF);
+        assert_eq!(cpu.registers.b, 0xFF);
+        assert_eq!(cpu.registers.c, 0xFF);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
 }
