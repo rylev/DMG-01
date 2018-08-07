@@ -305,4 +305,40 @@ mod tests {
         assert_eq!(cpu.registers.c, 0xFF);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
+
+    // Add
+    #[test]
+    fn execute_add_8bit_non_overflow_target_a() {
+        let instruction = Instruction::Add(ArithmeticTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xe);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_add_8bit_non_overflow_target_c() {
+        let instruction = Instruction::Add(ArithmeticTarget::C);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.registers.c = 0x3;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xa);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_add_8bit_carry() {
+        let instruction = Instruction::Add(ArithmeticTarget::B);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0xFC;
+        cpu.registers.b = 0x9;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0x05);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
+    }
 }
