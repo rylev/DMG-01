@@ -1,5 +1,5 @@
 [package]
-name = "c1"
+name = "cpu_registers"
 version = "0.1.0"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 
