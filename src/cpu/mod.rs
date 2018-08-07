@@ -331,6 +331,19 @@ mod tests {
     }
 
     #[test]
+    fn execute_add_8bit_non_overflow_target_c_with_carry() {
+        let instruction = Instruction::Add(ArithmeticTarget::C);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.registers.c = 0x3;
+        cpu.registers.f.carry = true;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xa);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
     fn execute_add_8bit_carry() {
         let instruction = Instruction::Add(ArithmeticTarget::B);
         let mut cpu = CPU::new();
@@ -340,5 +353,55 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x05);
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
+    }
+
+    // Add with carry
+    #[test]
+    fn execute_addc_8bit_non_overflow_target_a_no_carry() {
+        let instruction = Instruction::AddC(ArithmeticTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xe);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_addc_8bit_non_overflow_target_a_with_carry() {
+        let instruction = Instruction::AddC(ArithmeticTarget::A);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.registers.f.carry = true;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xf);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_addc_8bit_non_overflow_target_c_with_carry() {
+        let instruction = Instruction::AddC(ArithmeticTarget::C);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0x7;
+        cpu.registers.c = 0x3;
+        cpu.registers.f.carry = true;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0xb);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_addc_8bit_carry_with_carry() {
+        let instruction = Instruction::AddC(ArithmeticTarget::B);
+        let mut cpu = CPU::new();
+        cpu.registers.a = 0xFC;
+        cpu.registers.b = 0x3;
+        cpu.registers.f.carry = true;
+        cpu.execute(instruction);
+
+        assert_eq!(cpu.registers.a, 0x00);
+        check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => true);
     }
 }
