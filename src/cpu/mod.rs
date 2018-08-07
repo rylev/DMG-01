@@ -112,6 +112,9 @@ impl CPU {
         let new_value = value.wrapping_sub(1);
         self.registers.f.zero = new_value == 0;
         self.registers.f.subtract = true;
+        // Half Carry is set if the lower nibble of the value is equal to 0x0.
+        // If the nibble is equal to 0x0 (0b0000) that means decrementing the value
+        // by 1 would cause a carry from the upper nibble to the lower nibble.
         self.registers.f.half_carry = value & 0xF == 0x0;
         new_value
     }
