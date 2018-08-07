@@ -3,7 +3,7 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecRegister};
+use self::instruction::{Instruction,IncDecTarget};
 
 pub struct CPU {
     registers: Registers
@@ -12,17 +12,18 @@ pub struct CPU {
 // Macro for changing the value of a 8 bit register through some CPU method
 // Arguments:
 // * self (a.k.a the CPU)
-// * the name of the register,
+// * the name of the register to get,
 // * a method for changing register's value,
+// * the name of the register to set,
 //
 // The macro gets the value from the register, performs work on that value and then sets the value back in the
 // register
 macro_rules! change_8bit_register {
-    ( $self:ident, $reg:ident, $work:ident) => {
+    ( $self:ident, $getter:ident => $work:ident => $setter:ident) => {
         {
-            let amount = $self.registers.$reg;
-            let result = $self.$work(amount);
-            $self.registers.$reg = result;
+            let value = $self.registers.$getter;
+            let result = $self.$work(value);
+            $self.registers.$setter = result;
         }
     };
 }
@@ -31,13 +32,13 @@ macro_rules! change_8bit_register {
 // Arguments:
 // * self (a.k.a the CPU)
 // * a method for getting a register,
-// * a method for setting a register,
 // * a method for changing register's value,
+// * a method for setting a register,
 //
 // The macro gets the value from the register, performs work on that value and then sets the value back in the
 // register
 macro_rules! change_16bit_register {
-    ( $self:ident, $getter:ident, $setter:ident, $work:ident) => {
+    ( $self:ident, $getter:ident => $work:ident => $setter:ident ) => {
         {
             let amount = $self.registers.$getter();
             let result = $self.$work(amount);
@@ -58,33 +59,33 @@ impl CPU {
             Instruction::Inc(register) => {
                 match register {
                     // 8 bit target
-                    IncDecRegister::A => change_8bit_register!(self, a, inc_8bit),
-                    IncDecRegister::B => change_8bit_register!(self, b, inc_8bit),
-                    IncDecRegister::C => change_8bit_register!(self, c, inc_8bit),
-                    IncDecRegister::D => change_8bit_register!(self, d, inc_8bit),
-                    IncDecRegister::E => change_8bit_register!(self, e, inc_8bit),
-                    IncDecRegister::H => change_8bit_register!(self, h, inc_8bit),
-                    IncDecRegister::L => change_8bit_register!(self, l, inc_8bit),
+                    IncDecTarget::A => change_8bit_register!(self, a => inc_8bit => a),
+                    IncDecTarget::B => change_8bit_register!(self, b => inc_8bit => b),
+                    IncDecTarget::C => change_8bit_register!(self, c => inc_8bit => c),
+                    IncDecTarget::D => change_8bit_register!(self, d => inc_8bit => d),
+                    IncDecTarget::E => change_8bit_register!(self, e => inc_8bit => e),
+                    IncDecTarget::H => change_8bit_register!(self, h => inc_8bit => h),
+                    IncDecTarget::L => change_8bit_register!(self, l => inc_8bit => l),
                     // 16 bit target
-                    IncDecRegister::BC => change_16bit_register!(self, get_bc, set_bc, inc_16bit),
-                    IncDecRegister::DE => change_16bit_register!(self, get_de, set_de, inc_16bit),
-                    IncDecRegister::HL => change_16bit_register!(self, get_hl, set_hl, inc_16bit),
+                    IncDecTarget::BC => change_16bit_register!(self, get_bc => inc_16bit => set_bc),
+                    IncDecTarget::DE => change_16bit_register!(self, get_de => inc_16bit => set_de),
+                    IncDecTarget::HL => change_16bit_register!(self, get_hl => inc_16bit => set_hl),
                 }
             },
             Instruction::Dec(register) => {
                 match register {
                     // 8 bit target
-                    IncDecRegister::A => change_8bit_register!(self, a, dec_8bit),
-                    IncDecRegister::B => change_8bit_register!(self, b, dec_8bit),
-                    IncDecRegister::C => change_8bit_register!(self, c, dec_8bit),
-                    IncDecRegister::D => change_8bit_register!(self, d, dec_8bit),
-                    IncDecRegister::E => change_8bit_register!(self, e, dec_8bit),
-                    IncDecRegister::H => change_8bit_register!(self, h, dec_8bit),
-                    IncDecRegister::L => change_8bit_register!(self, l, dec_8bit),
+                    IncDecTarget::A => change_8bit_register!(self, a => dec_8bit => a),
+                    IncDecTarget::B => change_8bit_register!(self, b => dec_8bit => b),
+                    IncDecTarget::C => change_8bit_register!(self, c => dec_8bit => c),
+                    IncDecTarget::D => change_8bit_register!(self, d => dec_8bit => d),
+                    IncDecTarget::E => change_8bit_register!(self, e => dec_8bit => e),
+                    IncDecTarget::H => change_8bit_register!(self, h => dec_8bit => h),
+                    IncDecTarget::L => change_8bit_register!(self, l => dec_8bit => l),
                     // 16 bit target
-                    IncDecRegister::BC => change_16bit_register!(self, get_bc, set_bc, dec_16bit),
-                    IncDecRegister::DE => change_16bit_register!(self, get_de, set_de, dec_16bit),
-                    IncDecRegister::HL => change_16bit_register!(self, get_hl, set_hl, dec_16bit),
+                    IncDecTarget::BC => change_16bit_register!(self, get_bc => dec_16bit => set_bc),
+                    IncDecTarget::DE => change_16bit_register!(self, get_de => dec_16bit => set_de),
+                    IncDecTarget::HL => change_16bit_register!(self, get_hl => dec_16bit => set_hl),
                 }
             },
         }
@@ -145,7 +146,7 @@ mod tests {
     // Inc
     #[test]
     fn execute_inc_8bit_non_overflow() {
-        let instruction = Instruction::Inc(IncDecRegister::A);
+        let instruction = Instruction::Inc(IncDecTarget::A);
         let mut cpu = CPU::new();
         cpu.registers.a = 0x7;
         cpu.execute(instruction);
@@ -156,7 +157,7 @@ mod tests {
 
     #[test]
     fn execute_inc_8bit_half_carry() {
-        let instruction = Instruction::Inc(IncDecRegister::A);
+        let instruction = Instruction::Inc(IncDecTarget::A);
         let mut cpu = CPU::new();
         cpu.registers.a = 0xf;
         cpu.execute(instruction);
@@ -167,7 +168,7 @@ mod tests {
 
     #[test]
     fn execute_inc_8bit_overflow() {
-        let instruction = Instruction::Inc(IncDecRegister::A);
+        let instruction = Instruction::Inc(IncDecTarget::A);
         let mut cpu = CPU::new();
         cpu.registers.a = 0xFF;
         cpu.execute(instruction);
@@ -178,7 +179,7 @@ mod tests {
 
     #[test]
     fn execute_inc_16bit_byte_overflow() {
-        let instruction = Instruction::Inc(IncDecRegister::BC);
+        let instruction = Instruction::Inc(IncDecTarget::BC);
         let mut cpu = CPU::new();
         cpu.registers.set_bc(0xFF);
         cpu.execute(instruction);
@@ -191,7 +192,7 @@ mod tests {
 
     #[test]
     fn execute_inc_16bit_overflow() {
-        let instruction = Instruction::Inc(IncDecRegister::BC);
+        let instruction = Instruction::Inc(IncDecTarget::BC);
         let mut cpu = CPU::new();
         cpu.registers.set_bc(0xFFFF);
         cpu.execute(instruction);
