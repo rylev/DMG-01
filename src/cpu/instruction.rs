@@ -28,7 +28,7 @@ pub enum Instruction {
 
     RRA,
     RLA,
-    // RRCA,
-    // RLCA,
+    RRCA,
+    RLCA,
     // CPL,
 }
