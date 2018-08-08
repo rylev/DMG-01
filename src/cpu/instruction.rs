@@ -21,4 +21,5 @@ pub enum Instruction {
     And(ArithmeticTarget),
     Or(ArithmeticTarget),
     Xor(ArithmeticTarget),
+    Cp(ArithmeticTarget),
 }

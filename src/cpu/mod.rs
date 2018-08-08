@@ -9,6 +9,22 @@ pub struct CPU {
     registers: Registers
 }
 
+// Macro for reading the value of a 8 bit register through some CPU method
+// Arguments:
+// * self (a.k.a the CPU)
+// * the name of the register to get,
+// * a method for changing register's value,
+//
+// The macro gets the value from the register, and performs work on that value
+macro_rules! read_8bit_register {
+    ( $self:ident, $getter:ident => $work:ident) => {
+        {
+            let value = $self.registers.$getter;
+            $self.$work(value)
+        }
+    };
+}
+
 // Macro for changing the value of a 8 bit register through some CPU method
 // Arguments:
 // * self (a.k.a the CPU)
@@ -21,8 +37,7 @@ pub struct CPU {
 macro_rules! change_8bit_register {
     ( $self:ident, $getter:ident => $work:ident => $setter:ident) => {
         {
-            let value = $self.registers.$getter;
-            let result = $self.$work(value);
+            let result = read_8bit_register!($self, $getter => $work);
             $self.registers.$setter = result;
         }
     };
@@ -172,6 +187,18 @@ impl CPU {
                     ArithmeticTarget::L => change_8bit_register!(self, l => xor => a),
                 }
             },
+            Instruction::Cp(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => read_8bit_register!(self, a => cp),
+                    ArithmeticTarget::B => read_8bit_register!(self, b => cp),
+                    ArithmeticTarget::C => read_8bit_register!(self, c => cp),
+                    ArithmeticTarget::D => read_8bit_register!(self, d => cp),
+                    ArithmeticTarget::E => read_8bit_register!(self, e => cp),
+                    ArithmeticTarget::H => read_8bit_register!(self, h => cp),
+                    ArithmeticTarget::L => read_8bit_register!(self, l => cp),
+                }
+            },
         }
     }
 
@@ -289,6 +316,17 @@ impl CPU {
         self.registers.f.half_carry = false;
         self.registers.f.carry = false;
         new_value
+    }
+
+    #[inline(always)]
+    fn cp(&mut self, value: u8) {
+        self.registers.f.zero = self.registers.a == value;
+        self.registers.f.subtract = true;
+        // Half Carry is set if subtracting the lower nibbles of the value with register
+        // a will result in a value lower than 0x0.  To avoid underflowing in this test,
+        // we can check if the lower nibble of a is less than the lower nibble of the value
+        self.registers.f.half_carry = (self.registers.a & 0xF) < (value & 0xF);
+        self.registers.f.carry = self.registers.a < value;
     }
 }
 
@@ -583,5 +621,38 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x8);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // Cp
+    #[test]
+    fn execute_cp_8bit_non_underflow_target_a() {
+        let cpu = test_instruction!(Instruction::Cp(ArithmeticTarget::A), a => 0x7);
+
+        assert_eq!(cpu.registers.a, 0x7);
+        check_flags!(cpu, zero => true, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_cp_8bit_non_underflow_target_c() {
+        let cpu = test_instruction!(Instruction::Cp(ArithmeticTarget::C), a => 0x7, c => 0x3);
+
+        assert_eq!(cpu.registers.a, 0x7);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_cp_8bit_non_overflow_target_c_with_carry() {
+        let cpu = test_instruction!(Instruction::Cp(ArithmeticTarget::C), a => 0x7, c => 0x3, f.carry => true);
+
+        assert_eq!(cpu.registers.a, 0x7);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_cp_8bit_carry() {
+        let cpu = test_instruction!(Instruction::Cp(ArithmeticTarget::B), a => 0x4, b => 0x9);
+
+        assert_eq!(cpu.registers.a, 0x4);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
     }
 }
