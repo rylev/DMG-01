@@ -221,6 +221,9 @@ impl CPU {
             Instruction::RLCA => {
                 change_8bit_register!(self, a => rotate_left_set_zero => a);
             }
+            Instruction::CPL => {
+                change_8bit_register!(self, a => complement => a);
+            }
         }
     }
 
@@ -390,6 +393,14 @@ impl CPU {
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
         self.registers.f.carry = (value & 0x80) == 0x80;
+        new_value
+    }
+
+    #[inline(always)]
+    fn complement(&mut self, value: u8) -> u8 {
+        let new_value = !value;
+        self.registers.f.subtract = true;
+        self.registers.f.half_carry = true;
         new_value
     }
 }
@@ -754,5 +765,14 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x1);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // CPL
+    #[test]
+    fn execute_cpl_8bit() {
+        let cpu = test_instruction!(Instruction::CPL, a => 0b1011_0100);
+
+        assert_eq!(cpu.registers.a, 0b0100_1011);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => false);
     }
 }

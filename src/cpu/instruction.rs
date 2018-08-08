@@ -30,5 +30,5 @@ pub enum Instruction {
     RLA,
     RRCA,
     RLCA,
-    // CPL,
+    CPL,
 }
