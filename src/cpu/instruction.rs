@@ -7,7 +7,6 @@ pub enum IncDecTarget {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ArithmeticTarget {
     A, B, C, D, E, H, L,
-    D8(u8)
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -17,4 +16,6 @@ pub enum Instruction {
 
     Add(ArithmeticTarget),
     AddC(ArithmeticTarget),
+    Sub(ArithmeticTarget),
+    SubC(ArithmeticTarget),
 }

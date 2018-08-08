@@ -98,11 +98,6 @@ impl CPU {
                     ArithmeticTarget::E => change_8bit_register!(self, e => add_without_carry => a),
                     ArithmeticTarget::H => change_8bit_register!(self, h => add_without_carry => a),
                     ArithmeticTarget::L => change_8bit_register!(self, l => add_without_carry => a),
-                    // Direct target
-                    ArithmeticTarget::D8(amount) => {
-                        let result = self.add_without_carry(amount);
-                        self.registers.a = result;
-                    }
                 }
             },
             Instruction::AddC(register) => {
@@ -115,11 +110,30 @@ impl CPU {
                     ArithmeticTarget::E => change_8bit_register!(self, e => add_with_carry => a),
                     ArithmeticTarget::H => change_8bit_register!(self, h => add_with_carry => a),
                     ArithmeticTarget::L => change_8bit_register!(self, l => add_with_carry => a),
-                    // Direct target
-                    ArithmeticTarget::D8(amount) => {
-                        let result = self.add_with_carry(amount);
-                        self.registers.a = result;
-                    }
+                }
+            },
+            Instruction::Sub(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => sub_without_carry => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => sub_without_carry => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => sub_without_carry => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => sub_without_carry => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => sub_without_carry => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => sub_without_carry => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => sub_without_carry => a),
+                }
+            },
+            Instruction::SubC(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => sub_with_carry => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => sub_with_carry => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => sub_with_carry => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => sub_with_carry => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => sub_with_carry => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => sub_with_carry => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => sub_with_carry => a),
                 }
             },
         }
@@ -183,6 +197,32 @@ impl CPU {
         // the lower nibble to the upper nibble.
         self.registers.f.half_carry = ((self.registers.a & 0xF) + (value & 0xF) + additional_carry) > 0xF;
         add2
+    }
+
+    #[inline(always)]
+    fn sub_without_carry(&mut self, value: u8) -> u8 {
+        self.sub(value, false)
+    }
+
+    #[inline(always)]
+    fn sub_with_carry(&mut self, value: u8) -> u8 {
+        self.sub(value, true)
+    }
+
+    #[inline(always)]
+    fn sub(&mut self, value: u8, sub_carry: bool) -> u8 {
+        let additional_carry = if sub_carry && self.registers.f.carry { 1 } else { 0 };
+        let (sub, carry) = self.registers.a.overflowing_sub(value);
+        let (sub2, carry2) = sub.overflowing_sub(additional_carry);
+        self.registers.f.zero = sub2 == 0;
+        self.registers.f.subtract = true;
+        self.registers.f.carry = carry || carry2;
+        // Half Carry is set if adding the lower nibbles of the value and register a
+        // together (plus the optional carry bit) result in a value bigger the 0xF.
+        // If the result is larger than 0xF than the addition caused a carry from
+        // the lower nibble to the upper nibble.
+        // TODO: self.registers.f.half_carry = ((self.registers.a & 0xF) - (value & 0xF) - additional_carry) > 0xF;
+        sub2
     }
 }
 
@@ -337,14 +377,6 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
     }
 
-    #[test]
-    fn execute_add_8bit_direct() {
-        let cpu = test_instruction!(Instruction::Add(ArithmeticTarget::D8(0x7)), a => 0x3);
-
-        assert_eq!(cpu.registers.a, 0xa);
-        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
-    }
-
     // Add with carry
     #[test]
     fn execute_addc_8bit_non_overflow_target_a_no_carry() {
@@ -376,5 +408,65 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x00);
         check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => true);
+    }
+
+    // Sub
+    #[test]
+    fn execute_sub_8bit_non_underflow_target_a() {
+        let cpu = test_instruction!(Instruction::Sub(ArithmeticTarget::A), a => 0x7);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => true, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_sub_8bit_non_underflow_target_c() {
+        let cpu = test_instruction!(Instruction::Sub(ArithmeticTarget::C), a => 0x7, c => 0x3);
+
+        assert_eq!(cpu.registers.a, 0x4);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_sub_8bit_non_overflow_target_c_with_carry() {
+        let cpu = test_instruction!(Instruction::Sub(ArithmeticTarget::C), a => 0x7, c => 0x3, f.carry => true);
+
+        assert_eq!(cpu.registers.a, 0x4);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_sub_8bit_carry() {
+        let cpu = test_instruction!(Instruction::Sub(ArithmeticTarget::B), a => 0x4, b => 0x9);
+
+        assert_eq!(cpu.registers.a, 0xFB);
+        // TODO: half carry should be true
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => true);
+    }
+
+    // Sub with carry
+    #[test]
+    fn execute_subc_8bit_non_overflow_target_a_no_carry() {
+        let cpu = test_instruction!(Instruction::SubC(ArithmeticTarget::A), a => 0x7);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => true, subtract => true, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_subc_8bit_non_overflow_target_a_with_carry() {
+        let cpu = test_instruction!(Instruction::SubC(ArithmeticTarget::A), a => 0x7, f.carry => true);
+
+        assert_eq!(cpu.registers.a, 0xFF);
+        // TODO: half carry should be true
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => true);
+    }
+
+    #[test]
+    fn execute_subc_8bit_non_overflow_target_c_with_carry() {
+        let cpu = test_instruction!(Instruction::SubC(ArithmeticTarget::C), a => 0x7, c => 0x3, f.carry => true);
+
+        assert_eq!(cpu.registers.a, 0x3);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
     }
 }
