@@ -210,7 +210,10 @@ impl CPU {
                 self.registers.f.subtract = false;
             }
             Instruction::RRA => {
-                change_8bit_register!(self, a => rr_retain_zero => a);
+                change_8bit_register!(self, a => rotate_right_retain_zero => a);
+            }
+            Instruction::RLA => {
+                change_8bit_register!(self, a => rotate_left_retain_zero => a);
             }
         }
     }
@@ -343,18 +346,34 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn rr_retain_zero(&mut self, value: u8) -> u8 {
-        self.rr(value, false)
+    fn rotate_right_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_right(value, false)
     }
 
     #[inline(always)]
-    fn rr(&mut self, value: u8, set_zero: bool) -> u8 {
-        let carry_bit = value & 0b1;
-        let new_value = (if self.registers.f.carry { 1 } else { 0 }) << 7 | (value >> 1);
+    fn rotate_right(&mut self, value: u8, set_zero: bool) -> u8 {
+        let carry_bit = if self.registers.f.carry { 1 } else { 0 } << 7;
+        let new_value = carry_bit | (value >> 1);
         self.registers.f.zero = set_zero && new_value == 0;
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
-        self.registers.f.carry = carry_bit == 1;
+        self.registers.f.carry = value & 0b1 == 0b1;
+        new_value
+    }
+
+    #[inline(always)]
+    fn rotate_left_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_left(value, false)
+    }
+
+    #[inline(always)]
+    fn rotate_left(&mut self, value: u8, set_zero: bool) -> u8 {
+        let carry_bit = if self.registers.f.carry { 1 } else { 0 };
+        let new_value = (value << 1) | carry_bit;
+        self.registers.f.zero = set_zero && new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = (value & 0x80) == 0x80;
         new_value
     }
 }
@@ -689,6 +708,15 @@ mod tests {
     #[test]
     fn execute_rra_8bit() {
         let cpu = test_instruction!(Instruction::RRA, a => 0b1);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // RLA
+    #[test]
+    fn execute_rla_8bit() {
+        let cpu = test_instruction!(Instruction::RLA, a => 0x80);
 
         assert_eq!(cpu.registers.a, 0x0);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
