@@ -533,4 +533,55 @@ mod tests {
         assert_eq!(cpu.registers.a, 0x3);
         check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
     }
+
+    // And
+    #[test]
+    fn execute_and_8bit() {
+        let cpu = test_instruction!(Instruction::And(ArithmeticTarget::A), a => 0x7);
+
+        assert_eq!(cpu.registers.a, 0x7);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => false);
+    }
+
+    #[test]
+    fn execute_and_8bit_with_zero() {
+        let cpu = test_instruction!(Instruction::And(ArithmeticTarget::B), a => 0x8);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => false);
+    }
+
+    // Or
+    #[test]
+    fn execute_or_8bit() {
+        let cpu = test_instruction!(Instruction::Or(ArithmeticTarget::A), a => 0x7);
+
+        assert_eq!(cpu.registers.a, 0x7);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_or_8bit_with_zero() {
+        let cpu = test_instruction!(Instruction::Or(ArithmeticTarget::B), a => 0x8);
+
+        assert_eq!(cpu.registers.a, 0x8);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // Xor
+    #[test]
+    fn execute_xor_8bit() {
+        let cpu = test_instruction!(Instruction::Xor(ArithmeticTarget::A), a => 0b0000_0111);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => true, subtract => false, half_carry => false, carry => false);
+    }
+
+    #[test]
+    fn execute_xor_8bit_with_zero() {
+        let cpu = test_instruction!(Instruction::Xor(ArithmeticTarget::B), a => 0x8);
+
+        assert_eq!(cpu.registers.a, 0x8);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
 }
