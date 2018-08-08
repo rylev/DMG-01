@@ -136,6 +136,42 @@ impl CPU {
                     ArithmeticTarget::L => change_8bit_register!(self, l => sub_with_carry => a),
                 }
             },
+            Instruction::And(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => and => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => and => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => and => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => and => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => and => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => and => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => and => a),
+                }
+            },
+            Instruction::Or(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => or => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => or => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => or => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => or => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => or => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => or => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => or => a),
+                }
+            },
+            Instruction::Xor(register) => {
+                match register {
+                    // 8 bit target
+                    ArithmeticTarget::A => change_8bit_register!(self, a => xor => a),
+                    ArithmeticTarget::B => change_8bit_register!(self, b => xor => a),
+                    ArithmeticTarget::C => change_8bit_register!(self, c => xor => a),
+                    ArithmeticTarget::D => change_8bit_register!(self, d => xor => a),
+                    ArithmeticTarget::E => change_8bit_register!(self, e => xor => a),
+                    ArithmeticTarget::H => change_8bit_register!(self, h => xor => a),
+                    ArithmeticTarget::L => change_8bit_register!(self, l => xor => a),
+                }
+            },
         }
     }
 
@@ -223,6 +259,36 @@ impl CPU {
         // the lower nibble to the upper nibble.
         // TODO: self.registers.f.half_carry = ((self.registers.a & 0xF) - (value & 0xF) - additional_carry) > 0xF;
         sub2
+    }
+
+    #[inline(always)]
+    fn and(&mut self, value: u8) -> u8 {
+        let new_value = self.registers.a & value;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = true;
+        self.registers.f.carry = false;
+        new_value
+    }
+
+    #[inline(always)]
+    fn or(&mut self, value: u8) -> u8 {
+        let new_value = self.registers.a | value;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = false;
+        new_value
+    }
+
+    #[inline(always)]
+    fn xor(&mut self, value: u8) -> u8 {
+        let new_value = self.registers.a ^ value;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = false;
+        new_value
     }
 }
 

@@ -18,4 +18,7 @@ pub enum Instruction {
     AddC(ArithmeticTarget),
     Sub(ArithmeticTarget),
     SubC(ArithmeticTarget),
+    And(ArithmeticTarget),
+    Or(ArithmeticTarget),
+    Xor(ArithmeticTarget),
 }
