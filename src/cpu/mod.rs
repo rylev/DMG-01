@@ -199,6 +199,19 @@ impl CPU {
                     ArithmeticTarget::L => read_8bit_register!(self, l => cp),
                 }
             },
+            Instruction::CCF => {
+                self.registers.f.carry = !self.registers.f.carry;
+                self.registers.f.half_carry = false;
+                self.registers.f.subtract = false;
+            }
+            Instruction::SCF => {
+                self.registers.f.carry = true;
+                self.registers.f.half_carry = false;
+                self.registers.f.subtract = false;
+            }
+            Instruction::RRA => {
+                change_8bit_register!(self, a => rr_retain_zero => a);
+            }
         }
     }
 
@@ -327,6 +340,22 @@ impl CPU {
         // we can check if the lower nibble of a is less than the lower nibble of the value
         self.registers.f.half_carry = (self.registers.a & 0xF) < (value & 0xF);
         self.registers.f.carry = self.registers.a < value;
+    }
+
+    #[inline(always)]
+    fn rr_retain_zero(&mut self, value: u8) -> u8 {
+        self.rr(value, false)
+    }
+
+    #[inline(always)]
+    fn rr(&mut self, value: u8, set_zero: bool) -> u8 {
+        let carry_bit = value & 0b1;
+        let new_value = (if self.registers.f.carry { 1 } else { 0 }) << 7 | (value >> 1);
+        self.registers.f.zero = set_zero && new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = carry_bit == 1;
+        new_value
     }
 }
 
@@ -654,5 +683,14 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x4);
         check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
+    }
+
+    // RRA
+    #[test]
+    fn execute_rra_8bit() {
+        let cpu = test_instruction!(Instruction::RRA, a => 0b1);
+
+        assert_eq!(cpu.registers.a, 0x0);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
     }
 }

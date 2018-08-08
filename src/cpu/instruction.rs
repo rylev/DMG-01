@@ -22,4 +22,13 @@ pub enum Instruction {
     Or(ArithmeticTarget),
     Xor(ArithmeticTarget),
     Cp(ArithmeticTarget),
+
+    CCF,
+    SCF,
+
+    RRA,
+    // RLA,
+    // RRCA,
+    // RLCA,
+    // CPL,
 }
