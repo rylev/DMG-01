@@ -253,11 +253,11 @@ impl CPU {
         self.registers.f.zero = sub2 == 0;
         self.registers.f.subtract = true;
         self.registers.f.carry = carry || carry2;
-        // Half Carry is set if adding the lower nibbles of the value and register a
-        // together (plus the optional carry bit) result in a value bigger the 0xF.
-        // If the result is larger than 0xF than the addition caused a carry from
-        // the lower nibble to the upper nibble.
-        // TODO: self.registers.f.half_carry = ((self.registers.a & 0xF) - (value & 0xF) - additional_carry) > 0xF;
+        // Half Carry is set if subtracting the lower nibbles of the value (and the
+        // optional carry bit) with register a will result in a value lower than 0x0.
+        // To avoid underflowing in this test, we can check if the lower nibble of a
+        // is less than the lower nibble of the value (with the additional carry)
+        self.registers.f.half_carry = (self.registers.a & 0xF) < (value & 0xF) + additional_carry;
         sub2
     }
 
@@ -506,8 +506,7 @@ mod tests {
         let cpu = test_instruction!(Instruction::Sub(ArithmeticTarget::B), a => 0x4, b => 0x9);
 
         assert_eq!(cpu.registers.a, 0xFB);
-        // TODO: half carry should be true
-        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => true);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
     }
 
     // Sub with carry
@@ -524,8 +523,7 @@ mod tests {
         let cpu = test_instruction!(Instruction::SubC(ArithmeticTarget::A), a => 0x7, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0xFF);
-        // TODO: half carry should be true
-        check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => true);
+        check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
     }
 
     #[test]
