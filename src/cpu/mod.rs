@@ -50,6 +50,19 @@ macro_rules! arithmetic_instruction {
     ( $register:ident, $self:ident.$work:ident) => {
         {
             match $register {
+                ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work),
+                ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work),
+                ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work),
+                ArithmeticTarget::D => manipulate_8bit_register!($self: d => $work),
+                ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work),
+                ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work),
+                ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work),
+            }
+        }
+    };
+    ( $register:ident, $self:ident.$work:ident => a) => {
+        {
+            match $register {
                 ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work => a),
                 ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work => a),
                 ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work => a),
@@ -152,37 +165,28 @@ impl CPU {
                 }
             },
             Instruction::ADD(register) => {
-                arithmetic_instruction!(register, self.add_without_carry);
+                arithmetic_instruction!(register, self.add_without_carry => a);
             },
             Instruction::ADC(register) => {
-                arithmetic_instruction!(register, self.add_with_carry);
+                arithmetic_instruction!(register, self.add_with_carry => a);
             },
             Instruction::SUB(register) => {
-                arithmetic_instruction!(register, self.sub_without_carry);
+                arithmetic_instruction!(register, self.sub_without_carry => a);
             },
             Instruction::SBC(register) => {
-                arithmetic_instruction!(register, self.sub_with_carry);
+                arithmetic_instruction!(register, self.sub_with_carry => a);
             },
             Instruction::AND(register) => {
-                arithmetic_instruction!(register, self.and);
+                arithmetic_instruction!(register, self.and => a);
             },
             Instruction::OR(register) => {
-                arithmetic_instruction!(register, self.or);
+                arithmetic_instruction!(register, self.or => a);
             },
             Instruction::XOR(register) => {
-                arithmetic_instruction!(register, self.xor);
+                arithmetic_instruction!(register, self.xor => a);
             },
             Instruction::CP(register) => {
-                match register {
-                    // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => compare),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => compare),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => compare),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => compare),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => compare),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => compare),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => compare),
-                }
+                arithmetic_instruction!(register, self.compare);
             },
             Instruction::CCF => {
                 self.registers.f.carry = !self.registers.f.carry;
