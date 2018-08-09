@@ -37,17 +37,17 @@ impl std::convert::From<BitPosition> for u8  {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Instruction {
-    Inc(IncDecTarget),
-    Dec(IncDecTarget),
+    INC(IncDecTarget),
+    DEC(IncDecTarget),
 
-    Add(ArithmeticTarget),
-    AddC(ArithmeticTarget),
-    Sub(ArithmeticTarget),
-    SubC(ArithmeticTarget),
-    And(ArithmeticTarget),
-    Or(ArithmeticTarget),
-    Xor(ArithmeticTarget),
-    Cp(ArithmeticTarget),
+    ADD(ArithmeticTarget),
+    ADC(ArithmeticTarget),
+    SUB(ArithmeticTarget),
+    SBC(ArithmeticTarget),
+    AND(ArithmeticTarget),
+    OR(ArithmeticTarget),
+    XOR(ArithmeticTarget),
+    CP(ArithmeticTarget),
 
     CCF,
     SCF,
@@ -58,9 +58,9 @@ pub enum Instruction {
     RLCA,
     CPL,
 
-    Bit(PrefixTarget, BitPosition),
-    Res(PrefixTarget, BitPosition),
-    Set(PrefixTarget, BitPosition),
+    BIT(PrefixTarget, BitPosition),
+    RES(PrefixTarget, BitPosition),
+    SET(PrefixTarget, BitPosition),
     SRL(PrefixTarget),
     RR(PrefixTarget),
 
