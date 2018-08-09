@@ -287,6 +287,18 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_right_set_zero => l),
                 }
             }
+            Instruction::RL(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => rotate_left_set_zero => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => rotate_left_set_zero => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => rotate_left_set_zero => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => rotate_left_set_zero => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => rotate_left_set_zero => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => rotate_left_set_zero => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_left_set_zero => l),
+                }
+            }
         }
     }
 
@@ -529,7 +541,7 @@ mod tests {
         };
     }
 
-    // Inc
+    // INC
     #[test]
     fn execute_inc_8bit_non_overflow() {
         let cpu = test_instruction!(Instruction::INC(IncDecTarget::A), a => 0x7);
@@ -580,7 +592,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Dec
+    // DEC
     #[test]
     fn execute_dec_8bit_non_overflow() {
         let cpu = test_instruction!(Instruction::DEC(IncDecTarget::A), a => 0x7);
@@ -618,7 +630,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Add
+    // ADD
     #[test]
     fn execute_add_8bit_non_overflow_target_a() {
         let cpu = test_instruction!(Instruction::ADD(ArithmeticTarget::A), a => 0x7);
@@ -651,7 +663,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
     }
 
-    // Add with carry
+    // ADC
     #[test]
     fn execute_addc_8bit_non_overflow_target_a_no_carry() {
         let cpu = test_instruction!(Instruction::ADD(ArithmeticTarget::A), a => 0x7);
@@ -684,7 +696,7 @@ mod tests {
         check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => true);
     }
 
-    // Sub
+    // SUB
     #[test]
     fn execute_sub_8bit_non_underflow_target_a() {
         let cpu = test_instruction!(Instruction::SUB(ArithmeticTarget::A), a => 0x7);
@@ -717,7 +729,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
     }
 
-    // Sub with carry
+    // SBC
     #[test]
     fn execute_subc_8bit_non_overflow_target_a_no_carry() {
         let cpu = test_instruction!(Instruction::SBC(ArithmeticTarget::A), a => 0x7);
@@ -742,7 +754,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => true, half_carry => false, carry => false);
     }
 
-    // And
+    // AND
     #[test]
     fn execute_and_8bit() {
         let cpu = test_instruction!(Instruction::AND(ArithmeticTarget::A), a => 0x7);
@@ -759,7 +771,7 @@ mod tests {
         check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => false);
     }
 
-    // Or
+    // OR
     #[test]
     fn execute_or_8bit() {
         let cpu = test_instruction!(Instruction::OR(ArithmeticTarget::A), a => 0x7);
@@ -776,7 +788,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Xor
+    // XOR
     #[test]
     fn execute_xor_8bit() {
         let cpu = test_instruction!(Instruction::XOR(ArithmeticTarget::A), a => 0b0000_0111);
@@ -793,7 +805,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Cp
+    // CP
     #[test]
     fn execute_cp_8bit_non_underflow_target_a() {
         let cpu = test_instruction!(Instruction::CP(ArithmeticTarget::A), a => 0x7);
@@ -871,7 +883,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => false);
     }
 
-    // Bit
+    // BIT
     #[test]
     fn execute_bit_8bit() {
         let cpu = test_instruction!(Instruction::BIT(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
@@ -884,7 +896,7 @@ mod tests {
         check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => false);
     }
 
-    // Res
+    // RES
     #[test]
     fn execute_res_8bit() {
         let cpu = test_instruction!(Instruction::RES(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
@@ -897,7 +909,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Set
+    // SET
     #[test]
     fn execute_set_8bit() {
         let cpu = test_instruction!(Instruction::SET(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
@@ -910,7 +922,7 @@ mod tests {
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 
-    // Srl
+    // SRL
     #[test]
     fn execute_srl_8bit() {
         let cpu = test_instruction!(Instruction::SRL(PrefixTarget::A), a => 0b1011_0101);
@@ -930,6 +942,20 @@ mod tests {
         let cpu = test_instruction!(Instruction::RR(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0b1101_1010);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // RL
+    #[test]
+    fn execute_rl() {
+        let cpu = test_instruction!(Instruction::RL(PrefixTarget::A), a => 0b1011_0101);
+
+        assert_eq!(cpu.registers.a, 0b0110_1010);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+
+        let cpu = test_instruction!(Instruction::RL(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
+
+        assert_eq!(cpu.registers.a, 0b0110_1011);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
     }
 }

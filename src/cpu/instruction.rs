@@ -63,5 +63,6 @@ pub enum Instruction {
     SET(PrefixTarget, BitPosition),
     SRL(PrefixTarget),
     RR(PrefixTarget),
+    RL(PrefixTarget),
 
 }
