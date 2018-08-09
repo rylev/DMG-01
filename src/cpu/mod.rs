@@ -323,6 +323,18 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_left_set_zero => l),
                 }
             }
+            Instruction::SRA(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => shift_right_arithmetic => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => shift_right_arithmetic => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => shift_right_arithmetic => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => shift_right_arithmetic => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => shift_right_arithmetic => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => shift_right_arithmetic => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => shift_right_arithmetic => l),
+                }
+            }
         }
     }
 
@@ -568,6 +580,17 @@ impl CPU {
     #[inline(always)]
     fn shift_right_logical(&mut self, value: u8) -> u8 {
         let new_value = value >> 1;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = value & 0b1 == 0b1;
+        new_value
+    }
+
+    #[inline(always)]
+    fn shift_right_arithmetic(&mut self, value: u8) -> u8 {
+        let msb = value & 0x80;
+        let new_value = msb | (value >> 1);
         self.registers.f.zero = new_value == 0;
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
@@ -1020,6 +1043,16 @@ mod tests {
         let cpu = test_instruction!(Instruction::RL(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0b0110_1011);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // SRA
+    #[test]
+    fn execute_sra() {
+        let cpu = test_instruction!(Instruction::SRA(PrefixTarget::A), a => 0b1011_0101);
+
+        //1101011
+        assert_eq!(cpu.registers.a, 0b1101_1010);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
     }
 }
