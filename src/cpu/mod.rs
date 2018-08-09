@@ -251,6 +251,18 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self, (l, bit_position) => res => l),
                 }
             }
+            Instruction::Set(register, bit_position) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self, (a, bit_position) => set => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self, (b, bit_position) => set => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self, (c, bit_position) => set => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self, (d, bit_position) => set => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self, (e, bit_position) => set => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self, (h, bit_position) => set => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self, (l, bit_position) => set => l),
+                }
+            }
         }
     }
 
@@ -445,6 +457,12 @@ impl CPU {
     fn res(&mut self, value: u8, bit_position: BitPosition) -> u8 {
         let bit_position: u8 = bit_position.into();
         value & !(1 << bit_position)
+    }
+
+    #[inline(always)]
+    fn set(&mut self, value: u8, bit_position: BitPosition) -> u8 {
+        let bit_position: u8 = bit_position.into();
+        value | (1 << bit_position)
     }
 }
 
@@ -842,6 +860,19 @@ mod tests {
 
         let cpu = test_instruction!(Instruction::Res(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
         assert_eq!(cpu.registers.a, 0b1011_0100);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // Set
+    #[test]
+    fn execute_set_8bit() {
+        let cpu = test_instruction!(Instruction::Set(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
+
+        assert_eq!(cpu.registers.a, 0b1011_0100);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+
+        let cpu = test_instruction!(Instruction::Set(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
+        assert_eq!(cpu.registers.a, 0b1011_0110);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 }
