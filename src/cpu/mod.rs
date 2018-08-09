@@ -19,26 +19,26 @@ pub struct CPU {
 // The macro gets the value from the register, performs work on that value and then sets the value back in the
 // register
 macro_rules! manipulate_8bit_register {
-    ( $self:ident, $getter:ident => $work:ident) => {
+    ( $self:ident : $getter:ident => $work:ident) => {
         {
             let value = $self.registers.$getter;
             $self.$work(value)
         }
     };
-    ( $self:ident, $getter:ident => $work:ident => $setter:ident) => {
+    ( $self:ident : $getter:ident => $work:ident => $setter:ident) => {
         {
-            let result = manipulate_8bit_register!($self, $getter => $work);
+            let result = manipulate_8bit_register!($self: $getter => $work);
             $self.registers.$setter = result;
         }
     };
-    ( $self:ident, ( $getter:ident @ $bit_position:ident ) => $work:ident => $setter:ident) => {
+    ( $self:ident : ( $getter:ident @ $bit_position:ident ) => $work:ident => $setter:ident) => {
         {
             let value = $self.registers.$getter;
             let result = $self.$work(value, $bit_position);
             $self.registers.$setter = result;
         }
     };
-    ( $self:ident, ( $register:ident @ $bit_position:ident ) => $work:ident ) => {
+    ( $self:ident : ( $register:ident @ $bit_position:ident ) => $work:ident ) => {
         {
             let value = $self.registers.$register;
             $self.$work(value, $bit_position);
@@ -56,7 +56,7 @@ macro_rules! manipulate_8bit_register {
 // The macro gets the value from the register, performs work on that value and then sets the value back in the
 // register
 macro_rules! manipulate_16bit_register {
-    ( $self:ident, $getter:ident => $work:ident => $setter:ident ) => {
+    ( $self:ident : $getter:ident => $work:ident => $setter:ident ) => {
         {
             let amount = $self.registers.$getter();
             let result = $self.$work(amount);
@@ -77,129 +77,129 @@ impl CPU {
             Instruction::Inc(register) => {
                 match register {
                     // 8 bit target
-                    IncDecTarget::A => manipulate_8bit_register!(self, a => inc_8bit => a),
-                    IncDecTarget::B => manipulate_8bit_register!(self, b => inc_8bit => b),
-                    IncDecTarget::C => manipulate_8bit_register!(self, c => inc_8bit => c),
-                    IncDecTarget::D => manipulate_8bit_register!(self, d => inc_8bit => d),
-                    IncDecTarget::E => manipulate_8bit_register!(self, e => inc_8bit => e),
-                    IncDecTarget::H => manipulate_8bit_register!(self, h => inc_8bit => h),
-                    IncDecTarget::L => manipulate_8bit_register!(self, l => inc_8bit => l),
+                    IncDecTarget::A => manipulate_8bit_register!(self: a => inc_8bit => a),
+                    IncDecTarget::B => manipulate_8bit_register!(self: b => inc_8bit => b),
+                    IncDecTarget::C => manipulate_8bit_register!(self: c => inc_8bit => c),
+                    IncDecTarget::D => manipulate_8bit_register!(self: d => inc_8bit => d),
+                    IncDecTarget::E => manipulate_8bit_register!(self: e => inc_8bit => e),
+                    IncDecTarget::H => manipulate_8bit_register!(self: h => inc_8bit => h),
+                    IncDecTarget::L => manipulate_8bit_register!(self: l => inc_8bit => l),
                     // 16 bit target
-                    IncDecTarget::BC => manipulate_16bit_register!(self, get_bc => inc_16bit => set_bc),
-                    IncDecTarget::DE => manipulate_16bit_register!(self, get_de => inc_16bit => set_de),
-                    IncDecTarget::HL => manipulate_16bit_register!(self, get_hl => inc_16bit => set_hl),
+                    IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
+                    IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
+                    IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl),
                 }
             },
             Instruction::Dec(register) => {
                 match register {
                     // 8 bit target
-                    IncDecTarget::A => manipulate_8bit_register!(self, a => dec_8bit => a),
-                    IncDecTarget::B => manipulate_8bit_register!(self, b => dec_8bit => b),
-                    IncDecTarget::C => manipulate_8bit_register!(self, c => dec_8bit => c),
-                    IncDecTarget::D => manipulate_8bit_register!(self, d => dec_8bit => d),
-                    IncDecTarget::E => manipulate_8bit_register!(self, e => dec_8bit => e),
-                    IncDecTarget::H => manipulate_8bit_register!(self, h => dec_8bit => h),
-                    IncDecTarget::L => manipulate_8bit_register!(self, l => dec_8bit => l),
+                    IncDecTarget::A => manipulate_8bit_register!(self: a => dec_8bit => a),
+                    IncDecTarget::B => manipulate_8bit_register!(self: b => dec_8bit => b),
+                    IncDecTarget::C => manipulate_8bit_register!(self: c => dec_8bit => c),
+                    IncDecTarget::D => manipulate_8bit_register!(self: d => dec_8bit => d),
+                    IncDecTarget::E => manipulate_8bit_register!(self: e => dec_8bit => e),
+                    IncDecTarget::H => manipulate_8bit_register!(self: h => dec_8bit => h),
+                    IncDecTarget::L => manipulate_8bit_register!(self: l => dec_8bit => l),
                     // 16 bit target
-                    IncDecTarget::BC => manipulate_16bit_register!(self, get_bc => dec_16bit => set_bc),
-                    IncDecTarget::DE => manipulate_16bit_register!(self, get_de => dec_16bit => set_de),
-                    IncDecTarget::HL => manipulate_16bit_register!(self, get_hl => dec_16bit => set_hl),
+                    IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc),
+                    IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
+                    IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl),
                 }
             },
             Instruction::Add(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => add_without_carry => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => add_without_carry => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => add_without_carry => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => add_without_carry => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => add_without_carry => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => add_without_carry => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => add_without_carry => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => add_without_carry => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => add_without_carry => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => add_without_carry => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => add_without_carry => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => add_without_carry => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => add_without_carry => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => add_without_carry => a),
                 }
             },
             Instruction::AddC(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => add_with_carry => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => add_with_carry => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => add_with_carry => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => add_with_carry => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => add_with_carry => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => add_with_carry => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => add_with_carry => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => add_with_carry => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => add_with_carry => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => add_with_carry => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => add_with_carry => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => add_with_carry => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => add_with_carry => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => add_with_carry => a),
                 }
             },
             Instruction::Sub(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => sub_without_carry => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => sub_without_carry => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => sub_without_carry => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => sub_without_carry => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => sub_without_carry => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => sub_without_carry => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => sub_without_carry => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => sub_without_carry => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => sub_without_carry => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => sub_without_carry => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => sub_without_carry => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => sub_without_carry => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => sub_without_carry => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => sub_without_carry => a),
                 }
             },
             Instruction::SubC(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => sub_with_carry => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => sub_with_carry => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => sub_with_carry => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => sub_with_carry => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => sub_with_carry => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => sub_with_carry => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => sub_with_carry => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => sub_with_carry => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => sub_with_carry => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => sub_with_carry => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => sub_with_carry => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => sub_with_carry => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => sub_with_carry => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => sub_with_carry => a),
                 }
             },
             Instruction::And(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => and => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => and => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => and => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => and => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => and => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => and => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => and => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => and => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => and => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => and => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => and => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => and => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => and => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => and => a),
                 }
             },
             Instruction::Or(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => or => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => or => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => or => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => or => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => or => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => or => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => or => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => or => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => or => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => or => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => or => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => or => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => or => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => or => a),
                 }
             },
             Instruction::Xor(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => xor => a),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => xor => a),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => xor => a),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => xor => a),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => xor => a),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => xor => a),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => xor => a),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => xor => a),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => xor => a),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => xor => a),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => xor => a),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => xor => a),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => xor => a),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => xor => a),
                 }
             },
             Instruction::Cp(register) => {
                 match register {
                     // 8 bit target
-                    ArithmeticTarget::A => manipulate_8bit_register!(self, a => cp),
-                    ArithmeticTarget::B => manipulate_8bit_register!(self, b => cp),
-                    ArithmeticTarget::C => manipulate_8bit_register!(self, c => cp),
-                    ArithmeticTarget::D => manipulate_8bit_register!(self, d => cp),
-                    ArithmeticTarget::E => manipulate_8bit_register!(self, e => cp),
-                    ArithmeticTarget::H => manipulate_8bit_register!(self, h => cp),
-                    ArithmeticTarget::L => manipulate_8bit_register!(self, l => cp),
+                    ArithmeticTarget::A => manipulate_8bit_register!(self: a => cp),
+                    ArithmeticTarget::B => manipulate_8bit_register!(self: b => cp),
+                    ArithmeticTarget::C => manipulate_8bit_register!(self: c => cp),
+                    ArithmeticTarget::D => manipulate_8bit_register!(self: d => cp),
+                    ArithmeticTarget::E => manipulate_8bit_register!(self: e => cp),
+                    ArithmeticTarget::H => manipulate_8bit_register!(self: h => cp),
+                    ArithmeticTarget::L => manipulate_8bit_register!(self: l => cp),
                 }
             },
             Instruction::CCF => {
@@ -213,54 +213,54 @@ impl CPU {
                 self.registers.f.subtract = false;
             }
             Instruction::RRA => {
-                manipulate_8bit_register!(self, a => rotate_right_retain_zero => a);
+                manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
             }
             Instruction::RLA => {
-                manipulate_8bit_register!(self, a => rotate_left_retain_zero => a);
+                manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
             }
             Instruction::RRCA => {
-                manipulate_8bit_register!(self, a => rotate_right_set_zero => a);
+                manipulate_8bit_register!(self: a => rotate_right_set_zero => a);
             }
             Instruction::RLCA => {
-                manipulate_8bit_register!(self, a => rotate_left_set_zero => a);
+                manipulate_8bit_register!(self: a => rotate_left_set_zero => a);
             }
             Instruction::CPL => {
-                manipulate_8bit_register!(self, a => complement => a);
+                manipulate_8bit_register!(self: a => complement => a);
             }
             Instruction::Bit(register, bit_position) => {
                 match register {
                     // 8 bit target
-                    PrefixTarget::A => manipulate_8bit_register!(self, (a @ bit_position) => bit_test),
-                    PrefixTarget::B => manipulate_8bit_register!(self, (b @ bit_position) => bit_test),
-                    PrefixTarget::C => manipulate_8bit_register!(self, (c @ bit_position) => bit_test),
-                    PrefixTarget::D => manipulate_8bit_register!(self, (d @ bit_position) => bit_test),
-                    PrefixTarget::E => manipulate_8bit_register!(self, (e @ bit_position) => bit_test),
-                    PrefixTarget::H => manipulate_8bit_register!(self, (h @ bit_position) => bit_test),
-                    PrefixTarget::L => manipulate_8bit_register!(self, (l @ bit_position) => bit_test),
+                    PrefixTarget::A => manipulate_8bit_register!(self: (a @ bit_position) => bit_test),
+                    PrefixTarget::B => manipulate_8bit_register!(self: (b @ bit_position) => bit_test),
+                    PrefixTarget::C => manipulate_8bit_register!(self: (c @ bit_position) => bit_test),
+                    PrefixTarget::D => manipulate_8bit_register!(self: (d @ bit_position) => bit_test),
+                    PrefixTarget::E => manipulate_8bit_register!(self: (e @ bit_position) => bit_test),
+                    PrefixTarget::H => manipulate_8bit_register!(self: (h @ bit_position) => bit_test),
+                    PrefixTarget::L => manipulate_8bit_register!(self: (l @ bit_position) => bit_test),
                 }
             }
             Instruction::Res(register, bit_position) => {
                 match register {
                     // 8 bit target
-                    PrefixTarget::A => manipulate_8bit_register!(self, (a @ bit_position) => res => a),
-                    PrefixTarget::B => manipulate_8bit_register!(self, (b @ bit_position) => res => b),
-                    PrefixTarget::C => manipulate_8bit_register!(self, (c @ bit_position) => res => c),
-                    PrefixTarget::D => manipulate_8bit_register!(self, (d @ bit_position) => res => d),
-                    PrefixTarget::E => manipulate_8bit_register!(self, (e @ bit_position) => res => e),
-                    PrefixTarget::H => manipulate_8bit_register!(self, (h @ bit_position) => res => h),
-                    PrefixTarget::L => manipulate_8bit_register!(self, (l @ bit_position) => res => l),
+                    PrefixTarget::A => manipulate_8bit_register!(self: (a @ bit_position) => res => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: (b @ bit_position) => res => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: (c @ bit_position) => res => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: (d @ bit_position) => res => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: (e @ bit_position) => res => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: (h @ bit_position) => res => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: (l @ bit_position) => res => l),
                 }
             }
             Instruction::Set(register, bit_position) => {
                 match register {
                     // 8 bit target
-                    PrefixTarget::A => manipulate_8bit_register!(self, (a @ bit_position) => set => a),
-                    PrefixTarget::B => manipulate_8bit_register!(self, (b @ bit_position) => set => b),
-                    PrefixTarget::C => manipulate_8bit_register!(self, (c @ bit_position) => set => c),
-                    PrefixTarget::D => manipulate_8bit_register!(self, (d @ bit_position) => set => d),
-                    PrefixTarget::E => manipulate_8bit_register!(self, (e @ bit_position) => set => e),
-                    PrefixTarget::H => manipulate_8bit_register!(self, (h @ bit_position) => set => h),
-                    PrefixTarget::L => manipulate_8bit_register!(self, (l @ bit_position) => set => l),
+                    PrefixTarget::A => manipulate_8bit_register!(self: (a @ bit_position) => set => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: (b @ bit_position) => set => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: (c @ bit_position) => set => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: (d @ bit_position) => set => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: (e @ bit_position) => set => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: (h @ bit_position) => set => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: (l @ bit_position) => set => l),
                 }
             }
         }
