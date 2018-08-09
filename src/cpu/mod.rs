@@ -263,6 +263,18 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self: (l @ bit_position) => set => l),
                 }
             }
+            Instruction::SRL(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => srl => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => srl => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => srl => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => srl => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => srl => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => srl => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => srl => l),
+                }
+            }
         }
     }
 
@@ -463,6 +475,17 @@ impl CPU {
     fn set(&mut self, value: u8, bit_position: BitPosition) -> u8 {
         let bit_position: u8 = bit_position.into();
         value | (1 << bit_position)
+    }
+
+    #[inline(always)]
+    fn srl(&mut self, value: u8) -> u8 {
+        let carry = value & 0b1 == 0b1;
+        let new_value = value >> 1;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = carry;
+        new_value
     }
 }
 
@@ -874,5 +897,14 @@ mod tests {
         let cpu = test_instruction!(Instruction::Set(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
         assert_eq!(cpu.registers.a, 0b1011_0110);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // Srl
+    #[test]
+    fn execute_srl_8bit() {
+        let cpu = test_instruction!(Instruction::SRL(PrefixTarget::A), a => 0b1011_0101);
+
+        assert_eq!(cpu.registers.a, 0b0101_1010);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
     }
 }
