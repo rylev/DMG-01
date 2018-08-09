@@ -64,5 +64,7 @@ pub enum Instruction {
     SRL(PrefixTarget),
     RR(PrefixTarget),
     RL(PrefixTarget),
+    RRC(PrefixTarget),
+    RLC(PrefixTarget),
 
 }

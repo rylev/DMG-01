@@ -213,16 +213,16 @@ impl CPU {
                 self.registers.f.subtract = false;
             }
             Instruction::RRA => {
-                manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
+                manipulate_8bit_register!(self: a => rotate_right_through_carry_retain_zero => a);
             }
             Instruction::RLA => {
-                manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
+                manipulate_8bit_register!(self: a => rotate_left_through_carry_retain_zero => a);
             }
             Instruction::RRCA => {
-                manipulate_8bit_register!(self: a => rotate_right_set_zero => a);
+                manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
             }
             Instruction::RLCA => {
-                manipulate_8bit_register!(self: a => rotate_left_set_zero => a);
+                manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
             }
             Instruction::CPL => {
                 manipulate_8bit_register!(self: a => complement => a);
@@ -278,6 +278,30 @@ impl CPU {
             Instruction::RR(register) => {
                 match register {
                     // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => rotate_right_through_carry_set_zero => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => rotate_right_through_carry_set_zero => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => rotate_right_through_carry_set_zero => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => rotate_right_through_carry_set_zero => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => rotate_right_through_carry_set_zero => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => rotate_right_through_carry_set_zero => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_right_through_carry_set_zero => l),
+                }
+            }
+            Instruction::RL(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => rotate_left_through_carry_set_zero => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => rotate_left_through_carry_set_zero => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => rotate_left_through_carry_set_zero => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => rotate_left_through_carry_set_zero => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => rotate_left_through_carry_set_zero => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => rotate_left_through_carry_set_zero => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_left_through_carry_set_zero => l),
+                }
+            }
+            Instruction::RRC(register) => {
+                match register {
+                    // 8 bit target
                     PrefixTarget::A => manipulate_8bit_register!(self: a => rotate_right_set_zero => a),
                     PrefixTarget::B => manipulate_8bit_register!(self: b => rotate_right_set_zero => b),
                     PrefixTarget::C => manipulate_8bit_register!(self: c => rotate_right_set_zero => c),
@@ -287,7 +311,7 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self: l => rotate_right_set_zero => l),
                 }
             }
-            Instruction::RL(register) => {
+            Instruction::RLC(register) => {
                 match register {
                     // 8 bit target
                     PrefixTarget::A => manipulate_8bit_register!(self: a => rotate_left_set_zero => a),
@@ -430,17 +454,17 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn rotate_right_retain_zero(&mut self, value: u8) -> u8 {
-        self.rotate_right(value, false)
+    fn rotate_right_through_carry_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_right_through_carry(value, false)
     }
 
     #[inline(always)]
-    fn rotate_right_set_zero(&mut self, value: u8) -> u8 {
-        self.rotate_right(value, true)
+    fn rotate_right_through_carry_set_zero(&mut self, value: u8) -> u8 {
+        self.rotate_right_through_carry(value, true)
     }
 
     #[inline(always)]
-    fn rotate_right(&mut self, value: u8, set_zero: bool) -> u8 {
+    fn rotate_right_through_carry(&mut self, value: u8, set_zero: bool) -> u8 {
         let carry_bit = if self.registers.f.carry { 1 } else { 0 } << 7;
         let new_value = carry_bit | (value >> 1);
         self.registers.f.zero = set_zero && new_value == 0;
@@ -451,8 +475,34 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn rotate_left_retain_zero(&mut self, value: u8) -> u8 {
-        self.rotate_left(value, false)
+    fn rotate_left_through_carry_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_left_through_carry(value, false)
+    }
+
+    #[inline(always)]
+    fn rotate_left_through_carry_set_zero(&mut self, value: u8) -> u8 {
+        self.rotate_left_through_carry(value, true)
+    }
+
+    #[inline(always)]
+    fn rotate_left_through_carry(&mut self, value: u8, set_zero: bool) -> u8 {
+        let carry_bit = if self.registers.f.carry { 1 } else { 0 };
+        let new_value = (value << 1) | carry_bit;
+        self.registers.f.zero = set_zero && new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = (value & 0x80) == 0x80;
+        new_value
+    }
+
+    #[inline(always)]
+    fn rotate_right_set_zero(&mut self, value: u8) -> u8 {
+        self.rotate_right(value, true)
+    }
+
+    #[inline(always)]
+    fn rotate_right_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_right(value, false)
     }
 
     #[inline(always)]
@@ -461,13 +511,27 @@ impl CPU {
     }
 
     #[inline(always)]
+    fn rotate_left_retain_zero(&mut self, value: u8) -> u8 {
+        self.rotate_left(value, false)
+    }
+
+    #[inline(always)]
     fn rotate_left(&mut self, value: u8, set_zero: bool) -> u8 {
-        let carry_bit = if self.registers.f.carry { 1 } else { 0 };
-        let new_value = (value << 1) | carry_bit;
+        let new_value = value.rotate_left(1);
         self.registers.f.zero = set_zero && new_value == 0;
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
-        self.registers.f.carry = (value & 0x80) == 0x80;
+        self.registers.f.carry = value & 0x80 == 0x80;
+        new_value
+    }
+
+    #[inline(always)]
+    fn rotate_right(&mut self, value: u8, set_zero: bool) -> u8 {
+        let new_value = value.rotate_right(1);
+        self.registers.f.zero = set_zero && new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = value & 0b1 == 0b1;
         new_value
     }
 
