@@ -5,32 +5,34 @@ pub mod instruction;
 use self::registers::Registers;
 use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
 
-pub struct CPU {
-    registers: Registers
-}
-
+// Macros
 // Macro for changing the value of a 8 bit register through some CPU method
-// Arguments:
-// * self (a.k.a the CPU)
-// * the name of the register to get,
-// * a method for changing register's value,
-// * the name of the register to set,
-//
-// The macro gets the value from the register, performs work on that value and then sets the value back in the
-// register
 macro_rules! manipulate_8bit_register {
+    // Macro pattern for getting a value from a register and doing some work on that value
     ( $self:ident : $getter:ident => $work:ident) => {
         {
             let value = $self.registers.$getter;
             $self.$work(value)
         }
     };
+    // Macro pattern for getting a value from a register and doing some work on that value and
+    // writting it back to the register
     ( $self:ident : $getter:ident => $work:ident => $setter:ident) => {
         {
             let result = manipulate_8bit_register!($self: $getter => $work);
             $self.registers.$setter = result;
         }
     };
+    // Macro pattern for getting a value from a register and doing some work on that value at a
+    // specific bit pattern
+    ( $self:ident : ( $register:ident @ $bit_position:ident ) => $work:ident ) => {
+        {
+            let value = $self.registers.$register;
+            $self.$work(value, $bit_position);
+        }
+    };
+    // Macro pattern for getting a value from a register and doing some work on that value at a
+    // specific bit pattern and writting it back to the register
     ( $self:ident : ( $getter:ident @ $bit_position:ident ) => $work:ident => $setter:ident) => {
         {
             let value = $self.registers.$getter;
@@ -38,15 +40,10 @@ macro_rules! manipulate_8bit_register {
             $self.registers.$setter = result;
         }
     };
-    ( $self:ident : ( $register:ident @ $bit_position:ident ) => $work:ident ) => {
-        {
-            let value = $self.registers.$register;
-            $self.$work(value, $bit_position);
-        }
-    };
 }
 
 macro_rules! arithmetic_instruction {
+    // Macro pattern for matching a register and then manipulating the register
     ( $register:ident, $self:ident.$work:ident) => {
         {
             match $register {
@@ -60,6 +57,8 @@ macro_rules! arithmetic_instruction {
             }
         }
     };
+    // Macro pattern for matching a register and then manipulating the register and writing the
+    // value back to the a register
     ( $register:ident, $self:ident.$work:ident => a) => {
         {
             match $register {
@@ -76,6 +75,8 @@ macro_rules! arithmetic_instruction {
 }
 
 macro_rules! prefix_instruction {
+    // Macro pattern for matching a register and then manipulating the register and writing the
+    // value back to the a register
     ( $register:ident, $self:ident.$work:ident => reg) => {
         {
             match $register {
@@ -89,6 +90,8 @@ macro_rules! prefix_instruction {
             }
         }
     };
+    // Macro pattern for matching a register and then manipulating the register at a specific bit
+    // position and writing the value back to the a register
     ( $register:ident, $self:ident.$work:ident @ $bit_position:ident => reg) => {
         {
             match $register {
@@ -102,6 +105,8 @@ macro_rules! prefix_instruction {
             }
         }
     };
+    // Macro pattern for matching a register and then manipulating the register at a specific bit
+    // position
     ( $register:ident, $self:ident.$work:ident @ $bit_position:ident ) => {
         {
             match $register {
@@ -134,6 +139,10 @@ macro_rules! manipulate_16bit_register {
             $self.registers.$setter(result);
         }
     };
+}
+
+pub struct CPU {
+    registers: Registers
 }
 
 impl CPU {
