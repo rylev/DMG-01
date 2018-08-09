@@ -59,5 +59,6 @@ pub enum Instruction {
     CPL,
 
     Bit(PrefixTarget, BitPosition),
+    Res(PrefixTarget, BitPosition),
 
 }
