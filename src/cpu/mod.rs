@@ -3,7 +3,7 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget};
+use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
 
 pub struct CPU {
     registers: Registers
@@ -224,6 +224,39 @@ impl CPU {
             Instruction::CPL => {
                 change_8bit_register!(self, a => complement => a);
             }
+            Instruction::Bit(register, bit_position) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A =>  {
+                        let value = self.registers.a;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::B =>  {
+                        let value = self.registers.b;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::C =>  {
+                        let value = self.registers.c;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::D =>  {
+                        let value = self.registers.d;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::E =>  {
+                        let value = self.registers.e;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::H =>  {
+                        let value = self.registers.h;
+                        self.bit_test(value, bit_position);
+                    }
+                    PrefixTarget::L =>  {
+                        let value = self.registers.l;
+                        self.bit_test(value, bit_position);
+                    }
+                }
+            }
         }
     }
 
@@ -402,6 +435,16 @@ impl CPU {
         self.registers.f.subtract = true;
         self.registers.f.half_carry = true;
         new_value
+    }
+
+    #[inline(always)]
+    fn bit_test(&mut self, value: u8, bit_position: BitPosition) {
+        let bit_position: u8 = bit_position.into();
+        let result = (value >> bit_position) & 0b1;
+        self.registers.f.zero = result == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = true;
+
     }
 }
 
@@ -774,5 +817,18 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0b0100_1011);
         check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => false);
+    }
+
+    // Bit
+    #[test]
+    fn execute_bit_8bit() {
+        let cpu = test_instruction!(Instruction::Bit(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
+
+        assert_eq!(cpu.registers.a, 0b1011_0100);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => false);
+
+        let cpu = test_instruction!(Instruction::Bit(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
+        assert_eq!(cpu.registers.a, 0b1011_0100);
+        check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => false);
     }
 }
