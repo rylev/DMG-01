@@ -66,6 +66,8 @@ pub enum Instruction {
     RL(PrefixTarget),
     RRC(PrefixTarget),
     RLC(PrefixTarget),
-    SRA(PrefixTarget)
+    SRA(PrefixTarget),
+    SLA(PrefixTarget),
+    SWAP(PrefixTarget)
 
 }

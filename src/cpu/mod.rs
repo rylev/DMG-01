@@ -335,6 +335,30 @@ impl CPU {
                     PrefixTarget::L => manipulate_8bit_register!(self: l => shift_right_arithmetic => l),
                 }
             }
+            Instruction::SLA(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => shift_left_arithmetic => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => shift_left_arithmetic => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => shift_left_arithmetic => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => shift_left_arithmetic => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => shift_left_arithmetic => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => shift_left_arithmetic => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => shift_left_arithmetic => l),
+                }
+            }
+            Instruction::SWAP(register) => {
+                match register {
+                    // 8 bit target
+                    PrefixTarget::A => manipulate_8bit_register!(self: a => swap_nibbles => a),
+                    PrefixTarget::B => manipulate_8bit_register!(self: b => swap_nibbles => b),
+                    PrefixTarget::C => manipulate_8bit_register!(self: c => swap_nibbles => c),
+                    PrefixTarget::D => manipulate_8bit_register!(self: d => swap_nibbles => d),
+                    PrefixTarget::E => manipulate_8bit_register!(self: e => swap_nibbles => e),
+                    PrefixTarget::H => manipulate_8bit_register!(self: h => swap_nibbles => h),
+                    PrefixTarget::L => manipulate_8bit_register!(self: l => swap_nibbles => l),
+                }
+            }
         }
     }
 
@@ -595,6 +619,26 @@ impl CPU {
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
         self.registers.f.carry = value & 0b1 == 0b1;
+        new_value
+    }
+
+    #[inline(always)]
+    fn shift_left_arithmetic(&mut self, value: u8) -> u8 {
+        let new_value = value << 1;
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = value & 0x80 == 0x80;
+        new_value
+    }
+
+    #[inline(always)]
+    fn swap_nibbles(&mut self, value: u8) -> u8 {
+        let new_value = ((value & 0xf) << 4) | ((value & 0xf0) >> 4);
+        self.registers.f.zero = new_value == 0;
+        self.registers.f.subtract = false;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = false;
         new_value
     }
 }
@@ -1051,8 +1095,25 @@ mod tests {
     fn execute_sra() {
         let cpu = test_instruction!(Instruction::SRA(PrefixTarget::A), a => 0b1011_0101);
 
-        //1101011
         assert_eq!(cpu.registers.a, 0b1101_1010);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // SLA
+    #[test]
+    fn execute_sla() {
+        let cpu = test_instruction!(Instruction::SLA(PrefixTarget::A), a => 0b1011_0101);
+
+        assert_eq!(cpu.registers.a, 0b0110_1010);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
+    }
+
+    // SWAP
+    #[test]
+    fn execute_swap() {
+        let cpu = test_instruction!(Instruction::SWAP(PrefixTarget::A), a => 0b1011_0101);
+
+        assert_eq!(cpu.registers.a, 0b0101_1011);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
 }
