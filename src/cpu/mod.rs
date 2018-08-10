@@ -5,10 +5,22 @@ pub mod instruction;
 use self::registers::Registers;
 use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
 
-// Macros
-// Macro for changing the value of a 8 bit register through some CPU method
+/// # Macros
+///
+/// The following are macros for generating repetitive code needed for processing CPU
+/// instructions. For more information on macros read [the chapter in the Rust book](https://doc.rust-lang.org/book/second-edition/appendix-04-macros.html).
+
+/// Macro for changing the CPU based on the value of a 8 bit register
 macro_rules! manipulate_8bit_register {
     // Macro pattern for getting a value from a register and doing some work on that value
+    //
+    // # Example Usage:
+    // ``` rust
+    // manipulate_8bit_register!(self, a => print_register)
+    // ```
+    //
+    // This above reads register `a` and then calls the method `print_register` with the
+    // value from `a`
     ( $self:ident : $getter:ident => $work:ident) => {
         {
             let value = $self.registers.$getter;
@@ -17,6 +29,14 @@ macro_rules! manipulate_8bit_register {
     };
     // Macro pattern for getting a value from a register and doing some work on that value and
     // writting it back to the register
+    //
+    // # Example Usage:
+    // ``` rust
+    // manipulate_8bit_register!(self, a => increment => d)
+    // ```
+    //
+    // This above reads register `a` and then calls the method `increment` with the
+    // value from `a` and then writes the result of `increment` into register `d`
     ( $self:ident : $getter:ident => $work:ident => $setter:ident) => {
         {
             let result = manipulate_8bit_register!($self: $getter => $work);
@@ -25,99 +45,35 @@ macro_rules! manipulate_8bit_register {
     };
     // Macro pattern for getting a value from a register and doing some work on that value at a
     // specific bit pattern
+    //
+    // # Example Usage:
+    // ``` rust
+    // manipulate_8bit_register!(self, a => increment @ BitPosition::B2)
+    // ```
+    //
+    // This above reads register `a` and then calls the method `increment` with the
+    // value from `a` and the bit position marker `B2`
     ( $self:ident : ( $register:ident @ $bit_position:ident ) => $work:ident ) => {
         {
             let value = $self.registers.$register;
-            $self.$work(value, $bit_position);
+            $self.$work(value, $bit_position)
         }
     };
     // Macro pattern for getting a value from a register and doing some work on that value at a
     // specific bit pattern and writting it back to the register
+    //
+    // # Example Usage:
+    // ``` rust
+    // manipulate_8bit_register!(self, a => increment @ BitPosition::B2 => c)
+    // ```
+    //
+    // This above reads register `a` and then calls the method `increment` with the
+    // value from `a` and the bit position marker `B2` and then writes the result of the
+    // call to `increment` into the register `c`.
     ( $self:ident : ( $getter:ident @ $bit_position:ident ) => $work:ident => $setter:ident) => {
         {
-            let value = $self.registers.$getter;
-            let result = $self.$work(value, $bit_position);
+            let result = manipulate_8bit_register!($self: ( $getter @ $bit_position ) => $work);
             $self.registers.$setter = result;
-        }
-    };
-}
-
-macro_rules! arithmetic_instruction {
-    // Macro pattern for matching a register and then manipulating the register
-    ( $register:ident, $self:ident.$work:ident) => {
-        {
-            match $register {
-                ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work),
-                ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work),
-                ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work),
-                ArithmeticTarget::D => manipulate_8bit_register!($self: d => $work),
-                ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work),
-                ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work),
-                ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work),
-            }
-        }
-    };
-    // Macro pattern for matching a register and then manipulating the register and writing the
-    // value back to the a register
-    ( $register:ident, $self:ident.$work:ident => a) => {
-        {
-            match $register {
-                ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work => a),
-                ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work => a),
-                ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work => a),
-                ArithmeticTarget::D => manipulate_8bit_register!($self: d => $work => a),
-                ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work => a),
-                ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work => a),
-                ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work => a),
-            }
-        }
-    };
-}
-
-macro_rules! prefix_instruction {
-    // Macro pattern for matching a register and then manipulating the register and writing the
-    // value back to the a register
-    ( $register:ident, $self:ident.$work:ident => reg) => {
-        {
-            match $register {
-                PrefixTarget::A => manipulate_8bit_register!($self: a => $work => a),
-                PrefixTarget::B => manipulate_8bit_register!($self: b => $work => b),
-                PrefixTarget::C => manipulate_8bit_register!($self: c => $work => c),
-                PrefixTarget::D => manipulate_8bit_register!($self: d => $work => d),
-                PrefixTarget::E => manipulate_8bit_register!($self: e => $work => e),
-                PrefixTarget::H => manipulate_8bit_register!($self: h => $work => h),
-                PrefixTarget::L => manipulate_8bit_register!($self: l => $work => l),
-            }
-        }
-    };
-    // Macro pattern for matching a register and then manipulating the register at a specific bit
-    // position and writing the value back to the a register
-    ( $register:ident, $self:ident.$work:ident @ $bit_position:ident => reg) => {
-        {
-            match $register {
-                PrefixTarget::A => manipulate_8bit_register!($self: (a @ $bit_position) => $work => a),
-                PrefixTarget::B => manipulate_8bit_register!($self: (b @ $bit_position) => $work => b),
-                PrefixTarget::C => manipulate_8bit_register!($self: (c @ $bit_position) => $work => c),
-                PrefixTarget::D => manipulate_8bit_register!($self: (d @ $bit_position) => $work => d),
-                PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work => e),
-                PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work => h),
-                PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work => l),
-            }
-        }
-    };
-    // Macro pattern for matching a register and then manipulating the register at a specific bit
-    // position
-    ( $register:ident, $self:ident.$work:ident @ $bit_position:ident ) => {
-        {
-            match $register {
-                PrefixTarget::A => manipulate_8bit_register!($self: (a @ $bit_position) => $work),
-                PrefixTarget::B => manipulate_8bit_register!($self: (b @ $bit_position) => $work),
-                PrefixTarget::C => manipulate_8bit_register!($self: (c @ $bit_position) => $work),
-                PrefixTarget::D => manipulate_8bit_register!($self: (d @ $bit_position) => $work),
-                PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work),
-                PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work),
-                PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work),
-            }
         }
     };
 }
@@ -137,6 +93,126 @@ macro_rules! manipulate_16bit_register {
             let amount = $self.registers.$getter();
             let result = $self.$work(amount);
             $self.registers.$setter(result);
+        }
+    };
+}
+
+macro_rules! arithmetic_instruction {
+    // Macro pattern for matching a register and then manipulating the register
+    //
+    // # Example Usage:
+    // ``` rust
+    // arithmetic_instruction!(register, self.foo)
+    // ```
+    //
+    // The above matches a register and then calls the function `foo` to do work on the value
+    // in that register.
+    ( $register:ident, $self:ident.$work:ident) => {
+        {
+            match $register {
+                ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work),
+                ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work),
+                ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work),
+                ArithmeticTarget::D => manipulate_8bit_register!($self: d => $work),
+                ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work),
+                ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work),
+                ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work),
+            }
+        }
+    };
+    // Macro pattern for matching a register and then manipulating the register and writing the
+    // value back to the a register
+    //
+    // # Example Usage:
+    // ``` rust
+    // arithmetic_instruction!(register, self.foo => a)
+    // ```
+    //
+    // The above matches a register and then calls the function `foo` to do work on the value
+    // in that register and writes the result of `foo` into the a register.
+    ( $register:ident, $self:ident.$work:ident => a) => {
+        {
+            match $register {
+                ArithmeticTarget::A => manipulate_8bit_register!($self: a => $work => a),
+                ArithmeticTarget::B => manipulate_8bit_register!($self: b => $work => a),
+                ArithmeticTarget::C => manipulate_8bit_register!($self: c => $work => a),
+                ArithmeticTarget::D => manipulate_8bit_register!($self: d => $work => a),
+                ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work => a),
+                ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work => a),
+                ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work => a),
+            }
+        }
+    };
+}
+
+macro_rules! prefix_instruction {
+    // Macro pattern for matching a register and then manipulating the register and writing the
+    // value back to the a register
+    //
+    // # Example Usage:
+    // ``` rust
+    // prefix_instruction!(register, self.foo => a)
+    // ```
+    //
+    // The above matches a register and then calls the function `foo` to do work on the value
+    // in that register and writes the result of `foo` into the `a` register.
+    ( $register:ident, $self:ident.$work:ident => reg) => {
+        {
+            match $register {
+                PrefixTarget::A => manipulate_8bit_register!($self: a => $work => a),
+                PrefixTarget::B => manipulate_8bit_register!($self: b => $work => b),
+                PrefixTarget::C => manipulate_8bit_register!($self: c => $work => c),
+                PrefixTarget::D => manipulate_8bit_register!($self: d => $work => d),
+                PrefixTarget::E => manipulate_8bit_register!($self: e => $work => e),
+                PrefixTarget::H => manipulate_8bit_register!($self: h => $work => h),
+                PrefixTarget::L => manipulate_8bit_register!($self: l => $work => l),
+            }
+        }
+    };
+    // Macro pattern for matching a register and then manipulating the register at a specific bit
+    // location and writing the value back to the a register
+    //
+    // # Example Usage:
+    // ``` rust
+    // prefix_instruction!(register, (self.foo @ bit_position) => a)
+    // ```
+    //
+    // The above matches a register and then calls the function `foo` to do work on the value
+    // in that register at the bit position `bit_position` and writes the result of `foo` into the `a` register.
+    ( $register:ident, ( $self:ident.$work:ident @ $bit_position:ident ) => reg) => {
+        {
+            match $register {
+                PrefixTarget::A => manipulate_8bit_register!($self: (a @ $bit_position) => $work => a),
+                PrefixTarget::B => manipulate_8bit_register!($self: (b @ $bit_position) => $work => b),
+                PrefixTarget::C => manipulate_8bit_register!($self: (c @ $bit_position) => $work => c),
+                PrefixTarget::D => manipulate_8bit_register!($self: (d @ $bit_position) => $work => d),
+                PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work => e),
+                PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work => h),
+                PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work => l),
+            }
+        }
+    };
+    // Macro pattern for matching a register and then manipulating the register at a specific bit
+    // location
+    //
+    // # Example Usage:
+    // ``` rust
+    // prefix_instruction!(register, (self.foo @ bit_position))
+    // ```
+    //
+    // The above matches a register and then calls the function `foo` to do work on the value
+    // in that register at the bit position `bit_position`
+    ( $register:ident, $self:ident.$work:ident @ $bit_position:ident ) => {
+        {
+            match $register {
+                PrefixTarget::A => manipulate_8bit_register!($self: (a @ $bit_position) => $work),
+                PrefixTarget::B => manipulate_8bit_register!($self: (b @ $bit_position) => $work),
+                PrefixTarget::C => manipulate_8bit_register!($self: (c @ $bit_position) => $work),
+                PrefixTarget::D => manipulate_8bit_register!($self: (d @ $bit_position) => $work),
+                PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work),
+                PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work),
+                PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work),
+            }
         }
     };
 }
@@ -239,10 +315,10 @@ impl CPU {
                 prefix_instruction!(register, self.bit_test @ bit_position);
             }
             Instruction::RES(register, bit_position) => {
-                prefix_instruction!(register, self.reset_bit @ bit_position => reg);
+                prefix_instruction!(register, (self.reset_bit @ bit_position) => reg);
             }
             Instruction::SET(register, bit_position) => {
-                prefix_instruction!(register, self.set_bit @ bit_position => reg);
+                prefix_instruction!(register, (self.set_bit @ bit_position) => reg);
             }
             Instruction::SRL(register) => {
                 prefix_instruction!(register, self.shift_right_logical => reg);
