@@ -115,12 +115,15 @@ So let's take a look at the code:
 ...
 ```
 
-
 ## How Do We Know?
 
 Yout might be wondering, "how do we know what to do given a certain the instruction". The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a "data sheet"),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions [in the instruction guide](TODO).
 
-We now know how to implement `ADD`, and we know where to find descriptions of all the instructions. What are the other types of instructions that act on register data?
+> *Side Note*
+>
+> Most CPU instructions that deal with register data manipulate that data through various bitwise operations. If the likes of logical shifts and bitwise ands aren't super clear to you, check out the [guide on bit manipulation](./appendix/bit_manipulation.md).
+
+What are the other types of instructions that act on register data?
 
 * ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
 * SUB (subtract) - subtract the value stored in a specific register with the value in the A register
@@ -147,3 +150,7 @@ We now know how to implement `ADD`, and we know where to find descriptions of al
 * SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
 * SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
 * SWAP (swap nibbles) - switch upper and lower nibble of a specific register
+
+Reading through the guide on instructions, should give you enough information to implement all the instructions yourself.
+
+Next, we'll be looking at how the CPU keeps track of which instructions to execute as well as different types of instructions that can change where we are in a particular program.
