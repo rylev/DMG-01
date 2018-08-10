@@ -399,7 +399,7 @@ impl CPU {
         self.registers.f.zero = add2 == 0;
         self.registers.f.subtract = false;
         self.registers.f.carry = carry || carry2;
-        // Half Carry is set if adding the lower nibbles of the value and register a
+        // Half Carry is set if adding the lower nibbles of the value and register A
         // together (plus the optional carry bit) result in a value bigger the 0xF.
         // If the result is larger than 0xF than the addition caused a carry from
         // the lower nibble to the upper nibble.
