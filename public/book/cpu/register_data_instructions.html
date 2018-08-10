@@ -1,0 +1,351 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Instructions on Register Data - DMG-01: How to Emulate a Game Boy</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "../";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html" class="active"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#instructions-on-register-data" id="instructions-on-register-data"><h1>Instructions on Register Data</h1></a>
+<p>The first instructions we'll be examining are instructions that just operate on and manipulate register data.</p>
+<a class="header" href="#add" id="add"><h2>ADD</h2></a>
+<p>We'll start by looking closely at how the <code>ADD</code> instructions work. This is a simple instruction that adds specific register's contents to the A register's contents. Once we know how this instruction works, it won't be much work to extend the CPU to support all other instructions that just operate on register data.</p>
+<a class="header" href="#definition" id="definition"><h3>Definition</h3></a>
+<p>First we need to define the instruction. We'll get into how the game code actually encodes instructions and where the instructions come from later on. For now we're just focusing on the instruction itself and how it affects the CPU registers.</p>
+<p>The first thing to do is to define an enum called <code>Instruction</code>. This enum will be the central place where all of our instructions will be defined. Our <code>ADD</code> instruction needs to include information on which register they're targeting so we'll make sure to include it by associating the instruction with <code>ArithmeticTarget</code> enum that specifies the target register. <code>ADD</code> can target all of the 8 bit registers except f.</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+enum Instruction {
+  ADD(ArithmeticTarget),
+}
+
+enum ArithmeticTarget {
+  A, B, C, D, E, H, L,
+}
+#}</code></pre></pre>
+<a class="header" href="#executing-the-instruction" id="executing-the-instruction"><h3>Executing the Instruction</h3></a>
+<p>Ok, now that we have ths instruction, we'll need a way to execute it. Let's create a method on CPU that takes an instruction and executes it. This method will take a mutable reference to the CPU since instructions always mutate the CPU's state. The method will also take the instruction it will execute. We'll pattern match on the instruction and the target register, and then we'll do the appropriate action according to the instruction and the register:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+impl CPU {
+  ...
+  fn execute(&amp;mut self, instruction: Instruction) {
+    match instruction {
+      Instruction::ADD(target) =&gt; {
+        match target {
+          ArithmeticTarget::C =&gt; {
+            // TODO: implement ADD on register C
+          }
+          _ =&gt; // TODO: support more targets
+        }
+      }
+      _ =&gt; // TODO: support more instructions
+    }
+  }
+  ...
+}
+#}</code></pre></pre>
+<p>We now have the boiler plate for figuring out which instruction and which target register. Let's see now what we have to do to the actual CPU. The steps for <code>ADD</code> for 8 bit target registers are the following:</p>
+<ul>
+<li>Read the current value from the target register</li>
+<li>Add the value to the value in the A register making sure to handle overflow properly</li>
+<li>Update the flags register</li>
+<li>Write the updated value to the A register</li>
+</ul>
+<p>Let's implement it with C as the target register:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+...
+    match instruction {
+      Instruction::ADD(target) =&gt; {
+        match target {
+          ArithmeticTarget::C =&gt; {
+            let value = self.registers.c;
+            let new_value = self.add(value);
+            self.registers.a = new_value;
+          }
+          _ =&gt; // TODO: support more targets
+        }
+        _ =&gt; // TODO: support more instructions
+      }
+    }
+...
+  fn add(&amp;mut self, value: u8) {
+    let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
+    // TODO: set flags
+    new_value
+  }
+...
+#}</code></pre></pre>
+<p>Notice that we use the <code>overflowing_add</code> method on our 8 bit value instead of <code>+</code>. This is because <code>+</code> panics in development when the result of the addition overflows. Rust forces us to be explicit about the behaivor we want, we chose <code>overflowing_add</code> because it properly overflows the value, and it informs us if the addition actually resulted in an overflow or not. This will be important information for when we update the flags register.</p>
+<a class="header" href="#setting-flags" id="setting-flags"><h3>Setting Flags</h3></a>
+<p>There are four flags defined on the flags register:</p>
+<ul>
+<li>
+<p>Zero: set to true if the result of the operation is equal to 0.</p>
+</li>
+<li>
+<p>Subtract: set to true if the operation was a subtraction.</p>
+</li>
+<li>
+<p>Carry: set to true if the operation resulted in an overflow.</p>
+</li>
+<li>
+<p>Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elemetry arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.</p>
+<pre><code>      lower nibble            lower nibble
+         ┌--┐                    ┌--┐
+    1000 1111  +   1   ==   1001 0000
+    └--┘                    └--┘
+upper nibble            upper nibble
+</code></pre>
+<p>If this happens when adding our values, we set the half_carry flag to true. We can test for this by masking out the upper nibble of both the A register and the value we're adding and testing if this value is greater than 0xF.</p>
+</li>
+</ul>
+<p>So let's take a look at the code:</p>
+<pre><pre class="playpen"><code class="language-rust">
+# #![allow(unused_variables)]
+#fn main() {
+...
+  fn add(&amp;mut self, value: u8) {
+    let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
+    self.registers.f.zero = new_value == 0;
+    self.registers.f.subtract = false;
+    self.registers.f.carry = did_overflow;
+    // Half Carry is set if adding the lower nibbles of the value and register A
+    // together result in a value bigger than 0xF. If the result is larger than 0xF
+    // than the addition caused a carry from the lower nibble to the upper nibble.
+    self.registers.f.half_carry = (self.registers.a &amp; 0xF) + (value &amp; 0xF) &gt; 0xF;
+    new_value
+  }
+...
+#}</code></pre></pre>
+<a class="header" href="#how-do-we-know" id="how-do-we-know"><h2>How Do We Know?</h2></a>
+<p>Yout might be wondering, &quot;how do we know what to do given a certain the instruction&quot;. The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a &quot;data sheet&quot;),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions <a href="TODO">in the instruction guide</a>.</p>
+<blockquote>
+<p><em>Side Note</em></p>
+<p>Most CPU instructions that deal with register data manipulate that data through various bitwise operations. If the likes of logical shifts and bitwise ands aren't super clear to you, check out the <a href="./appendix/bit_manipulation.html">guide on bit manipulation</a>.</p>
+</blockquote>
+<p>What are the other types of instructions that act on register data?</p>
+<ul>
+<li>ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number</li>
+<li>SUB (subtract) - subtract the value stored in a specific register with the value in the A register</li>
+<li>SBC (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number</li>
+<li>AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register</li>
+<li>OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register</li>
+<li>XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register</li>
+<li>CP (compare) - just like SUB except the result of the subtraction is not stored back into A</li>
+<li>INC (increment) - increment the value in a specific register by 1</li>
+<li>DEC (decrement) - decrement the value in a specific register by 1</li>
+<li>CCF (complement carry flag) - toggle the value of the carry flag</li>
+<li>SCF (set carry flag) - set the carry flag to true</li>
+<li>RRA (rotate right A register) - bit rotate A register right through the carry flag</li>
+<li>RLA (rotate left A register) - bit rotate A register left through the carry flag</li>
+<li>RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)</li>
+<li>RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)</li>
+<li>CPL (complement) - toggle every bit of a specific register</li>
+<li>BIT (bit test) - test to see if a specific bit of a specific register is set</li>
+<li>RESET (bit reset) - set a specific bit of a specific register to 0</li>
+<li>SET (bit set) - set a specific bit of a specific register to 1</li>
+<li>SRL (shift right logical) - bit shift a specific register right by 1</li>
+<li>RR (rotate right) - bit rotate a specific register right by 1 through the carry flag</li>
+<li>RL (rotate left) - bit rotate a specific register left by 1 through the carry flag</li>
+<li>SRA (shift right arithmetic) - arithmetic shift a specific register right by 1</li>
+<li>SLA (shift left arithmetic) - arithmetic shift a specific register left by 1</li>
+<li>SWAP (swap nibbles) - switch upper and lower nibble of a specific register</li>
+</ul>
+<p>Reading through the guide on instructions, should give you enough information to implement all the instructions yourself.</p>
+<p>Next, we'll be looking at how the CPU keeps track of which instructions to execute as well as different types of instructions that can change where we are in a particular program.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../cpu/registers.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../appendix/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../cpu/registers.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../appendix/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
