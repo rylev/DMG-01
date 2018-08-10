@@ -69,5 +69,4 @@ pub enum Instruction {
     SRA(PrefixTarget),
     SLA(PrefixTarget),
     SWAP(PrefixTarget)
-
 }
