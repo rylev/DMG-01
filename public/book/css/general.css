@@ -10,7 +10,6 @@ html {
 }
 
 body {
-    margin: 0;
     font-size: 1rem;
     overflow-x: hidden;
 }
@@ -103,7 +102,7 @@ table tbody tr:nth-child(2n) {
 
 blockquote {
     margin: 20px 0;
-    padding: 0 20px;
+    padding: 10px 20px;
     color: var(--fg);
     background-color: var(--quote-bg);
     border-top: .1em solid var(--quote-border);

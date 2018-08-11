@@ -143,24 +143,17 @@
 <a class="header" href="#definition" id="definition"><h3>Definition</h3></a>
 <p>First we need to define the instruction. We'll get into how the game code actually encodes instructions and where the instructions come from later on. For now we're just focusing on the instruction itself and how it affects the CPU registers.</p>
 <p>The first thing to do is to define an enum called <code>Instruction</code>. This enum will be the central place where all of our instructions will be defined. Our <code>ADD</code> instruction needs to include information on which register they're targeting so we'll make sure to include it by associating the instruction with <code>ArithmeticTarget</code> enum that specifies the target register. <code>ADD</code> can target all of the 8 bit registers except f.</p>
-<pre><pre class="playpen"><code class="language-rust">
-# #![allow(unused_variables)]
-#fn main() {
-enum Instruction {
+<pre><code class="language-rust noplaypen">enum Instruction {
   ADD(ArithmeticTarget),
 }
 
 enum ArithmeticTarget {
   A, B, C, D, E, H, L,
 }
-#}</code></pre></pre>
+</code></pre>
 <a class="header" href="#executing-the-instruction" id="executing-the-instruction"><h3>Executing the Instruction</h3></a>
 <p>Ok, now that we have ths instruction, we'll need a way to execute it. Let's create a method on CPU that takes an instruction and executes it. This method will take a mutable reference to the CPU since instructions always mutate the CPU's state. The method will also take the instruction it will execute. We'll pattern match on the instruction and the target register, and then we'll do the appropriate action according to the instruction and the register:</p>
-<pre><pre class="playpen"><code class="language-rust">
-# #![allow(unused_variables)]
-#fn main() {
-impl CPU {
-  ...
+<pre><code class="language-rust noplaypen">impl CPU {
   fn execute(&amp;mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) =&gt; {
@@ -174,9 +167,8 @@ impl CPU {
       _ =&gt; // TODO: support more instructions
     }
   }
-  ...
 }
-#}</code></pre></pre>
+</code></pre>
 <p>We now have the boiler plate for figuring out which instruction and which target register. Let's see now what we have to do to the actual CPU. The steps for <code>ADD</code> for 8 bit target registers are the following:</p>
 <ul>
 <li>Read the current value from the target register</li>
@@ -185,10 +177,7 @@ impl CPU {
 <li>Write the updated value to the A register</li>
 </ul>
 <p>Let's implement it with C as the target register:</p>
-<pre><pre class="playpen"><code class="language-rust">
-# #![allow(unused_variables)]
-#fn main() {
-...
+<pre><code class="language-rust noplaypen">  fn execute(&amp;mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) =&gt; {
         match target {
@@ -202,14 +191,14 @@ impl CPU {
         _ =&gt; // TODO: support more instructions
       }
     }
-...
+  }
+
   fn add(&amp;mut self, value: u8) {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     // TODO: set flags
     new_value
   }
-...
-#}</code></pre></pre>
+</code></pre>
 <p>Notice that we use the <code>overflowing_add</code> method on our 8 bit value instead of <code>+</code>. This is because <code>+</code> panics in development when the result of the addition overflows. Rust forces us to be explicit about the behaivor we want, we chose <code>overflowing_add</code> because it properly overflows the value, and it informs us if the addition actually resulted in an overflow or not. This will be important information for when we update the flags register.</p>
 <a class="header" href="#setting-flags" id="setting-flags"><h3>Setting Flags</h3></a>
 <p>There are four flags defined on the flags register:</p>
@@ -235,11 +224,7 @@ upper nibble            upper nibble
 </li>
 </ul>
 <p>So let's take a look at the code:</p>
-<pre><pre class="playpen"><code class="language-rust">
-# #![allow(unused_variables)]
-#fn main() {
-...
-  fn add(&amp;mut self, value: u8) {
+<pre><code class="language-rust noplaypen">  fn add(&amp;mut self, value: u8) {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     self.registers.f.zero = new_value == 0;
     self.registers.f.subtract = false;
@@ -250,8 +235,7 @@ upper nibble            upper nibble
     self.registers.f.half_carry = (self.registers.a &amp; 0xF) + (value &amp; 0xF) &gt; 0xF;
     new_value
   }
-...
-#}</code></pre></pre>
+</code></pre>
 <a class="header" href="#how-do-we-know" id="how-do-we-know"><h2>How Do We Know?</h2></a>
 <p>Yout might be wondering, &quot;how do we know what to do given a certain the instruction&quot;. The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a &quot;data sheet&quot;),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions <a href="TODO">in the instruction guide</a>.</p>
 <blockquote>
@@ -260,31 +244,33 @@ upper nibble            upper nibble
 </blockquote>
 <p>What are the other types of instructions that act on register data?</p>
 <ul>
-<li>ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number</li>
-<li>SUB (subtract) - subtract the value stored in a specific register with the value in the A register</li>
-<li>SBC (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number</li>
-<li>AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register</li>
-<li>OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register</li>
-<li>XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register</li>
-<li>CP (compare) - just like SUB except the result of the subtraction is not stored back into A</li>
-<li>INC (increment) - increment the value in a specific register by 1</li>
-<li>DEC (decrement) - decrement the value in a specific register by 1</li>
-<li>CCF (complement carry flag) - toggle the value of the carry flag</li>
-<li>SCF (set carry flag) - set the carry flag to true</li>
-<li>RRA (rotate right A register) - bit rotate A register right through the carry flag</li>
-<li>RLA (rotate left A register) - bit rotate A register left through the carry flag</li>
-<li>RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)</li>
-<li>RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)</li>
-<li>CPL (complement) - toggle every bit of a specific register</li>
-<li>BIT (bit test) - test to see if a specific bit of a specific register is set</li>
-<li>RESET (bit reset) - set a specific bit of a specific register to 0</li>
-<li>SET (bit set) - set a specific bit of a specific register to 1</li>
-<li>SRL (shift right logical) - bit shift a specific register right by 1</li>
-<li>RR (rotate right) - bit rotate a specific register right by 1 through the carry flag</li>
-<li>RL (rotate left) - bit rotate a specific register left by 1 through the carry flag</li>
-<li>SRA (shift right arithmetic) - arithmetic shift a specific register right by 1</li>
-<li>SLA (shift left arithmetic) - arithmetic shift a specific register left by 1</li>
-<li>SWAP (swap nibbles) - switch upper and lower nibble of a specific register</li>
+<li><strong>ADC</strong> (add with carry) - just like ADD except that the value of the carry flag is also added to the number</li>
+<li><strong>SUB</strong> (subtract) - subtract the value stored in a specific register with the value in the A register</li>
+<li><strong>SBC</strong> (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number</li>
+<li><strong>AND</strong> (logical and) - do a bitwise and on the value in a specific register and the value in the A register</li>
+<li><strong>OR</strong> (logical or) - do a bitwise or on the value in a specific register and the value in the A register</li>
+<li><strong>XOR</strong> (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register</li>
+<li><strong>CP</strong> (compare) - just like SUB except the result of the subtraction is not stored back into A</li>
+<li><strong>INC</strong> (increment) - increment the value in a specific register by 1</li>
+<li><strong>DEC</strong> (decrement) - decrement the value in a specific register by 1</li>
+<li><strong>CCF</strong> (complement carry flag) - toggle the value of the carry flag</li>
+<li><strong>SCF</strong> (set carry flag) - set the carry flag to true</li>
+<li><strong>RRA</strong> (rotate right A register) - bit rotate A register right through the carry flag</li>
+<li><strong>RLA</strong> (rotate left A register) - bit rotate A register left through the carry flag</li>
+<li><strong>RRCA</strong> (rotate right A register) - bit rotate A register right (not through the carry flag)</li>
+<li><strong>RRLA</strong> (rotate left A register) - bit rotate A register left (not through the carry flag)</li>
+<li><strong>CPL</strong> (complement) - toggle every bit of the A register</li>
+<li><strong>BIT</strong> (bit test) - test to see if a specific bit of a specific register is set</li>
+<li><strong>RESET</strong> (bit reset) - set a specific bit of a specific register to 0</li>
+<li><strong>SET</strong> (bit set) - set a specific bit of a specific register to 1</li>
+<li><strong>SRL</strong> (shift right logical) - bit shift a specific register right by 1</li>
+<li><strong>RR</strong> (rotate right) - bit rotate a specific register right by 1 through the carry flag</li>
+<li><strong>RL</strong> (rotate left) - bit rotate a specific register left by 1 through the carry flag</li>
+<li><strong>RRC</strong> (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)</li>
+<li><strong>RLC</strong> (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)</li>
+<li><strong>SRA</strong> (shift right arithmetic) - arithmetic shift a specific register right by 1</li>
+<li><strong>SLA</strong> (shift left arithmetic) - arithmetic shift a specific register left by 1</li>
+<li><strong>SWAP</strong> (swap nibbles) - switch upper and lower nibble of a specific register</li>
 </ul>
 <p>Reading through the guide on instructions, should give you enough information to implement all the instructions yourself.</p>
 <p>Next, we'll be looking at how the CPU keeps track of which instructions to execute as well as different types of instructions that can change where we are in a particular program.</p>
