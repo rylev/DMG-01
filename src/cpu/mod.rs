@@ -10,7 +10,7 @@ use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,B
 /// The following are macros for generating repetitive code needed for processing CPU
 /// instructions. For more information on macros read [the chapter in the Rust book](https://doc.rust-lang.org/book/second-edition/appendix-04-macros.html).
 
-/// Macro for changing the CPU based on the value of a 8 bit register
+// Macro for changing the CPU based on the value of a 8 bit register
 macro_rules! manipulate_8bit_register {
     // Macro pattern for getting a value from a register and doing some work on that value
     //

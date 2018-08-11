@@ -10,7 +10,7 @@ use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,B
 /// The following are macros for generating repetitive code needed for processing CPU
 /// instructions. For more information on macros read [the chapter in the Rust book](https://doc.rust-lang.org/book/second-edition/appendix-04-macros.html).
 
-/// Macro for changing the CPU based on the value of a 8 bit register
+// Macro for changing the CPU based on the value of a 8 bit register
 macro_rules! manipulate_8bit_register {
     // Macro pattern for getting a value from a register and doing some work on that value
     //
@@ -231,6 +231,11 @@ impl CPU {
     fn execute(&mut self, instruction: Instruction) {
         match instruction {
             Instruction::INC(register) => {
+                // DESCRIPTION: (increment) - increment the value in a specific register by 1
+                // WHEN: target is 16 bit register
+                // Z:- S:- H:- C:-
+                // ELSE:
+                // Z:? S:0 H:? C:-
                 match register {
                     // 8 bit target
                     IncDecTarget::A => manipulate_8bit_register!(self: a => inc_8bit => a),
@@ -247,6 +252,11 @@ impl CPU {
                 }
             },
             Instruction::DEC(register) => {
+                // DESCRIPTION: (decrement) - decrement the value in a specific register by 1
+                // WHEN: target is 16 bit register
+                // Z:- S:- H:- C:-
+                // ELSE:
+                // Z:? S:0 H:? C:-
                 match register {
                     // 8 bit target
                     IncDecTarget::A => manipulate_8bit_register!(self: a => dec_8bit => a),
@@ -263,85 +273,145 @@ impl CPU {
                 }
             },
             Instruction::ADD(register) => {
+                // DESCRIPTION: (add) - add the value stored in a specific register
+                // with the value in the A register
+                // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_without_carry => a);
             },
             Instruction::ADC(register) => {
+                // DESCRIPTION: (add with carry) - add the value stored in a specific
+                // register with the value in the A register and the value in the carry flag
+                // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_with_carry => a);
             },
             Instruction::SUB(register) => {
+                // DESCRIPTION: (subtract) - subtract the value stored in a specific register
+                // with the value in the A register
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_without_carry => a);
             },
             Instruction::SBC(register) => {
+                // DESCRIPTION: (subtract) - subtract the value stored in a specific register
+                // with the value in the A register and the value in the carry flag
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_with_carry => a);
             },
             Instruction::AND(register) => {
+                // DESCRIPTION: (AND) - do a bitwise and on the value in a specific
+                // register and the value in the A register
+                // Z:? S:0 H:1 C:0
                 arithmetic_instruction!(register, self.and => a);
             },
             Instruction::OR(register) => {
+                // DESCRIPTION: (OR) - do a bitwise or on the value in a specific
+                // register and the value in the A register
+                // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.or => a);
             },
             Instruction::XOR(register) => {
+                // DESCRIPTION: (XOR) - do a bitwise xor on the value in a specific
+                // register and the value in the A register
+                // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.xor => a);
             },
             Instruction::CP(register) => {
+                // DESCRIPTION: (compare) - just like SUB except the result of the
+                // subtraction is not stored back into A
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.compare);
             },
             Instruction::CCF => {
-                self.registers.f.carry = !self.registers.f.carry;
-                self.registers.f.half_carry = false;
+                // DESCRIPTION: (complement carry flag) - toggle the value of the carry flag
+                // Z:- S:0 H:0 C:?
                 self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+                self.registers.f.carry = !self.registers.f.carry;
             }
             Instruction::SCF => {
-                self.registers.f.carry = true;
-                self.registers.f.half_carry = false;
+                // DESCRIPTION: (set carry flag) - set the carry flag to true
+                // Z:- S:0 H:0 C:1
                 self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+                self.registers.f.carry = true;
             }
             Instruction::RRA => {
+                // DESCRIPTION: (rotate right A register) - bit rotate A register right through the carry flag
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_through_carry_retain_zero => a);
             }
             Instruction::RLA => {
+                // DESCRIPTION: (rotate left A register) - bit rotate A register left through the carry flag
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_through_carry_retain_zero => a);
             }
             Instruction::RRCA => {
+                // DESCRIPTION: (rotate right A register) - bit rotate A register right (not through the carry flag)
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
             }
             Instruction::RLCA => {
+                // DESCRIPTION: (rotate left A register) - bit rotate A register left (not through the carry flag)
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
             }
             Instruction::CPL => {
+                // DESCRIPTION: (complement) - toggle every bit of the A register
+                // Z:- S:1 H:1 C:-
                 manipulate_8bit_register!(self: a => complement => a);
             }
             Instruction::BIT(register, bit_position) => {
+                // DESCRIPTION: (bit test) - test to see if a specific bit of a specific register is set
+                // Z:? S:0 H:1 C:-
                 prefix_instruction!(register, self.bit_test @ bit_position);
             }
             Instruction::RES(register, bit_position) => {
+                // DESCRIPTION: (bit reset) - set a specific bit of a specific register to 0
+                // Z:- S:- H:- C:-
                 prefix_instruction!(register, (self.reset_bit @ bit_position) => reg);
             }
             Instruction::SET(register, bit_position) => {
+                // DESCRIPTION: (bit set) - set a specific bit of a specific register to 1
+                // Z:- S:- H:- C:-
                 prefix_instruction!(register, (self.set_bit @ bit_position) => reg);
             }
             Instruction::SRL(register) => {
+                // DESCRIPTION: (shift right logical) - bit shift a specific register right by 1
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_right_logical => reg);
             }
             Instruction::RR(register) => {
+                // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 through the carry flag
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_right_through_carry_set_zero => reg);
             }
             Instruction::RL(register) => {
+                // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 through the carry flag
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_left_through_carry_set_zero => reg);
             }
             Instruction::RRC(register) => {
+                // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 (not through the carry flag)
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_right_set_zero => reg);
             }
             Instruction::RLC(register) => {
+                // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 (not through the carry flag)
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_left_set_zero => reg);
             }
             Instruction::SRA(register) => {
+                // DESCRIPTION: (shift right arithmetic) - arithmetic shift a specific register right by 1
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_right_arithmetic => reg);
             }
             Instruction::SLA(register) => {
+                // DESCRIPTION: (shift left arithmetic) - arithmetic shift a specific register left by 1
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_left_arithmetic => reg);
             }
             Instruction::SWAP(register) => {
+                // DESCRIPTION: switch upper and lower nibble of a specific register
+                // Z:? S:0 H:0 C:0
                 prefix_instruction!(register, self.swap_nibbles => reg);
             }
         }
