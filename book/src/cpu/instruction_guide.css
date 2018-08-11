@@ -1,0 +1,43 @@
+body {
+  font-family: sans-serif;
+  font-weight: 300;
+}
+.title {
+  font-size: 48px;
+  margin: 30px auto;
+  text-align: center;
+}
+
+#instruction-table {
+  margin: 0 auto;
+}
+#instruction-table th {
+  width: 45px;
+  height: 30px;
+  background: #8bac0f;
+}
+#instruction-table a {
+  text-decoration: none;
+  color: #400aa7;
+}
+
+#instructions-list {
+  margin: 30px 0;
+}
+
+#instructions-list .heading {
+  font-size: 30px;
+}
+
+#instructions-list .quick-view {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+}
+#instructions-list .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  width: 100px;
+}
