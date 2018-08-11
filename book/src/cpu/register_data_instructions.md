@@ -27,6 +27,9 @@ enum ArithmeticTarget {
 Ok, now that we have ths instruction, we'll need a way to execute it. Let's create a method on CPU that takes an instruction and executes it. This method will take a mutable reference to the CPU since instructions always mutate the CPU's state. The method will also take the instruction it will execute. We'll pattern match on the instruction and the target register, and then we'll do the appropriate action according to the instruction and the register:
 
 ```rust,noplaypen
+# struct CPU {}
+# enum Instruction { ADD(ArithmeticTarget), }
+# enum ArithmeticTarget { A, B, C, D, E, H, L, }
 impl CPU {
   fn execute(&mut self, instruction: Instruction) {
     match instruction {
@@ -35,10 +38,10 @@ impl CPU {
           ArithmeticTarget::C => {
             // TODO: implement ADD on register C
           }
-          _ => // TODO: support more targets
+          _ => { /* TODO: support more targets */ }
         }
       }
-      _ => // TODO: support more instructions
+      _ => { /* TODO: support more instructions */ }
     }
   }
 }
@@ -53,6 +56,11 @@ We now have the boiler plate for figuring out which instruction and which target
 Let's implement it with C as the target register:
 
 ```rust,noplaypen
+# struct Registers { a:u8, c: u8 }
+# struct CPU { registers: Registers }
+# enum Instruction { ADD(ArithmeticTarget), }
+# enum ArithmeticTarget { A, B, C, D, E, H, L, }
+impl CPU {
   fn execute(&mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) => {
@@ -62,18 +70,19 @@ Let's implement it with C as the target register:
             let new_value = self.add(value);
             self.registers.a = new_value;
           }
-          _ => // TODO: support more targets
+          _ => { /* TODO: support more targets */ }
         }
-        _ => // TODO: support more instructions
       }
+      _ => { /* TODO: support more instructions */ }
     }
   }
 
-  fn add(&mut self, value: u8) {
+  fn add(&mut self, value: u8) -> u8 {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     // TODO: set flags
     new_value
   }
+}
 ```
 
 Notice that we use the `overflowing_add` method on our 8 bit value instead of `+`. This is because `+` panics in development when the result of the addition overflows. Rust forces us to be explicit about the behaivor we want, we chose `overflowing_add` because it properly overflows the value, and it informs us if the addition actually resulted in an overflow or not. This will be important information for when we update the flags register.
@@ -85,7 +94,7 @@ There are four flags defined on the flags register:
 * Subtract: set to true if the operation was a subtraction.
 * Carry: set to true if the operation resulted in an overflow.
 * Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elemetry arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.
-  ```
+  ```ignore
         lower nibble            lower nibble
            ┌--┐                    ┌--┐
       1000 1111  +   1   ==   1001 0000
@@ -98,7 +107,11 @@ There are four flags defined on the flags register:
 So let's take a look at the code:
 
 ```rust,noplaypen
-  fn add(&mut self, value: u8) {
+# struct FlagsRegister { zero: bool, subtract: bool, half_carry: bool, carry: bool }
+# struct Registers { a: u8, f: FlagsRegister }
+# struct CPU { registers: Registers }
+impl CPU {
+  fn add(&mut self, value: u8) -> u8 {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     self.registers.f.zero = new_value == 0;
     self.registers.f.subtract = false;
@@ -109,6 +122,7 @@ So let's take a look at the code:
     self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
     new_value
   }
+}
 ```
 
 ## How Do We Know?

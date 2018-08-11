@@ -10,7 +10,7 @@ Bitwise AND (&) is similiar to the boolean AND (&&) operator you're probably alr
 
 If we have two boolean values we already know how to AND them:
 
-```
+```ignore
 true  && true  == true
 false && true  == false
 true  && false == false
@@ -21,7 +21,7 @@ For bitwise operators we simply do the same operation on the the bits of two num
 
 Let's take a look at an example:
 
-```
+```ignore
   1001
 & 1100
 ------
@@ -30,7 +30,7 @@ Let's take a look at an example:
 
 Of course, we can do the same thing with hexadecimal numbers. The best way to think of these when you're getting used to them is to convert the hexadecimal number to binary and then do the AND:
 
-```
+```ignore
   0x8  1000
 & 0x3  0011
 ------ ----
@@ -45,7 +45,7 @@ Just like bitwise AND, Bitwise OR (|) is similiar to the boolean OR (||) operato
 
 If we have two boolean values we already know how to || them:
 
-```
+```ignore
 true  || true  == true
 false || true  == true
 true  || false == true
@@ -54,7 +54,7 @@ false || false == false
 
 Let's take a look at a bitwise example:
 
-```
+```ignore
   1001
 | 1100
 ------
@@ -73,7 +73,7 @@ To accomplish this first we look at the operator to see what direction we're goi
 
 Let's take a look at some examples:
 
-```
+```ignore
 1001 >> 1 == 0100
 1001 >> 2 == 0010
 1001 >> 3 == 0001
@@ -89,6 +89,6 @@ Again, if you have a number in hexadecimal notation, you can first convert it to
 
 One thing bit shifting is used for is to get the values of certain bytes in a number composed of many bytes. For example, in the following snippet, we're trying to get the value of the most significant byte:
 
-```
+```ignore
 0x1c74a3 >> 16 == 0x1c
 ```
