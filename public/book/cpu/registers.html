@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html" class="active"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html" class="active"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="../cpu/instruction_guide.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -156,7 +156,8 @@
 </code></pre>
 <p>We use the type <code>u8</code> for our registers. <code>u8</code> are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the <a href="./appendix/numbers.html">guide on numbers</a>.</p>
 <p>While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as <code>u16</code> in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these &quot;virtual&quot; 16 bit registers. These registers are refered to as &quot;af&quot; (&quot;a&quot; and &quot;f&quot; combined), &quot;bc&quot; (&quot;b&quot; and &quot;c&quot; combined), &quot;de&quot; (&quot;d&quot; and &quot;e&quot; combinded), and finally &quot;hl&quot; (&quot;h&quot; and &quot;l&quot; combined). Let's implement &quot;bc&quot;:</p>
-<pre><code class="language-rust noplaypen">impl Registers {
+<pre><code class="language-rust noplaypen"># struct Registers { a: u8, b: u8, c: u8, d: u8, e: u8, f: u8, h: u8, l: u8, }
+impl Registers {
   fn get_bc(&amp;self) -&gt; u16 {
     (self.b as u16) &lt;&lt; 8
     | self.c as u16
@@ -179,7 +180,7 @@
 <li>Bit 4: &quot;carry&quot;</li>
 </ul>
 <p>Here's a diagram of the flags register:</p>
-<pre><code>   ┌-&gt; Carry
+<pre><code class="language-ignore">   ┌-&gt; Carry
  ┌-+&gt; Subtraction
  | |
 1111 0000
@@ -197,7 +198,13 @@
 }
 </code></pre>
 <p>Since we might need to look at this register as an 8-bit number, we can implement some traits from the standard library that make this easy:</p>
-<pre><code class="language-rust noplaypen">const ZERO_FLAG_BYTE_POSITION: u8 = 7;
+<pre><code class="language-rust noplaypen"># struct FlagsRegister {
+#    zero: bool,
+#    subtract: bool,
+#    half_carry: bool,
+#    carry: bool
+# }
+const ZERO_FLAG_BYTE_POSITION: u8 = 7;
 const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
 const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
 const CARRY_FLAG_BYTE_POSITION: u8 = 4;

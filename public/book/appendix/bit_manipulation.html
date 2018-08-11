@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html" class="active"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html" class="active"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="../cpu/instruction_guide.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -142,20 +142,20 @@
 <a class="header" href="#and-" id="and-"><h2>AND (&amp;)</h2></a>
 <p>Bitwise AND (&amp;) is similiar to the boolean AND (&amp;&amp;) operator you're probably already familiar with except that it operates on each bit of a byte or set of bytes. It's important to remember that boolean values are equivalent to a single bit: 1 is true and 0 is false.</p>
 <p>If we have two boolean values we already know how to AND them:</p>
-<pre><code>true  &amp;&amp; true  == true
+<pre><code class="language-ignore">true  &amp;&amp; true  == true
 false &amp;&amp; true  == false
 true  &amp;&amp; false == false
 false &amp;&amp; false == false
 </code></pre>
 <p>For bitwise operators we simply do the same operation on the the bits of two numbers that are the same digit place. If we encounter a <code>1</code> and <code>1</code> it becomes <code>1</code>. All other combinations are <code>0</code>.</p>
 <p>Let's take a look at an example:</p>
-<pre><code>  1001
+<pre><code class="language-ignore">  1001
 &amp; 1100
 ------
   1000
 </code></pre>
 <p>Of course, we can do the same thing with hexadecimal numbers. The best way to think of these when you're getting used to them is to convert the hexadecimal number to binary and then do the AND:</p>
-<pre><code>  0x8  1000
+<pre><code class="language-ignore">  0x8  1000
 &amp; 0x3  0011
 ------ ----
   0x0  0000
@@ -164,13 +164,13 @@ false &amp;&amp; false == false
 <a class="header" href="#or-" id="or-"><h2>OR (|)</h2></a>
 <p>Just like bitwise AND, Bitwise OR (|) is similiar to the boolean OR (||) operator except that it operates on each bit of a byte or set of bytes.</p>
 <p>If we have two boolean values we already know how to || them:</p>
-<pre><code>true  || true  == true
+<pre><code class="language-ignore">true  || true  == true
 false || true  == true
 true  || false == true
 false || false == false
 </code></pre>
 <p>Let's take a look at a bitwise example:</p>
-<pre><code>  1001
+<pre><code class="language-ignore">  1001
 | 1100
 ------
   1101
@@ -181,7 +181,7 @@ false || false == false
 <p>Bit shifting is the practice of moving bits in order to different digit positions.</p>
 <p>To accomplish this first we look at the operator to see what direction we're going: <code>&lt;&lt;</code> for left and <code>&gt;&gt;</code> for right. We then take each bit and shift it over as many places as the number to the right of the operator tells us to. Any numbers that no longer fit (i.e. they've been shift off the edge of the number) disappear. All digit places that are left empty by the shifting get replaced by 0s.</p>
 <p>Let's take a look at some examples:</p>
-<pre><code>1001 &gt;&gt; 1 == 0100
+<pre><code class="language-ignore">1001 &gt;&gt; 1 == 0100
 1001 &gt;&gt; 2 == 0010
 1001 &gt;&gt; 3 == 0001
 1001 &gt;&gt; 4 == 0000
@@ -193,7 +193,7 @@ false || false == false
 </code></pre>
 <p>Again, if you have a number in hexadecimal notation, you can first convert it to binary and go bit by bit.</p>
 <p>One thing bit shifting is used for is to get the values of certain bytes in a number composed of many bytes. For example, in the following snippet, we're trying to get the value of the most significant byte:</p>
-<pre><code>0x1c74a3 &gt;&gt; 16 == 0x1c
+<pre><code class="language-ignore">0x1c74a3 &gt;&gt; 16 == 0x1c
 </code></pre>
 
                     </main>

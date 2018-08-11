@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li></ol></li><li><a href="appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="cpu/instruction_guide.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -185,7 +185,9 @@
 </blockquote>
 <p>Now that we have a small overview of the pieces we'll be talking about, let's take a closer look at the CPU!</p>
 <a class="header" href="#cpu" id="cpu"><h1>CPU</h1></a>
-<p>As we've said previously, the CPU is responsible for many different things. In the following chapters, we'll be exploring how the CPU executes instructions as well as how it talks to computer memory.</p>
+<p>The Game Boy's CPU is a custom chip called the Sharp LR35902. The chip is very similar to the much more popular <a href="https://en.wikipedia.org/wiki/Intel_8080">Intel 8080</a> and the <a href="https://en.wikipedia.org/wiki/Zilog_Z80">Zilog Z80</a>. The 8080 was used by lots of different computers in the 70s and 80s including the very first comercially successful personal computer the <a href="https://en.wikipedia.org/wiki/Altair_8800">Altair 8800</a>. The Z80 was also a very popular chip being used in many home electronic devices including in many Sega home consoles such as the Master System and the Sega Genesis/Mega Drive.</p>
+<p>We won't go into the specifics of what makes the LR35902 different from the Intel 8080 or Z80, but in general it's good to know that a large portion of what we'll learn about this custom chip will be applicable to other popular chips from yesteryear.</p>
+<p>In the next few sections we'll be looking at the different CPU instructions that the LR35902 can execute as long with how it reads instructions from memory, decodes them and updates its internal state as well as the contents of memory and different I/O devices.</p>
 <a class="header" href="#cpu-registers" id="cpu-registers"><h1>CPU Registers</h1></a>
 <p>In the previous chapter we outlined some of things that the CPU is responsible for. In this chapter we'll be focusing on just one of them: saving small amounts of data into registers.</p>
 <a class="header" href="#overview" id="overview"><h2>Overview</h2></a>
@@ -206,7 +208,8 @@
 </code></pre>
 <p>We use the type <code>u8</code> for our registers. <code>u8</code> are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the <a href="./appendix/numbers.html">guide on numbers</a>.</p>
 <p>While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as <code>u16</code> in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these &quot;virtual&quot; 16 bit registers. These registers are refered to as &quot;af&quot; (&quot;a&quot; and &quot;f&quot; combined), &quot;bc&quot; (&quot;b&quot; and &quot;c&quot; combined), &quot;de&quot; (&quot;d&quot; and &quot;e&quot; combinded), and finally &quot;hl&quot; (&quot;h&quot; and &quot;l&quot; combined). Let's implement &quot;bc&quot;:</p>
-<pre><code class="language-rust noplaypen">impl Registers {
+<pre><code class="language-rust noplaypen"># struct Registers { a: u8, b: u8, c: u8, d: u8, e: u8, f: u8, h: u8, l: u8, }
+impl Registers {
   fn get_bc(&amp;self) -&gt; u16 {
     (self.b as u16) &lt;&lt; 8
     | self.c as u16
@@ -229,7 +232,7 @@
 <li>Bit 4: &quot;carry&quot;</li>
 </ul>
 <p>Here's a diagram of the flags register:</p>
-<pre><code>   ┌-&gt; Carry
+<pre><code class="language-ignore">   ┌-&gt; Carry
  ┌-+&gt; Subtraction
  | |
 1111 0000
@@ -247,7 +250,13 @@
 }
 </code></pre>
 <p>Since we might need to look at this register as an 8-bit number, we can implement some traits from the standard library that make this easy:</p>
-<pre><code class="language-rust noplaypen">const ZERO_FLAG_BYTE_POSITION: u8 = 7;
+<pre><code class="language-rust noplaypen"># struct FlagsRegister {
+#    zero: bool,
+#    subtract: bool,
+#    half_carry: bool,
+#    carry: bool
+# }
+const ZERO_FLAG_BYTE_POSITION: u8 = 7;
 const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
 const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
 const CARRY_FLAG_BYTE_POSITION: u8 = 4;
@@ -297,7 +306,10 @@ enum ArithmeticTarget {
 </code></pre>
 <a class="header" href="#executing-the-instruction" id="executing-the-instruction"><h3>Executing the Instruction</h3></a>
 <p>Ok, now that we have ths instruction, we'll need a way to execute it. Let's create a method on CPU that takes an instruction and executes it. This method will take a mutable reference to the CPU since instructions always mutate the CPU's state. The method will also take the instruction it will execute. We'll pattern match on the instruction and the target register, and then we'll do the appropriate action according to the instruction and the register:</p>
-<pre><code class="language-rust noplaypen">impl CPU {
+<pre><code class="language-rust noplaypen"># struct CPU {}
+# enum Instruction { ADD(ArithmeticTarget), }
+# enum ArithmeticTarget { A, B, C, D, E, H, L, }
+impl CPU {
   fn execute(&amp;mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) =&gt; {
@@ -305,10 +317,10 @@ enum ArithmeticTarget {
           ArithmeticTarget::C =&gt; {
             // TODO: implement ADD on register C
           }
-          _ =&gt; // TODO: support more targets
+          _ =&gt; { /* TODO: support more targets */ }
         }
       }
-      _ =&gt; // TODO: support more instructions
+      _ =&gt; { /* TODO: support more instructions */ }
     }
   }
 }
@@ -321,7 +333,12 @@ enum ArithmeticTarget {
 <li>Write the updated value to the A register</li>
 </ul>
 <p>Let's implement it with C as the target register:</p>
-<pre><code class="language-rust noplaypen">  fn execute(&amp;mut self, instruction: Instruction) {
+<pre><code class="language-rust noplaypen"># struct Registers { a:u8, c: u8 }
+# struct CPU { registers: Registers }
+# enum Instruction { ADD(ArithmeticTarget), }
+# enum ArithmeticTarget { A, B, C, D, E, H, L, }
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) =&gt; {
         match target {
@@ -330,18 +347,19 @@ enum ArithmeticTarget {
             let new_value = self.add(value);
             self.registers.a = new_value;
           }
-          _ =&gt; // TODO: support more targets
+          _ =&gt; { /* TODO: support more targets */ }
         }
-        _ =&gt; // TODO: support more instructions
       }
+      _ =&gt; { /* TODO: support more instructions */ }
     }
   }
 
-  fn add(&amp;mut self, value: u8) {
+  fn add(&amp;mut self, value: u8) -&gt; u8 {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     // TODO: set flags
     new_value
   }
+}
 </code></pre>
 <p>Notice that we use the <code>overflowing_add</code> method on our 8 bit value instead of <code>+</code>. This is because <code>+</code> panics in development when the result of the addition overflows. Rust forces us to be explicit about the behaivor we want, we chose <code>overflowing_add</code> because it properly overflows the value, and it informs us if the addition actually resulted in an overflow or not. This will be important information for when we update the flags register.</p>
 <a class="header" href="#setting-flags" id="setting-flags"><h3>Setting Flags</h3></a>
@@ -358,7 +376,7 @@ enum ArithmeticTarget {
 </li>
 <li>
 <p>Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elemetry arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.</p>
-<pre><code>      lower nibble            lower nibble
+<pre><code class="language-ignore">      lower nibble            lower nibble
          ┌--┐                    ┌--┐
     1000 1111  +   1   ==   1001 0000
     └--┘                    └--┘
@@ -368,7 +386,11 @@ upper nibble            upper nibble
 </li>
 </ul>
 <p>So let's take a look at the code:</p>
-<pre><code class="language-rust noplaypen">  fn add(&amp;mut self, value: u8) {
+<pre><code class="language-rust noplaypen"># struct FlagsRegister { zero: bool, subtract: bool, half_carry: bool, carry: bool }
+# struct Registers { a: u8, f: FlagsRegister }
+# struct CPU { registers: Registers }
+impl CPU {
+  fn add(&amp;mut self, value: u8) -&gt; u8 {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     self.registers.f.zero = new_value == 0;
     self.registers.f.subtract = false;
@@ -379,9 +401,10 @@ upper nibble            upper nibble
     self.registers.f.half_carry = (self.registers.a &amp; 0xF) + (value &amp; 0xF) &gt; 0xF;
     new_value
   }
+}
 </code></pre>
 <a class="header" href="#how-do-we-know" id="how-do-we-know"><h2>How Do We Know?</h2></a>
-<p>Yout might be wondering, &quot;how do we know what to do given a certain the instruction&quot;. The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a &quot;data sheet&quot;),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions <a href="TODO">in the instruction guide</a>.</p>
+<p>Yout might be wondering, &quot;how do we know what to do given a certain the instruction&quot;. The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a &quot;data sheet&quot;),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions <a href="./instruction_guide.html">in the instruction guide</a>.</p>
 <blockquote>
 <p><em>Side Note</em></p>
 <p>Most CPU instructions that deal with register data manipulate that data through various bitwise operations. If the likes of logical shifts and bitwise ands aren't super clear to you, check out the <a href="./appendix/bit_manipulation.html">guide on bit manipulation</a>.</p>
@@ -500,20 +523,20 @@ Ten    &quot;1010&quot;</p>
 <a class="header" href="#and-" id="and-"><h2>AND (&amp;)</h2></a>
 <p>Bitwise AND (&amp;) is similiar to the boolean AND (&amp;&amp;) operator you're probably already familiar with except that it operates on each bit of a byte or set of bytes. It's important to remember that boolean values are equivalent to a single bit: 1 is true and 0 is false.</p>
 <p>If we have two boolean values we already know how to AND them:</p>
-<pre><code>true  &amp;&amp; true  == true
+<pre><code class="language-ignore">true  &amp;&amp; true  == true
 false &amp;&amp; true  == false
 true  &amp;&amp; false == false
 false &amp;&amp; false == false
 </code></pre>
 <p>For bitwise operators we simply do the same operation on the the bits of two numbers that are the same digit place. If we encounter a <code>1</code> and <code>1</code> it becomes <code>1</code>. All other combinations are <code>0</code>.</p>
 <p>Let's take a look at an example:</p>
-<pre><code>  1001
+<pre><code class="language-ignore">  1001
 &amp; 1100
 ------
   1000
 </code></pre>
 <p>Of course, we can do the same thing with hexadecimal numbers. The best way to think of these when you're getting used to them is to convert the hexadecimal number to binary and then do the AND:</p>
-<pre><code>  0x8  1000
+<pre><code class="language-ignore">  0x8  1000
 &amp; 0x3  0011
 ------ ----
   0x0  0000
@@ -522,13 +545,13 @@ false &amp;&amp; false == false
 <a class="header" href="#or-" id="or-"><h2>OR (|)</h2></a>
 <p>Just like bitwise AND, Bitwise OR (|) is similiar to the boolean OR (||) operator except that it operates on each bit of a byte or set of bytes.</p>
 <p>If we have two boolean values we already know how to || them:</p>
-<pre><code>true  || true  == true
+<pre><code class="language-ignore">true  || true  == true
 false || true  == true
 true  || false == true
 false || false == false
 </code></pre>
 <p>Let's take a look at a bitwise example:</p>
-<pre><code>  1001
+<pre><code class="language-ignore">  1001
 | 1100
 ------
   1101
@@ -539,7 +562,7 @@ false || false == false
 <p>Bit shifting is the practice of moving bits in order to different digit positions.</p>
 <p>To accomplish this first we look at the operator to see what direction we're going: <code>&lt;&lt;</code> for left and <code>&gt;&gt;</code> for right. We then take each bit and shift it over as many places as the number to the right of the operator tells us to. Any numbers that no longer fit (i.e. they've been shift off the edge of the number) disappear. All digit places that are left empty by the shifting get replaced by 0s.</p>
 <p>Let's take a look at some examples:</p>
-<pre><code>1001 &gt;&gt; 1 == 0100
+<pre><code class="language-ignore">1001 &gt;&gt; 1 == 0100
 1001 &gt;&gt; 2 == 0010
 1001 &gt;&gt; 3 == 0001
 1001 &gt;&gt; 4 == 0000
@@ -551,9 +574,371 @@ false || false == false
 </code></pre>
 <p>Again, if you have a number in hexadecimal notation, you can first convert it to binary and go bit by bit.</p>
 <p>One thing bit shifting is used for is to get the values of certain bytes in a number composed of many bytes. For example, in the following snippet, we're trying to get the value of the most significant byte:</p>
-<pre><code>0x1c74a3 &gt;&gt; 16 == 0x1c
+<pre><code class="language-ignore">0x1c74a3 &gt;&gt; 16 == 0x1c
 </code></pre>
 <a class="header" href="#resources" id="resources"><h1>Resources</h1></a>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DMG-01: Instruction Guide</title>
+    <link rel="stylesheet" href="instruction_guide.css">
+  </head>
+  <body>
+    <div>
+      <header class="header">
+        <div class="title">
+          Instruction Guide
+        </div>
+        <table id="instruction-table">
+          <tr>
+            <th></th>
+            <th>0x0</th>
+            <th>0x1</th>
+            <th>0x2</th>
+            <th>0x3</th>
+            <th>0x4</th>
+            <th>0x5</th>
+            <th>0x6</th>
+            <th>0x7</th>
+            <th>0x8</th>
+            <th>0x9</th>
+            <th>0xa</th>
+            <th>0xb</th>
+            <th>0xc</th>
+            <th>0xd</th>
+            <th>0xe</th>
+            <th>0xf</th>
+          </tr>
+          <tr>
+            <th>0x0</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x1</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x2</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x3</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x4</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x5</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x6</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x7</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x8</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th><a href="#ADD">ADD</a></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0x9</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xa</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xb</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xc</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xd</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xe</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+          <tr>
+            <th>0xf</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </table>
+      </header>
+      <div id="instructions-list">
+        <div class="heading">Arithmetic Instructions</div>
+        <div id="ADD">
+          <div>ADD</div>
+          <div class="quick-view">
+            <div class="row">
+              <div>1</div>
+              <div>4</div>
+            </div>
+            <div class="row">
+              <div>?</div>
+              <div>0</div>
+              <div>?</div>
+              <div>?</div>
+            </div>
+          </div>
+          <div>Playground</div>
+          <div class="playground">
+          </div>
+        </div>
+      </div>
+  </body>
+</html>
 
                     </main>
 
