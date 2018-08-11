@@ -140,13 +140,15 @@ What are the other types of instructions that act on register data?
 * RLA (rotate left A register) - bit rotate A register left through the carry flag
 * RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
 * RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)
-* CPL (complement) - toggle every bit of a specific register
+* CPL (complement) - toggle every bit of the A register
 * BIT (bit test) - test to see if a specific bit of a specific register is set
 * RESET (bit reset) - set a specific bit of a specific register to 0
 * SET (bit set) - set a specific bit of a specific register to 1
 * SRL (shift right logical) - bit shift a specific register right by 1
 * RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
 * RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
+* RRC (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
+* RLC (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
 * SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
 * SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
 * SWAP (swap nibbles) - switch upper and lower nibble of a specific register
