@@ -1,0 +1,43 @@
+body {
+  font-family: "Open Sans", sans-serif;
+  color: #333;
+}
+.header {
+  text-align: center;
+  margin: 40px 0;
+}
+.hero {
+  max-width: 500px;
+}
+.title {
+  display: block;
+  margin: 20px auto;
+}
+.subtitle {
+  font-size: 28px;
+  font-weight: 300;
+}
+.description {
+  text-align: center;
+  line-height: 25px;
+  font-weight: 300;
+}
+a:link {
+    text-decoration: inherit;
+    color: inherit;
+}
+a:visited {
+    text-decoration: inherit;
+    color: inherit;
+}
+
+.button {
+  background: #400aa7;
+  color: #fff;
+  padding: 12px;
+  width: 120px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 18px;
+  margin: 40px auto;
+}
