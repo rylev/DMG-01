@@ -10,7 +10,7 @@ use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,B
 /// The following are macros for generating repetitive code needed for processing CPU
 /// instructions. For more information on macros read [the chapter in the Rust book](https://doc.rust-lang.org/book/second-edition/appendix-04-macros.html).
 
-/// Macro for changing the CPU based on the value of a 8 bit register
+// Macro for changing the CPU based on the value of a 8 bit register
 macro_rules! manipulate_8bit_register {
     // Macro pattern for getting a value from a register and doing some work on that value
     //
@@ -217,20 +217,71 @@ macro_rules! prefix_instruction {
     };
 }
 
+const ROM_BANK_0_SIZE: usize = 0x3fff;
+const ROM_BANK_0_END: usize = 0x3fff;
+struct MemoryBus {
+    rom_bank_0: [u8; ROM_BANK_0_SIZE]
+}
+
+impl MemoryBus {
+    pub fn new() -> MemoryBus {
+        MemoryBus {
+            rom_bank_0: [0; ROM_BANK_0_SIZE]
+        }
+    }
+    pub fn read_byte(&self, address: u16) -> u8 {
+        let address = address as usize;
+        if address < ROM_BANK_0_END {
+            self.rom_bank_0[address]
+        } else {
+            panic!("Reading from unkown part of memory at address #{address}")
+        }
+    }
+}
+
 pub struct CPU {
-    registers: Registers
+    registers: Registers,
+    pc: u16,
+    bus: MemoryBus,
 }
 
 impl CPU {
     pub fn new() -> CPU {
         CPU {
-            registers: Registers::new()
+            registers: Registers::new(),
+            pc: 0x0,
+            bus: MemoryBus::new(),
         }
     }
 
-    fn execute(&mut self, instruction: Instruction) {
+    fn step(&mut self) {
+        let mut instruction_byte = self.bus.read_byte(self.pc);
+
+        let prefixed = instruction_byte == 0xCB;
+        if prefixed {
+            instruction_byte = self.bus.read_byte(self.pc + 1);
+        }
+
+        let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+            self.execute(instruction)
+        } else {
+            let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
+            panic!("Unkown instruction found for: {}", description)
+        };
+
+        self.pc = next_pc;
+    }
+
+    fn execute(&mut self, instruction: Instruction) -> u16 {
         match instruction {
             Instruction::INC(register) => {
+                // DESCRIPTION: (increment) - increment the value in a specific register by 1
+                // WHEN: target is 16 bit register
+                // PC: +1
+                // Z:- S:- H:- C:-
+                // ELSE:
+                // PC: +1
+                // Z:? S:0 H:? C:-
                 match register {
                     // 8 bit target
                     IncDecTarget::A => manipulate_8bit_register!(self: a => inc_8bit => a),
@@ -245,8 +296,16 @@ impl CPU {
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl),
                 }
+                self.pc.wrapping_add(1)
             },
             Instruction::DEC(register) => {
+                // DESCRIPTION: (decrement) - decrement the value in a specific register by 1
+                // WHEN: target is 16 bit register
+                // PC: +1
+                // Z:- S:- H:- C:-
+                // ELSE:
+                // PC: +1
+                // Z:? S:0 H:? C:-
                 match register {
                     // 8 bit target
                     IncDecTarget::A => manipulate_8bit_register!(self: a => dec_8bit => a),
@@ -261,88 +320,201 @@ impl CPU {
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl),
                 }
+                self.pc.wrapping_add(1)
             },
             Instruction::ADD(register) => {
+                // DESCRIPTION: (add) - add the value stored in a specific register
+                // with the value in the A register
+                // PC:+1
+                // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_without_carry => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::ADC(register) => {
+                // DESCRIPTION: (add with carry) - add the value stored in a specific
+                // register with the value in the A register and the value in the carry flag
+                // PC:+1
+                // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_with_carry => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::SUB(register) => {
+                // DESCRIPTION: (subtract) - subtract the value stored in a specific register
+                // with the value in the A register
+                // PC:+1
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_without_carry => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::SBC(register) => {
+                // DESCRIPTION: (subtract) - subtract the value stored in a specific register
+                // with the value in the A register and the value in the carry flag
+                // PC:+1
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_with_carry => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::AND(register) => {
+                // DESCRIPTION: (AND) - do a bitwise and on the value in a specific
+                // register and the value in the A register
+                // PC:+1
+                // Z:? S:0 H:1 C:0
                 arithmetic_instruction!(register, self.and => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::OR(register) => {
+                // DESCRIPTION: (OR) - do a bitwise or on the value in a specific
+                // register and the value in the A register
+                // PC:+1
+                // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.or => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::XOR(register) => {
+                // DESCRIPTION: (XOR) - do a bitwise xor on the value in a specific
+                // register and the value in the A register
+                // PC:+1
+                // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.xor => a);
+                self.pc.wrapping_add(1)
             },
             Instruction::CP(register) => {
+                // DESCRIPTION: (compare) - just like SUB except the result of the
+                // subtraction is not stored back into A
+                // PC:+1
+                // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.compare);
+                self.pc.wrapping_add(1)
             },
             Instruction::CCF => {
-                self.registers.f.carry = !self.registers.f.carry;
-                self.registers.f.half_carry = false;
+                // DESCRIPTION: (complement carry flag) - toggle the value of the carry flag
+                // PC:+1
+                // Z:- S:0 H:0 C:?
                 self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+                self.registers.f.carry = !self.registers.f.carry;
+                self.pc.wrapping_add(1)
             }
             Instruction::SCF => {
-                self.registers.f.carry = true;
-                self.registers.f.half_carry = false;
+                // DESCRIPTION: (set carry flag) - set the carry flag to true
+                // PC:+1
+                // Z:- S:0 H:0 C:1
                 self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+                self.registers.f.carry = true;
+                self.pc.wrapping_add(1)
             }
             Instruction::RRA => {
+                // DESCRIPTION: (rotate right A register) - bit rotate A register right through the carry flag
+                // PC:+1
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_through_carry_retain_zero => a);
+                self.pc.wrapping_add(1)
             }
             Instruction::RLA => {
+                // DESCRIPTION: (rotate left A register) - bit rotate A register left through the carry flag
+                // PC:+1
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_through_carry_retain_zero => a);
+                self.pc.wrapping_add(1)
             }
             Instruction::RRCA => {
+                // DESCRIPTION: (rotate right A register) - bit rotate A register right (not through the carry flag)
+                // PC:+1
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
+                self.pc.wrapping_add(1)
             }
             Instruction::RLCA => {
+                // DESCRIPTION: (rotate left A register) - bit rotate A register left (not through the carry flag)
+                // PC:+1
+                // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
+                self.pc.wrapping_add(1)
             }
             Instruction::CPL => {
+                // DESCRIPTION: (complement) - toggle every bit of the A register
+                // PC:+1
+                // Z:- S:1 H:1 C:-
                 manipulate_8bit_register!(self: a => complement => a);
+                self.pc.wrapping_add(1)
             }
             Instruction::BIT(register, bit_position) => {
+                // DESCRIPTION: (bit test) - test to see if a specific bit of a specific register is set
+                // PC:+2
+                // Z:? S:0 H:1 C:-
                 prefix_instruction!(register, self.bit_test @ bit_position);
+                self.pc.wrapping_add(2)
             }
             Instruction::RES(register, bit_position) => {
+                // DESCRIPTION: (bit reset) - set a specific bit of a specific register to 0
+                // PC:+2
+                // Z:- S:- H:- C:-
                 prefix_instruction!(register, (self.reset_bit @ bit_position) => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::SET(register, bit_position) => {
+                // DESCRIPTION: (bit set) - set a specific bit of a specific register to 1
+                // PC:+2
+                // Z:- S:- H:- C:-
                 prefix_instruction!(register, (self.set_bit @ bit_position) => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::SRL(register) => {
+                // DESCRIPTION: (shift right logical) - bit shift a specific register right by 1
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_right_logical => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::RR(register) => {
+                // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 through the carry flag
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_right_through_carry_set_zero => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::RL(register) => {
+                // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 through the carry flag
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_left_through_carry_set_zero => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::RRC(register) => {
+                // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 (not through the carry flag)
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_right_set_zero => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::RLC(register) => {
+                // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 (not through the carry flag)
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.rotate_left_set_zero => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::SRA(register) => {
+                // DESCRIPTION: (shift right arithmetic) - arithmetic shift a specific register right by 1
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_right_arithmetic => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::SLA(register) => {
+                // DESCRIPTION: (shift left arithmetic) - arithmetic shift a specific register left by 1
+                // PC:+2
+                // Z:? S:0 H:0 C:?
                 prefix_instruction!(register, self.shift_left_arithmetic => reg);
+                self.pc.wrapping_add(2)
             }
             Instruction::SWAP(register) => {
+                // DESCRIPTION: switch upper and lower nibble of a specific register
+                // PC:+2
+                // Z:? S:0 H:0 C:0
                 prefix_instruction!(register, self.swap_nibbles => reg);
+                self.pc.wrapping_add(2)
             }
         }
     }
@@ -1100,5 +1272,25 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0b0101_1011);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // -----------------------------------------------------------------------------
+
+    // Step
+    #[test]
+    fn test_step() {
+        let mut cpu = CPU::new();
+        cpu.bus.rom_bank_0[0] = 0x23; //INC(HL)
+        cpu.bus.rom_bank_0[1] = 0xB5; //OR(L)
+        cpu.bus.rom_bank_0[2] = 0xCB; //PREFIX
+        cpu.bus.rom_bank_0[3] = 0xe8; //SET(B, 5)
+        for _ in 0..3 {
+            cpu.step();
+        }
+
+        assert_eq!(cpu.registers.h, 0b0);
+        assert_eq!(cpu.registers.l, 0b1);
+        assert_eq!(cpu.registers.a, 0b1);
+        assert_eq!(cpu.registers.b, 0b0010_0000);
     }
 }

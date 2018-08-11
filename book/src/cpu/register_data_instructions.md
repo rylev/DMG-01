@@ -12,7 +12,7 @@ First we need to define the instruction. We'll get into how the game code actual
 
 The first thing to do is to define an enum called `Instruction`. This enum will be the central place where all of our instructions will be defined. Our `ADD` instruction needs to include information on which register they're targeting so we'll make sure to include it by associating the instruction with `ArithmeticTarget` enum that specifies the target register. `ADD` can target all of the 8 bit registers except f.
 
-```rust
+```rust,noplaypen
 enum Instruction {
   ADD(ArithmeticTarget),
 }
@@ -26,9 +26,8 @@ enum ArithmeticTarget {
 
 Ok, now that we have ths instruction, we'll need a way to execute it. Let's create a method on CPU that takes an instruction and executes it. This method will take a mutable reference to the CPU since instructions always mutate the CPU's state. The method will also take the instruction it will execute. We'll pattern match on the instruction and the target register, and then we'll do the appropriate action according to the instruction and the register:
 
-```rust
+```rust,noplaypen
 impl CPU {
-  ...
   fn execute(&mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) => {
@@ -42,7 +41,6 @@ impl CPU {
       _ => // TODO: support more instructions
     }
   }
-  ...
 }
 ```
 
@@ -54,8 +52,8 @@ We now have the boiler plate for figuring out which instruction and which target
 
 Let's implement it with C as the target register:
 
-```rust
-...
+```rust,noplaypen
+  fn execute(&mut self, instruction: Instruction) {
     match instruction {
       Instruction::ADD(target) => {
         match target {
@@ -69,13 +67,13 @@ Let's implement it with C as the target register:
         _ => // TODO: support more instructions
       }
     }
-...
+  }
+
   fn add(&mut self, value: u8) {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     // TODO: set flags
     new_value
   }
-...
 ```
 
 Notice that we use the `overflowing_add` method on our 8 bit value instead of `+`. This is because `+` panics in development when the result of the addition overflows. Rust forces us to be explicit about the behaivor we want, we chose `overflowing_add` because it properly overflows the value, and it informs us if the addition actually resulted in an overflow or not. This will be important information for when we update the flags register.
@@ -99,8 +97,7 @@ There are four flags defined on the flags register:
 
 So let's take a look at the code:
 
-```rust
-...
+```rust,noplaypen
   fn add(&mut self, value: u8) {
     let (new_value, did_overflow) = self.registers.a.overflowing_add(value);
     self.registers.f.zero = new_value == 0;
@@ -112,7 +109,6 @@ So let's take a look at the code:
     self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
     new_value
   }
-...
 ```
 
 ## How Do We Know?
@@ -125,31 +121,33 @@ Yout might be wondering, "how do we know what to do given a certain the instruct
 
 What are the other types of instructions that act on register data?
 
-* ADC (add with carry) - just like ADD except that the value of the carry flag is also added to the number
-* SUB (subtract) - subtract the value stored in a specific register with the value in the A register
-* SBC (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number
-* AND (logical and) - do a bitwise and on the value in a specific register and the value in the A register
-* OR (logical or) - do a bitwise or on the value in a specific register and the value in the A register
-* XOR (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
-* CP (compare) - just like SUB except the result of the subtraction is not stored back into A
-* INC (increment) - increment the value in a specific register by 1
-* DEC (decrement) - decrement the value in a specific register by 1
-* CCF (complement carry flag) - toggle the value of the carry flag
-* SCF (set carry flag) - set the carry flag to true
-* RRA (rotate right A register) - bit rotate A register right through the carry flag
-* RLA (rotate left A register) - bit rotate A register left through the carry flag
-* RRCA (rotate right A register) - bit rotate A register right (not through the carry flag)
-* RRLA (rotate left A register) - bit rotate A register left (not through the carry flag)
-* CPL (complement) - toggle every bit of a specific register
-* BIT (bit test) - test to see if a specific bit of a specific register is set
-* RESET (bit reset) - set a specific bit of a specific register to 0
-* SET (bit set) - set a specific bit of a specific register to 1
-* SRL (shift right logical) - bit shift a specific register right by 1
-* RR (rotate right) - bit rotate a specific register right by 1 through the carry flag
-* RL (rotate left) - bit rotate a specific register left by 1 through the carry flag
-* SRA (shift right arithmetic) - arithmetic shift a specific register right by 1
-* SLA (shift left arithmetic) - arithmetic shift a specific register left by 1
-* SWAP (swap nibbles) - switch upper and lower nibble of a specific register
+* **ADC** (add with carry) - just like ADD except that the value of the carry flag is also added to the number
+* **SUB** (subtract) - subtract the value stored in a specific register with the value in the A register
+* **SBC** (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number
+* **AND** (logical and) - do a bitwise and on the value in a specific register and the value in the A register
+* **OR** (logical or) - do a bitwise or on the value in a specific register and the value in the A register
+* **XOR** (logical xor) - do a bitwise xor on the value in a specific register and the value in the A register
+* **CP** (compare) - just like SUB except the result of the subtraction is not stored back into A
+* **INC** (increment) - increment the value in a specific register by 1
+* **DEC** (decrement) - decrement the value in a specific register by 1
+* **CCF** (complement carry flag) - toggle the value of the carry flag
+* **SCF** (set carry flag) - set the carry flag to true
+* **RRA** (rotate right A register) - bit rotate A register right through the carry flag
+* **RLA** (rotate left A register) - bit rotate A register left through the carry flag
+* **RRCA** (rotate right A register) - bit rotate A register right (not through the carry flag)
+* **RRLA** (rotate left A register) - bit rotate A register left (not through the carry flag)
+* **CPL** (complement) - toggle every bit of the A register
+* **BIT** (bit test) - test to see if a specific bit of a specific register is set
+* **RESET** (bit reset) - set a specific bit of a specific register to 0
+* **SET** (bit set) - set a specific bit of a specific register to 1
+* **SRL** (shift right logical) - bit shift a specific register right by 1
+* **RR** (rotate right) - bit rotate a specific register right by 1 through the carry flag
+* **RL** (rotate left) - bit rotate a specific register left by 1 through the carry flag
+* **RRC** (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
+* **RLC** (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
+* **SRA** (shift right arithmetic) - arithmetic shift a specific register right by 1
+* **SLA** (shift left arithmetic) - arithmetic shift a specific register left by 1
+* **SWAP** (swap nibbles) - switch upper and lower nibble of a specific register
 
 Reading through the guide on instructions, should give you enough information to implement all the instructions yourself.
 

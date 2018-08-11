@@ -3,5 +3,6 @@ authors = ["Ryan Levick"]
 multilingual = false
 src = "src"
 title = "DMG-01: How to Emulate a Game Boy"
+
 [output.html]
-theme = "src/theme"
+theme = "theme"

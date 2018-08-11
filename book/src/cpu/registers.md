@@ -12,7 +12,7 @@ The CPU is composed of 8 different "registers". Registers are responsible for ho
 
 Let's get started building our CPU by specing out the registers in code:
 
-```rust
+```rust,noplaypen
 struct Registers {
   a: u8,
   b: u8,
@@ -29,7 +29,7 @@ We use the type `u8` for our registers. `u8` are 8-bit unsigned integers. For a 
 
 While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as `u16` in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these "virtual" 16 bit registers. These registers are refered to as "af" ("a" and "f" combined), "bc" ("b" and "c" combined), "de" ("d" and "e" combinded), and finally "hl" ("h" and "l" combined). Let's implement "bc":
 
-```rust
+```rust,noplaypen
 impl Registers {
   fn get_bc(&self) -> u16 {
     (self.b as u16) << 8
@@ -70,7 +70,7 @@ So while we could continue modeling our flags register as a simple 8-bit number 
 
 For this reason we'll make a struct called the `FlagsRegister`:
 
-```rust
+```rust,noplaypen
 struct FlagsRegister {
     zero: bool,
     subtract: bool,
@@ -81,7 +81,7 @@ struct FlagsRegister {
 
 Since we might need to look at this register as an 8-bit number, we can implement some traits from the standard library that make this easy:
 
-```rust
+```rust,noplaypen
 const ZERO_FLAG_BYTE_POSITION: u8 = 7;
 const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
 const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
