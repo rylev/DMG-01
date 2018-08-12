@@ -36,3 +36,11 @@ function rowClassName(fullClassName) {
   const regex = /row\d{1,2}/
   return fullClassName.match(regex)[0]
 }
+
+wasm_bindgen('./cpu_js_bg.wasm')
+        .then(() => {
+          const cpu = new wasm_bindgen.CPU()
+          cpu.set_register(wasm_bindgen.Register.A, 9)
+          const newCpu = wasm_bindgen.add(cpu, wasm_bindgen.A)
+          console.log(newCpu.to_json())
+        });

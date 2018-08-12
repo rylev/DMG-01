@@ -239,9 +239,11 @@ impl MemoryBus {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct CPU {
-    registers: Registers,
+    pub registers: Registers,
     pc: u16,
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     bus: MemoryBus,
 }
 
@@ -272,7 +274,7 @@ impl CPU {
         self.pc = next_pc;
     }
 
-    fn execute(&mut self, instruction: Instruction) -> u16 {
+    pub fn execute(&mut self, instruction: Instruction) -> u16 {
         match instruction {
             Instruction::INC(register) => {
                 // DESCRIPTION: (increment) - increment the value in a specific register by 1

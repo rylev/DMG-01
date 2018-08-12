@@ -1,6 +1,7 @@
 use std;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct FlagsRegister {
     // set if the the last operation produced a result of 0
     pub zero: bool,
