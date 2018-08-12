@@ -21,19 +21,20 @@ impl CPU {
     }
 
     pub fn set_register(&mut self, register: Register, value: u16) {
+        let mut registers = self.0.registers;
         match register {
-            Register::A => self.0.registers.a = value as u8,
-            Register::B => self.0.registers.b = value as u8,
-            Register::C => self.0.registers.c = value as u8,
-            Register::D => self.0.registers.d = value as u8,
-            Register::E => self.0.registers.e = value as u8,
-            Register::F => self.0.registers.f = (value as u8).into(),
-            Register::H => self.0.registers.h = value as u8,
-            Register::L => self.0.registers.l = value as u8,
-            Register::AF => self.0.registers.set_af(value),
-            Register::BC => self.0.registers.set_bc(value),
-            Register::DE => self.0.registers.set_de(value),
-            Register::HL => self.0.registers.set_hl(value)
+            Register::A => registers.a = value as u8,
+            Register::B => registers.b = value as u8,
+            Register::C => registers.c = value as u8,
+            Register::D => registers.d = value as u8,
+            Register::E => registers.e = value as u8,
+            Register::F => registers.f = (value as u8).into(),
+            Register::H => registers.h = value as u8,
+            Register::L => registers.l = value as u8,
+            Register::AF => registers.set_af(value),
+            Register::BC => registers.set_bc(value),
+            Register::DE => registers.set_de(value),
+            Register::HL => registers.set_hl(value)
         }
     }
 
@@ -58,6 +59,13 @@ pub fn add(cpu: CPU, target: Target) -> CPU {
     let mut cpu = cpu.0;
     let target = match target {
         Target::A => Some(dmg_01::cpu::instruction::ArithmeticTarget::A),
+        Target::B => Some(dmg_01::cpu::instruction::ArithmeticTarget::B),
+        Target::C => Some(dmg_01::cpu::instruction::ArithmeticTarget::C),
+        Target::D => Some(dmg_01::cpu::instruction::ArithmeticTarget::D),
+        Target::E => Some(dmg_01::cpu::instruction::ArithmeticTarget::E),
+        Target::H => Some(dmg_01::cpu::instruction::ArithmeticTarget::H),
+        Target::L => Some(dmg_01::cpu::instruction::ArithmeticTarget::L),
+        // TODO: think about returning error for invalid targets
         _ => None
     };
 

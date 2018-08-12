@@ -38,15 +38,16 @@ function rowClassName(fullClassName) {
 }
 
 
-function runInstruction(instruction) {
+function runInstruction(instruction, target) {
+  console.log(instruction)
   switch (instruction) {
     case 'ADD':
-      runADD()
+      runADD(target)
       return
   }
 }
 
-function runADD() {
+function runADD(target) {
   const registers = $('#ADD').find($('.cpu')).children().toArray()
   wasm_bindgen('./cpu_js_bg.wasm').then(() => {
     const cpu = new wasm_bindgen.CPU()
@@ -55,7 +56,8 @@ function runADD() {
       const value = $(registerDiv).find($('input'))[0].value
       cpu.set_register(registerName, value)
     })
-    const newCpu = wasm_bindgen.add(cpu, 0)
+    target = wasm_bindgen.Register[target]
+    const newCpu = wasm_bindgen.add(cpu, target)
     const json = newCpu.to_json()
     registers.forEach(registerDiv => {
       const registerName = registerDiv.className.replace('register-', '')
@@ -63,3 +65,36 @@ function runADD() {
     })
   });
 }
+
+const registers = ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']
+function addPlayground(instruction) {
+  const parent = $('#' + instruction)
+  const playground = $('<div/>', { class: 'playground', })
+  const cpu = $('<div/>', { class: 'cpu', }).appendTo(playground)
+
+  for (register of registers) {
+    const registerDiv = $('<div/>', {
+      class: 'register-' + register.toLowerCase(),
+    }).appendTo(cpu)
+
+    $('<p/>', { })
+      .text(register + ':')
+      .css({display:'inline'})
+      .appendTo(registerDiv)
+
+    $('<input/>', {
+      type: 'number',
+      min: 0,
+      max: 255
+    }).appendTo(registerDiv)
+  }
+
+  $('<button/>', {
+    text: 'Run',
+    click: () => { runInstruction(instruction, 'A') }
+  }).appendTo(playground)
+
+  parent.append(playground)
+}
+
+addPlayground('ADD')
