@@ -140,12 +140,22 @@ function addPlayground(instruction) {
         .css({display:'inline'})
         .appendTo(registerDiv)
     } else {
+      const preventTooBigValues = e => {
+        const currentValue = e.currentTarget.value
+        if (currentValue > 0xFF) {
+          e.currentTarget.value = 255
+        } else if (currentValue < 0) {
+          e.currentTarget.value = 0
+        }
+      }
       $('<input/>', {
         class: 'register-value',
         type: 'number',
         value: 0,
         min: 0,
-        max: 255
+        max: 255,
+        keydown: preventTooBigValues,
+        keyup: preventTooBigValues
       }).appendTo(registerDiv)
     }
   }
