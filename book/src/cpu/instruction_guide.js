@@ -48,16 +48,16 @@ function runInstruction(instruction, target) {
 
 function performInstruction(instructionName, target) {
   const instructionDiv = $('#' + instructionName.toUpperCase())
-  const cpu = getCpuForInstruction(instructionDiv, getRadixValue(instructionDiv))
+  const cpu = getCpuForInstruction(instructionDiv)
   const newCpu = wasm_bindgen[instructionName.toLowerCase()](cpu, wasm_bindgen.Register[target])
   setCpuForInstruction(instructionDiv, newCpu, getRadixValue(instructionDiv))
 }
 
-function getCpuForInstruction(instructionDiv, radix) {
+function getCpuForInstruction(instructionDiv) {
   const registerDivs = getRegisterDivs(instructionDiv)
   const cpu = new wasm_bindgen.CPU()
   registerDivs.forEach(registerDiv => {
-    setRegisterOnCpu(cpu, registerDiv, wasm_bindgen.Register, radix)
+    setRegisterOnCpu(cpu, registerDiv, wasm_bindgen.Register)
   })
   return cpu
 }
@@ -73,24 +73,25 @@ function getRadixValue(instructionDiv) {
   return instructionDiv.find($('input[name=radix]:checked'))[0].value
 }
 
-function setRegisterOnCpu(cpu, registerDiv, registerNames, currentRadixName) {
-  let registerName = registerDiv.className.replace('register-', '').toUpperCase()
+function setRegisterOnCpu(cpu, registerDiv, registerNames) {
+  const registerName = registerDiv.className.replace('register-', '').toUpperCase()
   const registerValue = $(registerDiv).find($('.register-value'))[0]
-  const valueString = registerName === 'F' ? $(registerValue).text() : registerValue.value
-  const value = parseInt(valueString, radixNameToNumber(currentRadixName))
-  registerName = registerNames[registerName]
-  cpu.set_register(registerName, value)
+  let valueString = registerName === 'F' ? $(registerValue).text() : registerValue.value
+  const radixName = valueString.includes('0b') ? 'binary' : valueString.includes('0x') ? 'hexadecimal' : 'decimal'
+  valueString = valueString.replace('0b', '').replace('0x', '')
+  const value = parseInt(valueString, radixNameToNumber(radixName))
+  cpu.set_register(registerNames[registerName], value)
 }
 
 function setRegisterDivValue(registerDiv, cpu, radixName) {
   const registerName = registerDiv.className.replace('register-', '')
   const valueDiv = $(registerDiv).find($('.register-value'))[0]
   const value = cpu.registers[registerName]
-  const valueString = value.toString(radixNameToNumber(radixName))
   if (registerName === 'f') {
+    const valueString = value.toString(radixNameToNumber(radixName))
     $(valueDiv).text(radixPrefix(radixName) + valueString)
   } else {
-    valueDiv.value = valueString
+    valueDiv.value = value.toString()
   }
 }
 
@@ -104,7 +105,13 @@ function radixPrefix(radixName) {
   }
 }
 function radixNameToNumber(radixName) {
-  return radixName === 'hexadecimal' ? 16 : radixName === 'binary' ? 2 : 10
+  if (radixName === 'hexadecimal') {
+    return 16
+  } else if (radixName === 'binary') {
+    return 2
+  } else {
+    return 10
+  }
 }
 
 function getRegisterDivs(instructionDiv) {
@@ -112,7 +119,6 @@ function getRegisterDivs(instructionDiv) {
 }
 
 const registers = ['A', 'B', 'C', 'D', 'E', 'F', 'H', 'L']
-let radixValue = 'decimal'
 function addPlayground(instruction) {
   const instructionDiv = $('#' + instruction)
   const playground = $('<div/>', { class: 'playground', })
@@ -151,8 +157,8 @@ function addPlayground(instruction) {
       value: name,
       checked: name === 'decimal',
       change: e => {
-        const cpu = getCpuForInstruction(instructionDiv, radixValue)
-        radixValue = e.currentTarget.value
+        const cpu = getCpuForInstruction(instructionDiv)
+        const radixValue = e.currentTarget.value
         setCpuForInstruction(instructionDiv, cpu, radixValue)
       }
     }).appendTo(playground)
@@ -166,7 +172,6 @@ function addPlayground(instruction) {
     text: 'Run',
     click: () => { runInstruction(instruction, 'A') }
   }).appendTo(playground)
-
 
   instructionDiv.append(playground)
 }
