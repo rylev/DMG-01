@@ -37,10 +37,22 @@ function rowClassName(fullClassName) {
   return fullClassName.match(regex)[0]
 }
 
-wasm_bindgen('./cpu_js_bg.wasm')
-        .then(() => {
-          const cpu = new wasm_bindgen.CPU()
-          cpu.set_register(wasm_bindgen.Register.A, 9)
-          const newCpu = wasm_bindgen.add(cpu, wasm_bindgen.A)
-          console.log(newCpu.to_json())
-        });
+
+function runInstruction(instruction) {
+  switch (instruction) {
+    case 'ADD':
+      runADD()
+      return
+  }
+}
+
+function runADD() {
+  wasm_bindgen('./cpu_js_bg.wasm').then(() => {
+    const cpu = new wasm_bindgen.CPU()
+    const add = document.getElementById('ADD')
+    console.log(add.getElementsByClassName('cpu')[0].getElementsByTagName('div'))
+    cpu.set_register(wasm_bindgen.Register.A, 9)
+    const newCpu = wasm_bindgen.add(cpu, wasm_bindgen.A)
+    console.log(newCpu.to_json())
+  });
+}
