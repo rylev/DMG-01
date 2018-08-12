@@ -1,6 +1,7 @@
 use super::flags_register::FlagsRegister;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct Registers {
     pub a: u8,
     pub b: u8,

@@ -4,3 +4,8 @@ version = "0.1.0"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 
 [dependencies]
+serde = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }
+
+[features]
+serialize = ["serde", "serde_derive"]
