@@ -1,7 +1,8 @@
 use std;
+#[cfg(feature = "serialize")]
+use serde::{Serialize,Serializer};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct FlagsRegister {
     // set if the the last operation produced a result of 0
     pub zero: bool,
@@ -11,6 +12,15 @@ pub struct FlagsRegister {
     pub half_carry: bool,
     // set if the result overflowed
     pub carry: bool
+}
+#[cfg(feature = "serialize")]
+impl Serialize for FlagsRegister {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u8((*self).into())
+    }
 }
 const ZERO_FLAG_BYTE_POSITION: u8 = 7;
 const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;

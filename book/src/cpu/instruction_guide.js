@@ -1,6 +1,6 @@
 const hoverStateClassName = 'hover'
 window.onload = function() {
-  const elements = document.getElementsByTagName('td')
+  const elements = $('td')
   for (element of elements) {
     element.onmouseover = function() {
       onRowAndColumn(elements, this.className, function (element) {
@@ -47,12 +47,19 @@ function runInstruction(instruction) {
 }
 
 function runADD() {
+  const registers = $('#ADD').find($('.cpu')).children().toArray()
   wasm_bindgen('./cpu_js_bg.wasm').then(() => {
     const cpu = new wasm_bindgen.CPU()
-    const add = document.getElementById('ADD')
-    console.log(add.getElementsByClassName('cpu')[0].getElementsByTagName('div'))
-    cpu.set_register(wasm_bindgen.Register.A, 9)
-    const newCpu = wasm_bindgen.add(cpu, wasm_bindgen.A)
-    console.log(newCpu.to_json())
+    registers.forEach(registerDiv => {
+      const registerName = wasm_bindgen.Register[registerDiv.className.replace('register-', '').toUpperCase()]
+      const value = $(registerDiv).find($('input'))[0].value
+      cpu.set_register(registerName, value)
+    })
+    const newCpu = wasm_bindgen.add(cpu, 0)
+    const json = newCpu.to_json()
+    registers.forEach(registerDiv => {
+      const registerName = registerDiv.className.replace('register-', '')
+      const value = $(registerDiv).find($('input'))[0].value = json.registers[registerName]
+    })
   });
 }

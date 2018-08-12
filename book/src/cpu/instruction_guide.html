@@ -361,14 +361,14 @@
             </div>
             <div class="playground">
               <div class="cpu">
-                <div class="register-a">A: <span></span></div>
-                <div class="register-b">B: <span></span></div>
-                <div class="register-c">C: <span></span></div>
-                <div class="register-d">D: <span></span></div>
-                <div class="register-e">E: <span></span></div>
-                <div class="register-f">F: <span></span></div>
-                <div class="register-h">H: <span></span></div>
-                <div class="register-l">L: <span></span></div>
+                <div class="register-a">A: <input type="number" min="0" max="255"></div>
+                <div class="register-b">B: <input type="number" min="0" max="255"></div>
+                <div class="register-c">C: <input type="number" min="0" max="255"></div>
+                <div class="register-d">D: <input type="number" min="0" max="255"></div>
+                <div class="register-e">E: <input type="number" min="0" max="255"></div>
+                <div class="register-f">F: <input type="number" min="0" max="255"></div>
+                <div class="register-h">H: <input type="number" min="0" max="255"></div>
+                <div class="register-l">L: <input type="number" min="0" max="255"></div>
               </div>
               <button onclick="runInstruction('ADD')">Run</button>
             </div>
@@ -376,6 +376,7 @@
         </div>
       </div>
   </body>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E=" crossorigin="anonymous"></script>
   <script src="cpu_js.js"></script>
   <script src="instruction_guide.js"></script>
 </html>
