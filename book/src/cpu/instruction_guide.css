@@ -23,14 +23,21 @@ body {
 }
 #instruction-table th {
   width: 45px;
-  height: 30px;
+  height: 32px;
   background: #400aa7;
+  color: #eee;
+  font-family: Montserrat-Medium;
+  font-weight: 300;
 }
 #instruction-table td {
   width: 45px;
   height: 30px;
-  background: #8bac0f;
+  background: #9bbc0f;
   font-weight: 500;
+  border: 1px solid #c3c3c3;
+}
+#instruction-table .hover {
+  background: #8bac0f;
 }
 #instruction-table td:hover {
   background: #306230;
