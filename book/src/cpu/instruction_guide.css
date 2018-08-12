@@ -10,15 +10,30 @@ body {
 
 #instruction-table {
   margin: 0 auto;
+  text-align: center;
+  border-collapse: collapse;
+}
+#instruction-table a {
+  text-decoration: none;
+  color: #fff;
+}
+#instruction-table a:visited {
+  text-decoration: none;
+  color: #fff;
 }
 #instruction-table th {
   width: 45px;
   height: 30px;
-  background: #8bac0f;
+  background: #400aa7;
 }
-#instruction-table a {
-  text-decoration: none;
-  color: #400aa7;
+#instruction-table td {
+  width: 45px;
+  height: 30px;
+  background: #8bac0f;
+  font-weight: 500;
+}
+#instruction-table td:hover {
+  background: #306230;
 }
 
 #instructions-list {
@@ -27,8 +42,22 @@ body {
 
 #instructions-list .heading {
   font-size: 30px;
+  margin: 30px 0px;
 }
 
+#instructions-list .instruction-name {
+  font-size: 22px;
+}
+
+#instructions-list .instruction-entry {
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+}
+#instructions-list .instruction-info {
+  display: flex;
+  flex-direction: row;
+}
 #instructions-list .quick-view {
   text-align: center;
   display: flex;
@@ -40,4 +69,21 @@ body {
   flex-direction: row;
   justify-content: space-around;
   width: 100px;
+}
+#instructions-list .row div {
+  font-weight: bold;
+  outline: 1px solid;
+  margin-top: 1px;
+  margin-left: 1px;
+  flex: 1;
+}
+.line {
+  height: 1px;
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 0.5em 0;
+  padding: 0;
+}
+#instructions-list .instruction-entry .description {
+  margin: 10px;
 }
