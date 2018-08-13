@@ -10,4 +10,4 @@
   - [Number Notations](./appendix/number_notations.md)
   - [Bit Manipulation](./appendix/bit_manipulation.md)
   - [Resources](./appendix/resources.md)
-  - [Instruction Guide](./cpu/instruction_guide.html)
+  - [Instruction Guide](./appendix/instruction_guide/index.html)
