@@ -12,6 +12,11 @@ const Radix = {
   Decimal: 1,
   Hexadecimal: 2
 }
+    import('dmg-01-js').then(dmg => {
+      const cpu = new dmg.CPU()
+      cpu.set_register(dmg.Register.A, 1)
+      console.log(cpu.to_json())
+    })
 
 class CPU extends React.Component {
   constructor(props) {
@@ -150,7 +155,7 @@ class CPU extends React.Component {
       case 'A':
         const cpu = this.state.cpu
         console.log(cpu)
-        cpu.set_register('A', value)
+        cpu.set_register(this.state.dmg.Register.A, value)
         console.log(cpu.to_json())
         this.setState({cpu: cpu})
         break
@@ -195,4 +200,3 @@ function toBinary(n, places = 2) {
     const padding = places - binary.length
     return `${"0".repeat(padding > 0 ? padding : 0)}${binary}`
 }
-

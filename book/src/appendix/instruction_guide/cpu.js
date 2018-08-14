@@ -161,7 +161,7 @@ var CPU =
 /******/ 				promises.push(installedWasmModuleData);
 /******/ 			else {
 /******/ 				var importObject = wasmImportObjects[wasmModuleId]();
-/******/ 				var req = fetch(__webpack_require__.p + "" + {"../dmg-01-js/pkg/dmg_01_js_bg.wasm":"adb69c13f3edbff65ade"}[wasmModuleId] + ".module.wasm");
+/******/ 				var req = fetch(__webpack_require__.p + "" + {"../dmg-01-js/pkg/dmg_01_js_bg.wasm":"71274b279c872ee859b8"}[wasmModuleId] + ".module.wasm");
 /******/ 				var promise;
 /******/ 				if(importObject instanceof Promise && typeof WebAssembly.compileStreaming === 'function') {
 /******/ 					promise = Promise.all([WebAssembly.compileStreaming(req), importObject]).then(function(items) {
@@ -913,6 +913,11 @@ var Radix = {
   Decimal: 1,
   Hexadecimal: 2
 };
+__webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
+  var cpu = new dmg.CPU();
+  cpu.set_register(dmg.Register.A, 1);
+  console.log(cpu.to_json());
+});
 
 var CPU = function (_React$Component) {
   _inherits(CPU, _React$Component);
@@ -1105,7 +1110,7 @@ var CPU = function (_React$Component) {
           case 'A':
             var cpu = _this5.state.cpu;
             console.log(cpu);
-            cpu.set_register('A', value);
+            cpu.set_register(_this5.state.dmg.Register.A, value);
             console.log(cpu.to_json());
             _this5.setState({ cpu: cpu });
             break;
