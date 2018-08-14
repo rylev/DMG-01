@@ -1,0 +1,80 @@
+.cpuWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  max-width: 500px;
+  min-width: 300px;
+}
+.cpuWrapper .cpu {
+  background: #211f1f;
+  width: 200px;
+  display: flex;
+  padding: 10px;
+}
+.cpuWrapper .pc {
+  color: #f3eded;
+  background: #2b9696;
+  padding: 3px;
+  font-size: 16px;
+  height: 40px;
+  text-align: center;
+  margin-top: 10px;
+  border: 1px solid black;
+}
+.cpuWrapper .registerSizeToggle {
+  display: flex;
+  font-size: 18px;
+  border: solid 1px black;
+  width: 120px;
+  justify-content: space-evenly;
+  border-radius: 4px;
+  margin: 10px;
+}
+
+.cpuWrapper .registerSizeToggle .toggle{
+  flex: 1;
+  text-align: center;
+  background: #d0caca;
+  cursor: pointer;
+}
+.cpuWrapper .registerSizeToggle .left{
+  border-bottom-left-radius: 3px;
+  border-top-left-radius: 3px;
+}
+.cpuWrapper .registerSizeToggle .right {
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+.cpuWrapper .registerSizeToggle .selected {
+  background: #d46a6a;
+}
+
+.cpuWrapper .registers {
+  display: flex;
+  border: 1px solid black;
+  width: 120px;
+  margin: 10px;
+  padding: 5px;
+  text-align: center;
+  font-size: 18px;
+  background: #543c82;
+  color: #ddd;
+}
+.cpuWrapper .registers.word {
+  flex-direction: column;
+}
+
+.cpuWrapper .column {
+  flex: 1;
+  padding: 5px;
+}
+
+.cpuWrapper .reg {
+  margin: 3px;
+}
+
+.cpuWrapper .regLabel {
+  font-size: 18px;
+}

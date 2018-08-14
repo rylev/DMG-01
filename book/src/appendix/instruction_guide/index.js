@@ -118,6 +118,4 @@ function getRegisterDivs(instructionDiv) {
   return instructionDiv.find($('.cpu')).children().toArray()
 }
 
-wasm_bindgen('./cpu_js_bg.wasm').then(() => {
-  CPU.mount($('#ADD .playground')[0])
-})
+CPU.mount($('#ADD .playground')[0])
