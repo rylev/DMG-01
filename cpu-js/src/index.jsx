@@ -7,11 +7,16 @@ const Mode = {
   ByteRegisters: 0,
   WordRegisters: 1
 }
+const Radix = {
+  Binary: 0,
+  Decimal: 1,
+  Hexadecimal: 2
+}
 
 class CPU extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { mode: Mode.ByteRegisters }
+    this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal }
     import('dmg-01-js').then(dmg => {
       this.setState({ cpu: new dmg.CPU() })
     })
@@ -19,20 +24,41 @@ class CPU extends React.Component {
 
   render() {
     const cpu = this.state.cpu
-    if (cpu) {
-      const json = cpu.to_json()
-      return (
-        <div className="cpuWrapper">
-          {this.registerSizeToggle()}
-          <div className="cpu">
-            {this.pc()}
-            {this.state.mode === Mode.ByteRegisters ? this.byteRegisters(json) : this.wordRegisters(json)}
-          </div>
-        </div>
-      )
-    }
+    if (!cpu) { return null }
 
-    return null;
+    const json = cpu.to_json()
+    return (
+      <div className="cpuWrapper">
+        {this.registerSizeToggle()}
+        <div className="cpu">
+          {this.pc()}
+          {this.state.mode === Mode.ByteRegisters ? this.byteRegisters(json) : this.wordRegisters(json)}
+        </div>
+        {this.radixSelector()}
+      </div>
+    )
+  }
+
+  radixSelector() {
+    return (
+      <div className="radixSelector">
+        {this.radixSelectorButton("Binary", Radix.Binary, "left")}
+        {this.radixSelectorButton("Decimal", Radix.Decimal, "center")}
+        {this.radixSelectorButton("Hexadecimal", Radix.Hexadecimal, "right")}
+      </div>
+    )
+  }
+
+  radixSelectorButton(label, radix, position) {
+    let className = "toggle " + position
+    if (this.state.radix === radix) {
+      className += " selected"
+    }
+    return (
+      <div className={ className } onClick={() => this.setState({radix: radix})}>
+        {label}
+      </div>
+    )
   }
 
   registerSizeToggle() {
@@ -51,7 +77,7 @@ class CPU extends React.Component {
     }
     return (
       <div className={ className } onClick={() => this.setState({mode: mode})}>
-            {label}
+        {label}
       </div>
     )
   }
@@ -96,10 +122,18 @@ class CPU extends React.Component {
   }
 
   register(label, upperByte, lowerByte) {
+    let regValue
+    if (this.state.radix === Radix.Binary) {
+      regValue = `0b${toBinary(upperByte, 8)}${lowerByte !== undefined ? toBinary(lowerByte,8) : ""}`
+    } else if (this.state.radix === Radix.Decimal) {
+      regValue = `${toDecimal(upperByte + (lowerByte || 0), lowerByte === undefined ? 3 : 5)}`
+    } else {
+      regValue = `0x${toHex(upperByte, 2)}${lowerByte !== undefined ? toHex(lowerByte,2) : ""}`
+    }
     return (
       <div className="reg">
         <div className="regLabel">{label}</div>
-        <div className="regValue">0x{toHex(upperByte, 2)}{lowerByte && toHex(lowerByte,2)}</div>
+        <div className="regValue">{regValue}</div>
       </div>
     )
   }
@@ -109,8 +143,19 @@ export function mount(div) {
   ReactDOM.render(<CPU />, div)
 }
 
-function toHex(byte, places = 2) {
-    const hex = byte.toString(16)
+function toHex(n, places = 2) {
+    const hex = n.toString(16)
     const padding = places - hex.length
     return `${"0".repeat(padding > 0 ? padding : 0)}${hex}`
 }
+function toDecimal(n, places = 2) {
+    const decimal = n.toString(10)
+    const padding = places - decimal.length
+    return `${"0".repeat(padding > 0 ? padding : 0)}${decimal}`
+}
+function toBinary(n, places = 2) {
+    const binary = n.toString(2)
+    const padding = places - binary.length
+    return `${"0".repeat(padding > 0 ? padding : 0)}${binary}`
+}
+

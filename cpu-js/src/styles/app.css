@@ -8,9 +8,11 @@
 }
 .cpuWrapper .cpu {
   background: #211f1f;
-  width: 200px;
+  width: 350px;
   display: flex;
-  padding: 10px;
+  padding: 15px;
+  border-radius: 3px;
+  justify-content: space-around;
 }
 .cpuWrapper .pc {
   color: #f3eded;
@@ -30,13 +32,13 @@
   justify-content: space-evenly;
   border-radius: 4px;
   margin: 10px;
+  background: #d0caca;
+  text-align: center;
+  cursor: pointer;
 }
 
 .cpuWrapper .registerSizeToggle .toggle{
   flex: 1;
-  text-align: center;
-  background: #d0caca;
-  cursor: pointer;
 }
 .cpuWrapper .registerSizeToggle .left{
   border-bottom-left-radius: 3px;
@@ -54,7 +56,7 @@
 .cpuWrapper .registers {
   display: flex;
   border: 1px solid black;
-  width: 120px;
+  width: 250px;
   margin: 10px;
   padding: 5px;
   text-align: center;
@@ -77,4 +79,33 @@
 
 .cpuWrapper .regLabel {
   font-size: 18px;
+}
+
+.cpuWrapper .radixSelector {
+  display: flex;
+  font-size: 12px;
+  width: 220px;
+  justify-content: space-evenly;
+  border: 1px solid black;
+  border-radius: 3px;
+  margin: 3px;
+  background: #d0caca;
+}
+.cpuWrapper .radixSelector .toggle{
+  text-align: center;
+  padding: 3px;
+  flex: 1;
+}
+.cpuWrapper .radixSelector .left{
+  border-bottom-left-radius: 3px;
+  border-top-left-radius: 3px;
+}
+.cpuWrapper .radixSelector .right {
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+
+.cpuWrapper .radixSelector .selected {
+  background: #d46a6a;
 }
