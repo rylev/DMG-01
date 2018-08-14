@@ -49,7 +49,7 @@ class CPU extends React.Component {
     if (!this.props.editable) { return null }
 
     return (
-      <div onClick={() => this.setState({editing: !this.state.editing})}>
+      <div className="editButton" onClick={() => this.setState({editing: !this.state.editing})}>
         { this.state.editing ? "Done" : "Edit" }
       </div>
     )
@@ -141,7 +141,7 @@ class CPU extends React.Component {
     return (
       <div className="reg">
         <div className="regLabel">{label}</div>
-        { this.state.editing ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)}
+        { this.state.editing && label !== 'F' ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)}
       </div>
     )
   }
@@ -150,19 +150,19 @@ class CPU extends React.Component {
     const value = upperByte + (lowerByte || 0)
     const onChange = e => {
       const value = parseInt(e.target.value || "0")
-      console.log(register)
       switch (register) {
-      case 'A':
+      case 'AF','BC','DE','HL':
+        console.warm("Setting 16-bit registers is not implemented")
+        break
+      default:
         const cpu = this.state.cpu
-        console.log(cpu)
-        cpu.set_register(this.state.dmg.Register.A, value)
-        console.log(cpu.to_json())
+        cpu.set_register(this.state.dmg.Register[register], value)
         this.setState({cpu: cpu})
         break
       }
     }
     return (
-      <input type="number" value={value} onChange={onChange}/>
+      <input className="registerEdit" type="number" value={value} onChange={onChange}/>
     )
   }
 

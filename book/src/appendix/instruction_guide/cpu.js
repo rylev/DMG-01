@@ -267,7 +267,7 @@ exports = module.exports = __webpack_require__(/*! ../../node_modules/css-loader
 
 
 // module
-exports.push([module.i, ".cpuWrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 50%;\n  max-width: 500px;\n  min-width: 300px;\n}\n.cpuWrapper .cpu {\n  background: #211f1f;\n  width: 350px;\n  display: flex;\n  padding: 15px;\n  border-radius: 3px;\n  justify-content: space-around;\n}\n.cpuWrapper .pc {\n  color: #f3eded;\n  background: #2b9696;\n  padding: 3px;\n  font-size: 16px;\n  height: 40px;\n  text-align: center;\n  margin-top: 10px;\n  border: 1px solid black;\n}\n.cpuWrapper .registerSizeToggle {\n  display: flex;\n  font-size: 18px;\n  border: solid 1px black;\n  width: 120px;\n  justify-content: space-evenly;\n  border-radius: 4px;\n  margin: 10px;\n  background: #d0caca;\n  text-align: center;\n  cursor: pointer;\n}\n\n.cpuWrapper .registerSizeToggle .toggle{\n  flex: 1;\n}\n.cpuWrapper .registerSizeToggle .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .registerSizeToggle .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n.cpuWrapper .registerSizeToggle .selected {\n  background: #d46a6a;\n}\n\n.cpuWrapper .registers {\n  display: flex;\n  border: 1px solid black;\n  width: 250px;\n  margin: 10px;\n  padding: 5px;\n  text-align: center;\n  font-size: 18px;\n  background: #543c82;\n  color: #ddd;\n}\n.cpuWrapper .registers.word {\n  flex-direction: column;\n}\n\n.cpuWrapper .column {\n  flex: 1;\n  padding: 5px;\n}\n\n.cpuWrapper .reg {\n  margin: 3px;\n}\n\n.cpuWrapper .regLabel {\n  font-size: 18px;\n}\n\n.cpuWrapper .radixSelector {\n  display: flex;\n  font-size: 12px;\n  width: 220px;\n  justify-content: space-evenly;\n  border: 1px solid black;\n  border-radius: 3px;\n  margin: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .radixSelector .toggle{\n  text-align: center;\n  padding: 3px;\n  flex: 1;\n}\n.cpuWrapper .radixSelector .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .radixSelector .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n\n.cpuWrapper .radixSelector .selected {\n  background: #d46a6a;\n}\n", ""]);
+exports.push([module.i, ".cpuWrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 50%;\n  max-width: 500px;\n  min-width: 300px;\n}\n.cpuWrapper .editButton {\n  align-self: flex-end;\n  font-size: 14px;\n  border: 1px solid black;\n  padding: 2px 10px;\n  margin-bottom: -20px;\n  margin-left: -20px;\n  border-radius: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .cpu {\n  background: #211f1f;\n  width: 350px;\n  display: flex;\n  padding: 15px;\n  border-radius: 3px;\n  justify-content: space-around;\n}\n.cpuWrapper .pc {\n  color: #f3eded;\n  background: #2b9696;\n  padding: 3px;\n  font-size: 16px;\n  height: 40px;\n  text-align: center;\n  margin-top: 10px;\n  border: 1px solid black;\n}\n.cpuWrapper .registerSizeToggle {\n  display: flex;\n  font-size: 18px;\n  border: solid 1px black;\n  width: 120px;\n  justify-content: space-evenly;\n  border-radius: 4px;\n  margin: 10px;\n  background: #d0caca;\n  text-align: center;\n  cursor: pointer;\n}\n\n.cpuWrapper .registerSizeToggle .toggle{\n  flex: 1;\n}\n.cpuWrapper .registerSizeToggle .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .registerSizeToggle .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n.cpuWrapper .registerSizeToggle .selected {\n  background: #d46a6a;\n}\n\n.cpuWrapper .registers {\n  display: flex;\n  border: 1px solid black;\n  width: 250px;\n  margin: 10px;\n  padding: 5px;\n  text-align: center;\n  font-size: 18px;\n  background: #543c82;\n  color: #ddd;\n}\n.cpuWrapper .registers.word {\n  flex-direction: column;\n}\n\n.cpuWrapper .column {\n  flex: 1;\n  padding: 5px;\n}\n\n.cpuWrapper .reg {\n  margin: 3px;\n}\n\n.cpuWrapper .registerEdit {\n  width: 100px;\n}\n\n.cpuWrapper .regLabel {\n  font-size: 18px;\n}\n\n.cpuWrapper .radixSelector {\n  display: flex;\n  font-size: 12px;\n  width: 220px;\n  justify-content: space-evenly;\n  border: 1px solid black;\n  border-radius: 3px;\n  margin: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .radixSelector .toggle{\n  text-align: center;\n  padding: 3px;\n  flex: 1;\n}\n.cpuWrapper .radixSelector .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .radixSelector .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n\n.cpuWrapper .radixSelector .selected {\n  background: #d46a6a;\n}\n", ""]);
 
 // exports
 
@@ -968,7 +968,7 @@ var CPU = function (_React$Component) {
 
       return React.createElement(
         "div",
-        { onClick: function onClick() {
+        { className: "editButton", onClick: function onClick() {
             return _this2.setState({ editing: !_this2.state.editing });
           } },
         this.state.editing ? "Done" : "Edit"
@@ -1094,7 +1094,7 @@ var CPU = function (_React$Component) {
           { className: "regLabel" },
           label
         ),
-        this.state.editing ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)
+        this.state.editing && label !== 'F' ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)
       );
     }
   }, {
@@ -1105,18 +1105,18 @@ var CPU = function (_React$Component) {
       var value = upperByte + (lowerByte || 0);
       var onChange = function onChange(e) {
         var value = parseInt(e.target.value || "0");
-        console.log(register);
         switch (register) {
-          case 'A':
+          case ('AF', 'BC', 'DE', 'HL'):
+            console.warm("Setting 16-bit registers is not implemented");
+            break;
+          default:
             var cpu = _this5.state.cpu;
-            console.log(cpu);
-            cpu.set_register(_this5.state.dmg.Register.A, value);
-            console.log(cpu.to_json());
+            cpu.set_register(_this5.state.dmg.Register[register], value);
             _this5.setState({ cpu: cpu });
             break;
         }
       };
-      return React.createElement("input", { type: "number", value: value, onChange: onChange });
+      return React.createElement("input", { className: "registerEdit", type: "number", value: value, onChange: onChange });
     }
   }, {
     key: "regValue",

@@ -6,6 +6,16 @@
   max-width: 500px;
   min-width: 300px;
 }
+.cpuWrapper .editButton {
+  align-self: flex-end;
+  font-size: 14px;
+  border: 1px solid black;
+  padding: 2px 10px;
+  margin-bottom: -20px;
+  margin-left: -20px;
+  border-radius: 3px;
+  background: #d0caca;
+}
 .cpuWrapper .cpu {
   background: #211f1f;
   width: 350px;
@@ -75,6 +85,10 @@
 
 .cpuWrapper .reg {
   margin: 3px;
+}
+
+.cpuWrapper .registerEdit {
+  width: 100px;
 }
 
 .cpuWrapper .regLabel {
