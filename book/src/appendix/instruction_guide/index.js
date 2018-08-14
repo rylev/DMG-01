@@ -118,4 +118,4 @@ function getRegisterDivs(instructionDiv) {
   return instructionDiv.find($('.cpu')).children().toArray()
 }
 
-CPU.mount($('#ADD .playground')[0])
+CPU.mount($('#ADD .playground')[0], true)

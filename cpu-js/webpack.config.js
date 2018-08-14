@@ -16,7 +16,7 @@ module.exports = {
         // Add '.ts' and '.tsx' as resolvable extensions.
         extensions: [".ts", ".tsx", ".js", ".json", ".wasm"]
     },
-    mode: 'production',
+    mode: 'development',
 
     module: {
         rules: [

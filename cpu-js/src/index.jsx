@@ -16,9 +16,9 @@ const Radix = {
 class CPU extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal }
+    this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal, editing: false }
     import('dmg-01-js').then(dmg => {
-      this.setState({ cpu: new dmg.CPU() })
+      this.setState({ dmg: dmg, cpu: new dmg.CPU() })
     })
   }
 
@@ -29,12 +29,23 @@ class CPU extends React.Component {
     const json = cpu.to_json()
     return (
       <div className="cpuWrapper">
+        {this.editButton()}
         {this.registerSizeToggle()}
         <div className="cpu">
           {this.pc()}
           {this.state.mode === Mode.ByteRegisters ? this.byteRegisters(json) : this.wordRegisters(json)}
         </div>
         {this.radixSelector()}
+      </div>
+    )
+  }
+
+  editButton() {
+    if (!this.props.editable) { return null }
+
+    return (
+      <div onClick={() => this.setState({editing: !this.state.editing})}>
+        { this.state.editing ? "Done" : "Edit" }
       </div>
     )
   }
@@ -122,6 +133,35 @@ class CPU extends React.Component {
   }
 
   register(label, upperByte, lowerByte) {
+    return (
+      <div className="reg">
+        <div className="regLabel">{label}</div>
+        { this.state.editing ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)}
+      </div>
+    )
+  }
+
+  editableRegValue(register, upperByte, lowerByte) {
+    const value = upperByte + (lowerByte || 0)
+    const onChange = e => {
+      const value = parseInt(e.target.value || "0")
+      console.log(register)
+      switch (register) {
+      case 'A':
+        const cpu = this.state.cpu
+        console.log(cpu)
+        cpu.set_register('A', value)
+        console.log(cpu.to_json())
+        this.setState({cpu: cpu})
+        break
+      }
+    }
+    return (
+      <input type="number" value={value} onChange={onChange}/>
+    )
+  }
+
+  regValue(upperByte, lowerByte) {
     let regValue
     if (this.state.radix === Radix.Binary) {
       regValue = `0b${toBinary(upperByte, 8)}${lowerByte !== undefined ? toBinary(lowerByte,8) : ""}`
@@ -131,16 +171,13 @@ class CPU extends React.Component {
       regValue = `0x${toHex(upperByte, 2)}${lowerByte !== undefined ? toHex(lowerByte,2) : ""}`
     }
     return (
-      <div className="reg">
-        <div className="regLabel">{label}</div>
-        <div className="regValue">{regValue}</div>
-      </div>
+      <div className="regValue">{regValue}</div>
     )
   }
 }
 
-export function mount(div) {
-  ReactDOM.render(<CPU />, div)
+export function mount(div, editable) {
+  ReactDOM.render(<CPU editable={editable} />, div)
 }
 
 function toHex(n, places = 2) {
