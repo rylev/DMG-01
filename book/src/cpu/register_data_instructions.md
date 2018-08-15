@@ -127,7 +127,7 @@ impl CPU {
 
 ## How Do We Know?
 
-Yout might be wondering, "how do we know what to do given a certain the instruction". The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a "data sheet"),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions [in the instruction guide](./instruction_guide.html).
+Yout might be wondering, "how do we know what to do given a certain the instruction". The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a "data sheet"),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions [in the instruction guide](../appendix/instruction_guide/index.html).
 
 > *Side Note*
 >

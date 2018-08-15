@@ -1,0 +1,200 @@
+.cpuWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  max-width: 500px;
+  min-width: 300px;
+}
+.cpuWrapper .editButton {
+  align-self: flex-end;
+  font-size: 14px;
+  border: 1px solid black;
+  padding: 2px 10px;
+  margin-bottom: -20px;
+  margin-left: -20px;
+  border-radius: 3px;
+  background: #d0caca;
+  cursor: pointer;
+}
+.cpuWrapper .cpu {
+  background: #211f1f;
+  width: 350px;
+  display: flex;
+  padding: 15px;
+  border-radius: 3px;
+  justify-content: space-around;
+}
+.cpuWrapper .pc {
+  color: #f3eded;
+  background: #2b9696;
+  padding: 3px;
+  font-size: 16px;
+  height: 40px;
+  text-align: center;
+  margin-top: 10px;
+  border: 1px solid black;
+}
+.cpuWrapper .registerSizeToggle {
+  display: flex;
+  font-size: 18px;
+  border: solid 1px black;
+  width: 120px;
+  justify-content: space-evenly;
+  border-radius: 4px;
+  margin: 10px;
+  background: #d0caca;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cpuWrapper .registerSizeToggle .toggle{
+  flex: 1;
+}
+.cpuWrapper .registerSizeToggle .left{
+  border-bottom-left-radius: 3px;
+  border-top-left-radius: 3px;
+}
+.cpuWrapper .registerSizeToggle .right {
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+.cpuWrapper .registerSizeToggle .selected {
+  background: #d46a6a;
+}
+
+.cpuWrapper .registers {
+  display: flex;
+  border: 1px solid black;
+  width: 250px;
+  margin: 10px;
+  padding: 5px;
+  text-align: center;
+  font-size: 18px;
+  background: #543c82;
+  color: #ddd;
+}
+.cpuWrapper .registers.word {
+  flex-direction: column;
+}
+
+.cpuWrapper .column {
+  flex: 1;
+  padding: 5px;
+}
+
+.cpuWrapper .reg {
+  margin: 3px;
+}
+
+.cpuWrapper .registerEdit {
+  width: 100px;
+}
+
+.cpuWrapper .regLabel {
+  font-size: 18px;
+}
+
+.cpuWrapper .radixSelector {
+  display: flex;
+  font-size: 12px;
+  width: 220px;
+  justify-content: space-evenly;
+  border: 1px solid black;
+  border-radius: 3px;
+  margin: 3px;
+  background: #d0caca;
+}
+.cpuWrapper .radixSelector .toggle{
+  cursor: pointer;
+  text-align: center;
+  padding: 3px;
+  flex: 1;
+}
+.cpuWrapper .radixSelector .left{
+  border-right: 1px solid black;
+  border-bottom-left-radius: 3px;
+  border-top-left-radius: 3px;
+}
+.cpuWrapper .radixSelector .right {
+  border-left: 1px solid black;
+  border-bottom-right-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+
+.cpuWrapper .radixSelector .selected {
+  background: #d46a6a;
+}
+
+.runInstructionCPU {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 600px;
+}
+
+.runInstructionCPU .targets {
+  display: flex;
+  max-width: 500px;
+  justify-content: center;
+}
+
+.runInstructionCPU .target {
+  margin: 0px 10px;
+  background: #d0caca;
+  padding: 10px;
+  width: 20px;
+  border-radius: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.runInstructionCPU .target.selected {
+  background: #d4696a;
+}
+
+.runInstructionCPU .targetsLabel {
+  font-size: 18px;
+  text-align: center;
+  max-width: 500px;
+  margin: 10px;
+}
+
+.runInstructionCPU .controlButtons {
+  display: flex;
+  margin: 10px;
+}
+.runInstructionCPU .controlButtons div {
+  cursor: pointer;
+  background: #533c81;
+  color: #ddd;
+  width: 50px;
+  text-align: center;
+  padding: 3px;
+  border-radius: 9px;
+  margin: 11px;
+  font-size: 18px;
+}
+
+.cpuWrapper .reg {
+  display: flex;
+  flex-direction: column;
+}
+.cpuWrapper .fRegisterToggle {
+  width: 18px;
+  align-self: flex-end;
+  margin-bottom: -18px;
+  font-size: 12px;
+  background: #211f1f;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 18px;
+}

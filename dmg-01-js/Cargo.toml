@@ -1,5 +1,5 @@
 [package]
-name = "cpu-js"
+name = "dmg-01-js"
 version = "0.1.0"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 
@@ -11,7 +11,7 @@ serde = "^1.0.59"
 serde_derive = "^1.0.59"
 
 [dependencies.dmg-01]
-path = "../.."
+path = ".."
 features = ["serialize"]
 
 [dependencies.wasm-bindgen]
