@@ -37,4 +37,4 @@ function rowClassName(fullClassName) {
   return fullClassName.match(regex)[0]
 }
 
-CPU.mount($('#ADD .playground')[0], true, 'add', 'A')
+CPU.mount($('#ADD .playground')[0], 'add', ['A', 'B', 'C', 'D', 'E', 'H', 'L'])

@@ -173,34 +173,61 @@ class CPU extends React.Component {
   }
 }
 
-export function mount(div, editable, instruction, target) {
-  import('dmg-01-js').then(dmg => {
-    ReactDOM.render(<RunnableCPU editable={editable} dmg={dmg} instruction={instruction} target={target} />, div)
-  })
-}
-
-class RunnableCPU extends React.Component {
+class RunInstructionCPU extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { cpu: new props.dmg.CPU() }
+    this.state = { cpu: new props.dmg.CPU(), target: this.props.targets[0] }
   }
   render() {
     if (!this.state.cpu) { return null }
 
     return (
-      <div className="runnableCPU">
-        <CPU editable={this.props.editable} dmg={this.props.dmg} cpu={this.state.cpu} />
-        <div onClick={() => this.run()}>
-            Run
+      <div className="runInstructionCPU">
+        <CPU editable={true} dmg={this.props.dmg} cpu={this.state.cpu} />
+        {this.targets()}
+        <div className="controlButtons">
+          <div className="runInstructionButton" onClick={() => this.run()}>
+              Run
+          </div>
+          <div className="resetButton" onClick={() => this.reset()}>
+              Reset
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  targets() {
+    const targets = this.props.targets.map(target => {
+      const className = this.state.target === target ? "selected target" : "target"
+      return <div className={className} onClick={() => this.setState({target: target})}>{target}</div>
+    })
+
+    return (
+      <div>
+        <div className="targetsLabel">Targets: </div>
+        <div className="targets">
+          {targets}
         </div>
       </div>
     )
   }
 
   run() {
-    const cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.props.target])
+    const cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.state.target])
     this.setState({cpu: cpu})
   }
+
+  reset() {
+    const cpu = new this.props.dmg.CPU()
+    this.setState({cpu: cpu})
+  }
+}
+
+export function mount(div, instruction, targets) {
+  import('dmg-01-js').then(dmg => {
+    ReactDOM.render(<RunInstructionCPU dmg={dmg} instruction={instruction} targets={targets} />, div)
+  })
 }
 
 function toHex(n, places = 2) {

@@ -267,7 +267,7 @@ exports = module.exports = __webpack_require__(/*! ../../node_modules/css-loader
 
 
 // module
-exports.push([module.i, ".cpuWrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 50%;\n  max-width: 500px;\n  min-width: 300px;\n}\n.cpuWrapper .editButton {\n  align-self: flex-end;\n  font-size: 14px;\n  border: 1px solid black;\n  padding: 2px 10px;\n  margin-bottom: -20px;\n  margin-left: -20px;\n  border-radius: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .cpu {\n  background: #211f1f;\n  width: 350px;\n  display: flex;\n  padding: 15px;\n  border-radius: 3px;\n  justify-content: space-around;\n}\n.cpuWrapper .pc {\n  color: #f3eded;\n  background: #2b9696;\n  padding: 3px;\n  font-size: 16px;\n  height: 40px;\n  text-align: center;\n  margin-top: 10px;\n  border: 1px solid black;\n}\n.cpuWrapper .registerSizeToggle {\n  display: flex;\n  font-size: 18px;\n  border: solid 1px black;\n  width: 120px;\n  justify-content: space-evenly;\n  border-radius: 4px;\n  margin: 10px;\n  background: #d0caca;\n  text-align: center;\n  cursor: pointer;\n}\n\n.cpuWrapper .registerSizeToggle .toggle{\n  flex: 1;\n}\n.cpuWrapper .registerSizeToggle .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .registerSizeToggle .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n.cpuWrapper .registerSizeToggle .selected {\n  background: #d46a6a;\n}\n\n.cpuWrapper .registers {\n  display: flex;\n  border: 1px solid black;\n  width: 250px;\n  margin: 10px;\n  padding: 5px;\n  text-align: center;\n  font-size: 18px;\n  background: #543c82;\n  color: #ddd;\n}\n.cpuWrapper .registers.word {\n  flex-direction: column;\n}\n\n.cpuWrapper .column {\n  flex: 1;\n  padding: 5px;\n}\n\n.cpuWrapper .reg {\n  margin: 3px;\n}\n\n.cpuWrapper .registerEdit {\n  width: 100px;\n}\n\n.cpuWrapper .regLabel {\n  font-size: 18px;\n}\n\n.cpuWrapper .radixSelector {\n  display: flex;\n  font-size: 12px;\n  width: 220px;\n  justify-content: space-evenly;\n  border: 1px solid black;\n  border-radius: 3px;\n  margin: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .radixSelector .toggle{\n  text-align: center;\n  padding: 3px;\n  flex: 1;\n}\n.cpuWrapper .radixSelector .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .radixSelector .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n\n.cpuWrapper .radixSelector .selected {\n  background: #d46a6a;\n}\n", ""]);
+exports.push([module.i, ".cpuWrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 50%;\n  max-width: 500px;\n  min-width: 300px;\n}\n.cpuWrapper .editButton {\n  align-self: flex-end;\n  font-size: 14px;\n  border: 1px solid black;\n  padding: 2px 10px;\n  margin-bottom: -20px;\n  margin-left: -20px;\n  border-radius: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .cpu {\n  background: #211f1f;\n  width: 350px;\n  display: flex;\n  padding: 15px;\n  border-radius: 3px;\n  justify-content: space-around;\n}\n.cpuWrapper .pc {\n  color: #f3eded;\n  background: #2b9696;\n  padding: 3px;\n  font-size: 16px;\n  height: 40px;\n  text-align: center;\n  margin-top: 10px;\n  border: 1px solid black;\n}\n.cpuWrapper .registerSizeToggle {\n  display: flex;\n  font-size: 18px;\n  border: solid 1px black;\n  width: 120px;\n  justify-content: space-evenly;\n  border-radius: 4px;\n  margin: 10px;\n  background: #d0caca;\n  text-align: center;\n  cursor: pointer;\n}\n\n.cpuWrapper .registerSizeToggle .toggle{\n  flex: 1;\n}\n.cpuWrapper .registerSizeToggle .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .registerSizeToggle .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n.cpuWrapper .registerSizeToggle .selected {\n  background: #d46a6a;\n}\n\n.cpuWrapper .registers {\n  display: flex;\n  border: 1px solid black;\n  width: 250px;\n  margin: 10px;\n  padding: 5px;\n  text-align: center;\n  font-size: 18px;\n  background: #543c82;\n  color: #ddd;\n}\n.cpuWrapper .registers.word {\n  flex-direction: column;\n}\n\n.cpuWrapper .column {\n  flex: 1;\n  padding: 5px;\n}\n\n.cpuWrapper .reg {\n  margin: 3px;\n}\n\n.cpuWrapper .registerEdit {\n  width: 100px;\n}\n\n.cpuWrapper .regLabel {\n  font-size: 18px;\n}\n\n.cpuWrapper .radixSelector {\n  display: flex;\n  font-size: 12px;\n  width: 220px;\n  justify-content: space-evenly;\n  border: 1px solid black;\n  border-radius: 3px;\n  margin: 3px;\n  background: #d0caca;\n}\n.cpuWrapper .radixSelector .toggle{\n  text-align: center;\n  padding: 3px;\n  flex: 1;\n}\n.cpuWrapper .radixSelector .left{\n  border-bottom-left-radius: 3px;\n  border-top-left-radius: 3px;\n}\n.cpuWrapper .radixSelector .right {\n  border-bottom-right-radius: 3px;\n  border-top-right-radius: 3px;\n}\n\n\n.cpuWrapper .radixSelector .selected {\n  background: #d46a6a;\n}\n\n.runInstructionCPU {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 600px;\n}\n\n.runInstructionCPU .targets {\n  display: flex;\n  max-width: 500px;\n  justify-content: center;\n}\n\n.runInstructionCPU .target {\n  margin: 0px 10px;\n  background: #d0caca;\n  padding: 10px;\n  width: 20px;\n  border-radius: 20px;\n  height: 20px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.runInstructionCPU .target.selected {\n  background: #d4696a;\n}\n\n.runInstructionCPU .targetsLabel {\n  font-size: 18px;\n  text-align: center;\n  max-width: 500px;\n  margin: 10px;\n}\n\n.runInstructionCPU .controlButtons {\n  display: flex;\n  margin: 10px;\n}\n.runInstructionCPU .controlButtons div {\n  cursor: pointer;\n  background: #533c81;\n  color: #ddd;\n  width: 50px;\n  text-align: center;\n  padding: 3px;\n  border-radius: 9px;\n  margin: 11px;\n  font-size: 18px;\n}\n", ""]);
 
 // exports
 
@@ -1132,25 +1132,19 @@ var CPU = function (_React$Component) {
   return CPU;
 }(React.Component);
 
-function mount(div, editable, instruction, target) {
-  __webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
-    ReactDOM.render(React.createElement(RunnableCPU, { editable: editable, dmg: dmg, instruction: instruction, target: target }), div);
-  });
-}
+var RunInstructionCPU = function (_React$Component2) {
+  _inherits(RunInstructionCPU, _React$Component2);
 
-var RunnableCPU = function (_React$Component2) {
-  _inherits(RunnableCPU, _React$Component2);
+  function RunInstructionCPU(props) {
+    _classCallCheck(this, RunInstructionCPU);
 
-  function RunnableCPU(props) {
-    _classCallCheck(this, RunnableCPU);
+    var _this6 = _possibleConstructorReturn(this, (RunInstructionCPU.__proto__ || Object.getPrototypeOf(RunInstructionCPU)).call(this, props));
 
-    var _this6 = _possibleConstructorReturn(this, (RunnableCPU.__proto__ || Object.getPrototypeOf(RunnableCPU)).call(this, props));
-
-    _this6.state = { cpu: new props.dmg.CPU() };
+    _this6.state = { cpu: new props.dmg.CPU(), target: _this6.props.targets[0] };
     return _this6;
   }
 
-  _createClass(RunnableCPU, [{
+  _createClass(RunInstructionCPU, [{
     key: "render",
     value: function render() {
       var _this7 = this;
@@ -1161,27 +1155,82 @@ var RunnableCPU = function (_React$Component2) {
 
       return React.createElement(
         "div",
-        { className: "runnableCPU" },
-        React.createElement(CPU, { editable: this.props.editable, dmg: this.props.dmg, cpu: this.state.cpu }),
+        { className: "runInstructionCPU" },
+        React.createElement(CPU, { editable: true, dmg: this.props.dmg, cpu: this.state.cpu }),
+        this.targets(),
         React.createElement(
           "div",
-          { onClick: function onClick() {
-              return _this7.run();
+          { className: "controlButtons" },
+          React.createElement(
+            "div",
+            { className: "runInstructionButton", onClick: function onClick() {
+                return _this7.run();
+              } },
+            "Run"
+          ),
+          React.createElement(
+            "div",
+            { className: "resetButton", onClick: function onClick() {
+                return _this7.reset();
+              } },
+            "Reset"
+          )
+        )
+      );
+    }
+  }, {
+    key: "targets",
+    value: function targets() {
+      var _this8 = this;
+
+      var targets = this.props.targets.map(function (target) {
+        var className = _this8.state.target === target ? "selected target" : "target";
+        return React.createElement(
+          "div",
+          { className: className, onClick: function onClick() {
+              return _this8.setState({ target: target });
             } },
-          "Run"
+          target
+        );
+      });
+
+      return React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "div",
+          { className: "targetsLabel" },
+          "Targets: "
+        ),
+        React.createElement(
+          "div",
+          { className: "targets" },
+          targets
         )
       );
     }
   }, {
     key: "run",
     value: function run() {
-      var cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.props.target]);
+      var cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.state.target]);
+      this.setState({ cpu: cpu });
+    }
+  }, {
+    key: "reset",
+    value: function reset() {
+      var cpu = new this.props.dmg.CPU();
       this.setState({ cpu: cpu });
     }
   }]);
 
-  return RunnableCPU;
+  return RunInstructionCPU;
 }(React.Component);
+
+function mount(div, instruction, targets) {
+  __webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
+    ReactDOM.render(React.createElement(RunInstructionCPU, { dmg: dmg, instruction: instruction, targets: targets }), div);
+  });
+}
 
 function toHex(n) {
   var places = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
