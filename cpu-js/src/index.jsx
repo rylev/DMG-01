@@ -16,7 +16,7 @@ const Radix = {
 class CPU extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal, editing: false }
+    this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal, editing: false, fRegisterVerbose: false }
   }
 
   render() {
@@ -109,7 +109,7 @@ class CPU extends React.Component {
           {this.register("H", cpu.registers.h)}
         </div>
         <div className="column">
-          {this.register("F", cpu.registers.f)}
+          {this.fRegister(cpu.registers.f)}
           {this.register("C", cpu.registers.c)}
           {this.register("E", cpu.registers.e)}
           {this.register("L", cpu.registers.l)}
@@ -129,11 +129,36 @@ class CPU extends React.Component {
     )
   }
 
+  fRegister(byte) {
+    return (
+      <div className="reg">
+        <div className="fRegisterToggle" onClick={() => this.setState({fRegisterVerbose: !this.state.fRegisterVerbose})}>?</div>
+        <div className="regLabel">F</div>
+        { this.state.fRegisterVerbose ? this.fRegisterVerbose(byte) : this.regValue(byte)}
+      </div>
+    )
+  }
+
+  fRegisterVerbose(byte) {
+    const zero = (byte & 0x80) === 0x80 ? "1" : "0"
+    const negative = (byte & 0x40) === 0x40 ? "1" : "0"
+    const halfCarry = (byte & 0x20) === 0x20 ? "1" : "0"
+    const carry = (byte & 0x10) === 0x10 ? "1" : "0"
+    return (
+      <div className="fRegisterVerbose">
+        <span>Z:{zero}</span>
+        <span>N:{negative}</span>
+        <span>H:{halfCarry}</span>
+        <span>C:{carry}</span>
+      </div>
+    )
+  }
+
   register(label, upperByte, lowerByte) {
     return (
       <div className="reg">
         <div className="regLabel">{label}</div>
-        { this.state.editing && label !== 'F' ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)}
+        { this.state.editing ? this.editableRegValue(label, upperByte, lowerByte) : this.regValue(upperByte, lowerByte)}
       </div>
     )
   }

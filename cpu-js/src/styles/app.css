@@ -175,3 +175,21 @@
   margin: 11px;
   font-size: 18px;
 }
+
+.cpuWrapper .reg {
+  display: flex;
+  flex-direction: column;
+}
+.cpuWrapper .fRegisterToggle {
+  width: 18px;
+  align-self: flex-end;
+  margin-bottom: -18px;
+  font-size: 12px;
+  background: #211f1f;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 18px;
+}
