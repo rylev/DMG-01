@@ -15,6 +15,7 @@
   margin-left: -20px;
   border-radius: 3px;
   background: #d0caca;
+  cursor: pointer;
 }
 .cpuWrapper .cpu {
   background: #211f1f;
@@ -106,15 +107,18 @@
   background: #d0caca;
 }
 .cpuWrapper .radixSelector .toggle{
+  cursor: pointer;
   text-align: center;
   padding: 3px;
   flex: 1;
 }
 .cpuWrapper .radixSelector .left{
+  border-right: 1px solid black;
   border-bottom-left-radius: 3px;
   border-top-left-radius: 3px;
 }
 .cpuWrapper .radixSelector .right {
+  border-left: 1px solid black;
   border-bottom-right-radius: 3px;
   border-top-right-radius: 3px;
 }
@@ -147,6 +151,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
 }
 
 .runInstructionCPU .target.selected {

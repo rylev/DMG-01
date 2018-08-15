@@ -168,8 +168,11 @@ class CPU extends React.Component {
     const onChange = e => {
       const value = parseInt(e.target.value || "0")
       switch (register) {
-      case 'AF','BC','DE','HL':
-        console.warm("Setting 16-bit registers is not implemented")
+      case 'AF':
+      case 'BC':
+      case 'DE':
+      case 'HL':
+        console.warn("Setting 16-bit registers is not implemented")
         break
       default:
         const cpu = this.props.cpu
