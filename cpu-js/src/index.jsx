@@ -12,23 +12,15 @@ const Radix = {
   Decimal: 1,
   Hexadecimal: 2
 }
-    import('dmg-01-js').then(dmg => {
-      const cpu = new dmg.CPU()
-      cpu.set_register(dmg.Register.A, 1)
-      console.log(cpu.to_json())
-    })
 
 class CPU extends React.Component {
   constructor(props) {
     super(props)
     this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal, editing: false }
-    import('dmg-01-js').then(dmg => {
-      this.setState({ dmg: dmg, cpu: new dmg.CPU() })
-    })
   }
 
   render() {
-    const cpu = this.state.cpu
+    const cpu = this.props.cpu
     if (!cpu) { return null }
 
     const json = cpu.to_json()
@@ -155,8 +147,8 @@ class CPU extends React.Component {
         console.warm("Setting 16-bit registers is not implemented")
         break
       default:
-        const cpu = this.state.cpu
-        cpu.set_register(this.state.dmg.Register[register], value)
+        const cpu = this.props.cpu
+        cpu.set_register(this.props.dmg.Register[register], value)
         this.setState({cpu: cpu})
         break
       }
@@ -181,8 +173,34 @@ class CPU extends React.Component {
   }
 }
 
-export function mount(div, editable) {
-  ReactDOM.render(<CPU editable={editable} />, div)
+export function mount(div, editable, instruction, target) {
+  import('dmg-01-js').then(dmg => {
+    ReactDOM.render(<RunnableCPU editable={editable} dmg={dmg} instruction={instruction} target={target} />, div)
+  })
+}
+
+class RunnableCPU extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { cpu: new props.dmg.CPU() }
+  }
+  render() {
+    if (!this.state.cpu) { return null }
+
+    return (
+      <div className="runnableCPU">
+        <CPU editable={this.props.editable} dmg={this.props.dmg} cpu={this.state.cpu} />
+        <div onClick={() => this.run()}>
+            Run
+        </div>
+      </div>
+    )
+  }
+
+  run() {
+    const cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.props.target])
+    this.setState({cpu: cpu})
+  }
 }
 
 function toHex(n, places = 2) {

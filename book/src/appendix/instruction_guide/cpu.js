@@ -913,11 +913,6 @@ var Radix = {
   Decimal: 1,
   Hexadecimal: 2
 };
-__webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
-  var cpu = new dmg.CPU();
-  cpu.set_register(dmg.Register.A, 1);
-  console.log(cpu.to_json());
-});
 
 var CPU = function (_React$Component) {
   _inherits(CPU, _React$Component);
@@ -928,16 +923,13 @@ var CPU = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, (CPU.__proto__ || Object.getPrototypeOf(CPU)).call(this, props));
 
     _this.state = { mode: Mode.ByteRegisters, radix: Radix.Hexadecimal, editing: false };
-    __webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
-      _this.setState({ dmg: dmg, cpu: new dmg.CPU() });
-    });
     return _this;
   }
 
   _createClass(CPU, [{
     key: "render",
     value: function render() {
-      var cpu = this.state.cpu;
+      var cpu = this.props.cpu;
       if (!cpu) {
         return null;
       }
@@ -1110,8 +1102,8 @@ var CPU = function (_React$Component) {
             console.warm("Setting 16-bit registers is not implemented");
             break;
           default:
-            var cpu = _this5.state.cpu;
-            cpu.set_register(_this5.state.dmg.Register[register], value);
+            var cpu = _this5.props.cpu;
+            cpu.set_register(_this5.props.dmg.Register[register], value);
             _this5.setState({ cpu: cpu });
             break;
         }
@@ -1140,9 +1132,56 @@ var CPU = function (_React$Component) {
   return CPU;
 }(React.Component);
 
-function mount(div, editable) {
-  ReactDOM.render(React.createElement(CPU, { editable: editable }), div);
+function mount(div, editable, instruction, target) {
+  __webpack_require__.e(/*! import() */ 0).then(__webpack_require__.bind(null, /*! dmg-01-js */ "../dmg-01-js/pkg/dmg_01_js.js")).then(function (dmg) {
+    ReactDOM.render(React.createElement(RunnableCPU, { editable: editable, dmg: dmg, instruction: instruction, target: target }), div);
+  });
 }
+
+var RunnableCPU = function (_React$Component2) {
+  _inherits(RunnableCPU, _React$Component2);
+
+  function RunnableCPU(props) {
+    _classCallCheck(this, RunnableCPU);
+
+    var _this6 = _possibleConstructorReturn(this, (RunnableCPU.__proto__ || Object.getPrototypeOf(RunnableCPU)).call(this, props));
+
+    _this6.state = { cpu: new props.dmg.CPU() };
+    return _this6;
+  }
+
+  _createClass(RunnableCPU, [{
+    key: "render",
+    value: function render() {
+      var _this7 = this;
+
+      if (!this.state.cpu) {
+        return null;
+      }
+
+      return React.createElement(
+        "div",
+        { className: "runnableCPU" },
+        React.createElement(CPU, { editable: this.props.editable, dmg: this.props.dmg, cpu: this.state.cpu }),
+        React.createElement(
+          "div",
+          { onClick: function onClick() {
+              return _this7.run();
+            } },
+          "Run"
+        )
+      );
+    }
+  }, {
+    key: "run",
+    value: function run() {
+      var cpu = this.props.dmg[this.props.instruction](this.state.cpu, this.props.dmg.Target[this.props.target]);
+      this.setState({ cpu: cpu });
+    }
+  }]);
+
+  return RunnableCPU;
+}(React.Component);
 
 function toHex(n) {
   var places = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
