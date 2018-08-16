@@ -226,6 +226,8 @@ struct MemoryBus {
 impl MemoryBus {
     pub fn new() -> MemoryBus {
         MemoryBus {
+            // Note: instead of modeling memory as one array of length 0xFFFF, we'll
+            // break memory up into it's logical parts.
             rom_bank_0: [0; ROM_BANK_0_SIZE]
         }
     }
