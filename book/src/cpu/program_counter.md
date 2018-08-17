@@ -185,4 +185,4 @@ impl Instruction {
 }
 ```
 
-And there we have it. We're now succesfully executing instructions that are stored in memory! To finish our discussion of how the program counter and how instructions get executed in memory, we'll want to look at new instructions that have the job of explicitly changing where the program counter is pointing to. In other words, these instructions change where in the game code we're currently executing. These instructions are known as "jump" instructions.
+And there we have it. We're now succesfully executing instructions that are stored in memory! We even have the ability to tell the difference between "prefixed" instructions and non-"prefixed" instructions. Next we'll look at bit closer at instructions that read and write to memory.
