@@ -1,0 +1,6 @@
+[package]
+name = "register-data-instructions"
+version = "0.1.0"
+authors = ["Ryan Levick <ryan.levick@gmail.com>"]
+
+[dependencies]
