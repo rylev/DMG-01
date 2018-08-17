@@ -3,7 +3,14 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
+use self::instruction::{
+    Instruction,
+    IncDecTarget,
+    ArithmeticTarget,
+    PrefixTarget,
+    BitPosition,
+    JumpTest
+};
 
 /// # Macros
 ///
@@ -258,12 +265,12 @@ impl CPU {
         }
     }
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            instruction_byte = self.bus.read_byte(self.pc + 1);
+            instruction_byte = self.read_next_byte();
         }
 
         let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
@@ -520,16 +527,72 @@ impl CPU {
                 prefix_instruction!(register, self.swap_nibbles => reg);
                 self.pc.wrapping_add(2)
             },
-            Instruction::JP(test) {
+            Instruction::JP(test) => {
+                // DESCRIPTION: conditionally jump to the address stored in the next word in memory
+                // PC:?/+3
+                // - - - -
                 match test {
-                    JumpTest::NotZero =>
-                    JumpTest::NotCarry =>
-                    JumpTest::Zero =>
-                    JumpTest::Carry =>
-                    JumpTest::Always =>
+                    JumpTest::NotZero => {
+                        let jump_condition = !self.registers.f.zero;
+                        self.jump(jump_condition)
+                    },
+                    JumpTest::NotCarry => {
+                        let jump_condition = !self.registers.f.carry;
+                        self.jump(jump_condition)
+                    }
+                    JumpTest::Zero => {
+                        let jump_condition = self.registers.f.zero;
+                        self.jump(jump_condition)
+                    }
+                    JumpTest::Carry => {
+                        let jump_condition = self.registers.f.carry;
+                        self.jump(jump_condition)
+                    }
+                    JumpTest::Always => {
+                        self.jump(true)
+                    }
+                }
+            }
+            Instruction::JR(test) => {
+                // DESCRIPTION: conditionally jump to the address that is N bytes away in memory
+                // where N is the next byte in memory interpreted as a signed byte
+                // PC:?/+2
+                // - - - -
+                match test {
+                    JumpTest::NotZero => {
+                        let jump_condition = !self.registers.f.zero;
+                        self.jump_relative(jump_condition)
+                    },
+                    JumpTest::NotCarry => {
+                        let jump_condition = !self.registers.f.carry;
+                        self.jump_relative(jump_condition)
+                    }
+                    JumpTest::Zero => {
+                        let jump_condition = self.registers.f.zero;
+                        self.jump_relative(jump_condition)
+                    }
+                    JumpTest::Carry => {
+                        let jump_condition = self.registers.f.carry;
+                        self.jump_relative(jump_condition)
+                    }
+                    JumpTest::Always => {
+                        self.jump_relative(true)
+                    }
                 }
             }
         }
+    }
+
+    #[inline(always)]
+    fn read_next_word(&self) -> u16 {
+        // Gameboy is little endian so read pc + 2 as most significant bit
+        // and pc + 1 as least significant bit
+        ((self.bus.read_byte(self.pc + 2) as u16) << 8)  | (self.bus.read_byte(self.pc + 1) as u16)
+    }
+
+    #[inline(always)]
+    fn read_next_byte(&self) -> u8 {
+        self.bus.read_byte(self.pc + 1)
     }
 
     #[inline(always)]
@@ -810,6 +873,31 @@ impl CPU {
         self.registers.f.half_carry = false;
         self.registers.f.carry = false;
         new_value
+    }
+
+    #[inline(always)]
+    fn jump(&mut self, should_jump: bool) -> u16 {
+        if should_jump {
+            println!("{:x}", self.read_next_word());
+            self.read_next_word()
+        } else {
+            self.pc.wrapping_add(3)
+        }
+    }
+
+    #[inline(always)]
+    fn jump_relative(&mut self, should_jump: bool) -> u16 {
+        let next_step = self.pc.wrapping_add(2);
+         if should_jump {
+            let offset = self.read_next_byte() as i8;
+            if offset >= 0 {
+                next_step.wrapping_add(offset as u16)
+            } else {
+                next_step.wrapping_sub(offset.abs() as u16)
+            }
+        } else {
+            next_step
+        }
     }
 }
 
@@ -1285,6 +1373,37 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0b0101_1011);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // JP
+    #[test]
+    fn execute_jp() {
+        let mut cpu = CPU::new();
+        cpu.pc = 0xF8;
+        cpu.bus.rom_bank_0[0xF9] = 0xFC;
+        cpu.bus.rom_bank_0[0xFA] = 0x02;
+        let next_pc = cpu.execute(Instruction::JP(JumpTest::Always));
+
+        assert_eq!(next_pc, 0x02FC);
+
+        let next_pc = cpu.execute(Instruction::JP(JumpTest::Carry));
+
+        assert_eq!(next_pc, 0xFB);
+    }
+
+    // JR
+    #[test]
+    fn execute_jr() {
+        let mut cpu = CPU::new();
+        cpu.pc = 0xF8;
+        cpu.bus.rom_bank_0[0xF9] = 0x4;
+        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+
+        assert_eq!(next_pc, 0xFE);
+
+        cpu.bus.rom_bank_0[0xF9] = 0xFC; // == -4
+        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+        assert_eq!(next_pc, 0xF6);
     }
 
     // -----------------------------------------------------------------------------
