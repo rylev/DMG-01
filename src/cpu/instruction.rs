@@ -26,6 +26,38 @@ pub enum JumpTest {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LoadByteTarget {
+    A, B, C, D, E, H, L, HLI
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LoadByteSource {
+    A, B, C, D, E, H, L, D8, HLI
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LoadWordTarget {
+    BC, DE, HL
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum Indirect {
+    BCIndirect,
+    DEIndirect,
+    HLIndirectMinus,
+    HLIndirectPlus,
+    WordIndirect,
+    LastByteIndirect
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LoadType {
+    Byte(LoadByteTarget, LoadByteSource),
+    Word(LoadWordTarget),
+    AFromIndirect(Indirect),
+    IndirectFromA(Indirect),
+    AFromByteAddress,
+    ByteAddressFromA,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BitPosition {
     B0, B1, B2, B3, B4, B5, B6, B7
 }
@@ -85,7 +117,10 @@ pub enum Instruction {
     // Jump Instructions
     JP(JumpTest),
     JR(JumpTest),
-    JPI
+    JPI,
+
+    // Load Instructions
+    LD(LoadType)
 }
 
 impl Instruction {

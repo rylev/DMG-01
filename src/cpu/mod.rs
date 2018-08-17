@@ -10,7 +10,12 @@ use self::instruction::{
     PrefixTarget,
     BitPosition,
     JumpTest,
-    ADDHLTarget
+    ADDHLTarget,
+    LoadType,
+    LoadByteSource,
+    LoadByteTarget,
+    LoadWordTarget,
+    Indirect
 };
 
 /// # Macros
@@ -275,6 +280,14 @@ impl MemoryBus {
         let address = address as usize;
         if address < ROM_BANK_0_END {
             self.rom_bank_0[address]
+        } else {
+            panic!("Reading from unkown part of memory at address #{address}")
+        }
+    }
+    pub fn write_byte(&mut self, address: u16, value: u8) {
+        let address = address as usize;
+        if address < ROM_BANK_0_END {
+            self.rom_bank_0[address] = value;
         } else {
             panic!("Reading from unkown part of memory at address #{address}")
         }
@@ -636,10 +649,159 @@ impl CPU {
                 }
             }
             Instruction::JPI => {
-                // 1  4
+                // DESCRIPTION: jump to the address stored in HL
+                // 1
                 // PC:HL
                 // - - - -
                 self.registers.get_hl()
+            }
+            Instruction::LD(load_type) => {
+                match load_type {
+                    // DESCRIPTION: load byte store in a particular register into another
+                    // particular register
+                    // WHEN: source is d8
+                    // PC:+2
+                    // WHEN: source is (HL)
+                    // PC:+1
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::Byte(target, source) => {
+                        let source_value = match source {
+                            LoadByteSource::A => self.registers.a,
+                            LoadByteSource::B => self.registers.b,
+                            LoadByteSource::C => self.registers.c,
+                            LoadByteSource::D => self.registers.d,
+                            LoadByteSource::E => self.registers.e,
+                            LoadByteSource::H => self.registers.h,
+                            LoadByteSource::L => self.registers.l,
+                            LoadByteSource::D8 => self.read_next_byte(),
+                            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl())
+                        };
+                        match target {
+                            LoadByteTarget::A => self.registers.a = source_value,
+                            LoadByteTarget::B => self.registers.b = source_value,
+                            LoadByteTarget::C => self.registers.c = source_value,
+                            LoadByteTarget::D => self.registers.d = source_value,
+                            LoadByteTarget::E => self.registers.e = source_value,
+                            LoadByteTarget::H => self.registers.h = source_value,
+                            LoadByteTarget::L => self.registers.l = source_value,
+                            LoadByteTarget::HLI => self.bus.write_byte(self.registers.get_hl(), source_value)
+                        };
+                        match source {
+                            LoadByteSource::D8  => self.pc.wrapping_add(2),
+                            LoadByteSource::HLI => self.pc.wrapping_add(1),
+                            _                   => self.pc.wrapping_add(1),
+                        }
+                    },
+                    // DESCRIPTION: load next word in memory into a particular register
+                    // PC:+3
+                    // - - - -
+                    LoadType::Word(target) => {
+                        let word = self.read_next_word();
+                        match target {
+                            LoadWordTarget::BC => self.registers.set_bc(word),
+                            LoadWordTarget::DE => self.registers.set_de(word),
+                            LoadWordTarget::HL => self.registers.set_hl(word)
+                        };
+                        self.pc.wrapping_add(3)
+                    },
+                    // DESCRIPTION: load a particular value stored at the source address into A
+                    // WHEN: source is byte indirect
+                    // PC:+2
+                    // WHEN: source is word indirect
+                    // PC:+3
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::AFromIndirect(source) => {
+                        self.registers.a = match source {
+                            Indirect::BCIndirect => self.bus.read_byte(self.registers.get_bc()),
+                            Indirect::DEIndirect => self.bus.read_byte(self.registers.get_de()),
+                            Indirect::HLIndirectMinus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_sub(1));
+                                self.bus.read_byte(hl)
+                            }
+                            Indirect::HLIndirectPlus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_add(1));
+                                self.bus.read_byte(hl)
+                            }
+                            Indirect::WordIndirect => self.bus.read_byte(self.read_next_word()),
+                            Indirect::LastByteIndirect => self.bus.read_byte(0xFF00 + self.registers.c as u16),
+                        };
+
+                        let pc_offset = match source {
+                            Indirect::WordIndirect => 3,
+                            Indirect::LastByteIndirect => 2,
+                            _ => 1
+                        };
+                        self.pc.wrapping_add(pc_offset)
+                    },
+                    // DESCRIPTION: load the A register into memory at the source address
+                    // WHEN: instruction.source is byte indirect
+                    // PC:+2
+                    // WHEN: instruction.source is word indirect
+                    // PC:+3
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::IndirectFromA(target) => {
+                        let a = self.registers.a;
+                        match target {
+                            Indirect::BCIndirect => {
+                                let bc = self.registers.get_bc();
+                                self.bus.write_byte(bc, a)
+                            }
+                            Indirect::DEIndirect => {
+                                let de = self.registers.get_de();
+                                self.bus.write_byte(de, a)
+                            }
+                            Indirect::HLIndirectMinus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_sub(1));
+                                self.bus.write_byte(hl, a);
+                            }
+                            Indirect::HLIndirectPlus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_add(1));
+                                self.bus.write_byte(hl, a);
+                            }
+                            Indirect::WordIndirect => {
+                                let word = self.read_next_word();
+                                self.bus.write_byte(word, a);
+                            },
+                            Indirect::LastByteIndirect => {
+                                let c = self.registers.c as u16;
+                                self.bus.write_byte(0xFF00 + c, a);
+                            }
+                        };
+
+                        let pc_offset = match target {
+                            Indirect::WordIndirect => 3,
+                            Indirect::LastByteIndirect => 2,
+                            _ => 1
+                        };
+                        self.pc.wrapping_add(pc_offset)
+                    },
+                    // DESCRIPTION: Load the value in A into memory location located at 0xFF plus
+                    // an offset stored as the next byte in memory
+                    // PC:+2
+                    // - - - -
+                    LoadType::ByteAddressFromA => {
+                        let offset = self.bus.read_byte(self.pc + 1) as u16;
+                        self.bus.write_byte(0xFF00 + offset, self.registers.a);
+                        self.pc.wrapping_add(2)
+                    },
+                    // DESCRIPTION: Load the value located at 0xFF plus an offset stored as the next byte in memory into A
+                    // PC:+2
+                    // - - - -
+                    LoadType::AFromByteAddress => {
+                        self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
+                        self.pc.wrapping_add(2)
+                    },
+                }
             }
         }
     }
