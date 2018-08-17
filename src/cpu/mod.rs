@@ -724,8 +724,7 @@ impl CPU {
         self.registers.f.subtract = false;
         // Half carry tests if we flow over the 11th bit i.e. does adding the two
         // numbers together cause the 11th bit to flip
-        let mask = 0b111_1111_1111;
-        //TODO: this can overflow and will panic
+        let mask = 0b111_1111_1111; // mask out bits 11-15
         self.registers.f.half_carry = (value & mask) + (hl & mask) > mask;
 
         result
@@ -1126,6 +1125,15 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x05);
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
+    }
+
+    // ADDHL
+    #[test]
+    fn execute_add_hl() {
+        let cpu = test_instruction!(Instruction::ADDHL(ADDHLTarget::BC), b => 0x07, c => 0x00, h => 0x03, l => 0x00);
+
+        assert_eq!(cpu.registers.get_hl(), 0x0A00);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => false);
     }
 
     // ADC

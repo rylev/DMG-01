@@ -382,6 +382,10 @@ impl Instruction {
             0x84 => Some(Instruction::ADD(ArithmeticTarget::H)),
             0x85 => Some(Instruction::ADD(ArithmeticTarget::L)),
 
+            0x09 => Some(Instruction::ADDHL(ADDHLTarget::BC)),
+            0x19 => Some(Instruction::ADDHL(ADDHLTarget::DE)),
+            0x29 => Some(Instruction::ADDHL(ADDHLTarget::HL)),
+
             0x8f => Some(Instruction::ADC(ArithmeticTarget::A)),
             0x88 => Some(Instruction::ADC(ArithmeticTarget::B)),
             0x89 => Some(Instruction::ADC(ArithmeticTarget::C)),
