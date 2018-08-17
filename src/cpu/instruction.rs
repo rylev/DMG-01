@@ -17,6 +17,11 @@ pub enum PrefixTarget {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub enum JumpTest {
+    NotZero, NotCarry, Zero, Carry, Always
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BitPosition {
     B0, B1, B2, B3, B4, B5, B6, B7
 }
@@ -37,6 +42,7 @@ impl std::convert::From<BitPosition> for u8  {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Instruction {
+    // Arithmetic Instructions
     INC(IncDecTarget),
     DEC(IncDecTarget),
 
@@ -58,6 +64,7 @@ pub enum Instruction {
     RLCA,
     CPL,
 
+    // Prefix Instructions
     BIT(PrefixTarget, BitPosition),
     RES(PrefixTarget, BitPosition),
     SET(PrefixTarget, BitPosition),
@@ -68,7 +75,11 @@ pub enum Instruction {
     RLC(PrefixTarget),
     SRA(PrefixTarget),
     SLA(PrefixTarget),
-    SWAP(PrefixTarget)
+    SWAP(PrefixTarget),
+
+    // Jump Instructions
+    JP(JumpTest),
+    JR(JumpTest)
 }
 
 impl Instruction {

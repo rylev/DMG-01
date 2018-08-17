@@ -519,6 +519,15 @@ impl CPU {
                 // Z:? S:0 H:0 C:0
                 prefix_instruction!(register, self.swap_nibbles => reg);
                 self.pc.wrapping_add(2)
+            },
+            Instruction::JP(test) {
+                match test {
+                    JumpTest::NotZero =>
+                    JumpTest::NotCarry =>
+                    JumpTest::Zero =>
+                    JumpTest::Carry =>
+                    JumpTest::Always =>
+                }
             }
         }
     }
