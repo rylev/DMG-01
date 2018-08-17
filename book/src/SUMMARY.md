@@ -5,6 +5,7 @@
 - [CPU](./cpu/introduction.md)
   - [CPU Registers](./cpu/registers.md)
   - [Instructions on Register Data](./cpu/register_data_instructions.md)
+  - [Program Count](./cpu/program_counter.md)
 - [Appendix](./appendix/index.md)
   - [Numbers](./appendix/numbers.md)
   - [Number Notations](./appendix/number_notations.md)
