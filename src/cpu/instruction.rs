@@ -8,12 +8,12 @@ pub enum IncDecTarget {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ArithmeticTarget {
-    A, B, C, D, E, H, L,
+    A, B, C, D, E, H, L, D8, HLI
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PrefixTarget {
-    A, B, C, D, E, H, L,
+    A, B, C, D, E, H, L, HLI
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -48,6 +48,7 @@ pub enum Instruction {
 
     ADD(ArithmeticTarget),
     ADC(ArithmeticTarget),
+    ADDHL(ADDHLTarget)
     SUB(ArithmeticTarget),
     SBC(ArithmeticTarget),
     AND(ArithmeticTarget),
@@ -79,7 +80,8 @@ pub enum Instruction {
 
     // Jump Instructions
     JP(JumpTest),
-    JR(JumpTest)
+    JR(JumpTest),
+    JPI
 }
 
 impl Instruction {
@@ -439,6 +441,20 @@ impl Instruction {
             0x0f => Some(Instruction::RRCA),
             0x07 => Some(Instruction::RLCA),
             0x2f => Some(Instruction::CPL),
+
+            0xc3 => Some(Instruction::JP(JumpTest::Always)),
+            0xc2 => Some(Instruction::JP(JumpTest::NotZero)),
+            0xd2 => Some(Instruction::JP(JumpTest::NotCarry)),
+            0xca => Some(Instruction::JP(JumpTest::Zero)),
+            0xda => Some(Instruction::JP(JumpTest::Carry)),
+
+            0x18 => Some(Instruction::JR(JumpTest::Always)),
+            0x28 => Some(Instruction::JR(JumpTest::Zero)),
+            0x38 => Some(Instruction::JR(JumpTest::Carry)),
+            0x20 => Some(Instruction::JR(JumpTest::NotZero)),
+            0x30 => Some(Instruction::JR(JumpTest::NotCarry)),
+
+            0xe9 => Some(Instruction::JPI),
 
             _ => None
         }

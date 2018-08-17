@@ -124,6 +124,14 @@ macro_rules! arithmetic_instruction {
                 ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work),
                 ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work),
                 ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work),
+                ArithmeticTarget::D8 => {
+                    let value = $self.read_next_byte();
+                    $self.$work(value);
+                }
+                ArithmeticTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    $self.$work(value);
+                }
             }
         }
     };
@@ -147,6 +155,16 @@ macro_rules! arithmetic_instruction {
                 ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work => a),
                 ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work => a),
                 ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work => a),
+                ArithmeticTarget::D8 => {
+                    let value = $self.read_next_byte();
+                    let result = $self.$work(value);
+                    $self.registers.a = result;
+                }
+                ArithmeticTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -173,6 +191,11 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: e => $work => e),
                 PrefixTarget::H => manipulate_8bit_register!($self: h => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: l => $work => l),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -196,6 +219,11 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work => e),
                 PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work => l),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value, $bit_position);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -219,6 +247,10 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work),
                 PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work),
                 PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    $self.$work(value, $bit_position);
+                }
             }
         }
     };
@@ -579,6 +611,12 @@ impl CPU {
                         self.jump_relative(true)
                     }
                 }
+            }
+            Instruction::JPI => {
+                // 1  4
+                // PC:HL
+                // - - - -
+                self.registers.get_hl()
             }
         }
     }
