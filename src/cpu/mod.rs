@@ -1652,6 +1652,35 @@ mod tests {
         assert_eq!(next_pc, 0xF6);
     }
 
+    // LD a, (??)
+    #[test]
+    fn execute_ld_a_indirect() {
+        let mut cpu = CPU::new();
+        cpu.registers.set_bc(0xF9);
+        cpu.bus.rom_bank_0[0xF9] = 0x4;
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::BCIndirect)));
+
+        assert_eq!(cpu.registers.a, 0x04);
+
+        cpu.registers.set_hl(0xA1);
+        cpu.bus.rom_bank_0[0xA1] = 0x9;
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::HLIndirectPlus)));
+
+        assert_eq!(cpu.registers.a, 0x09);
+        assert_eq!(cpu.registers.get_hl(), 0xA2);
+    }
+
+    // LD ?, ?
+    #[test]
+    fn execute_ld_byte() {
+        let mut cpu = CPU::new();
+        cpu.registers.b = 0x4;
+        cpu.execute(Instruction::LD(LoadType::Byte(LoadByteTarget::D, LoadByteSource::B)));
+
+        assert_eq!(cpu.registers.b, 0x4);
+        assert_eq!(cpu.registers.d, 0x4);
+    }
+
     // -----------------------------------------------------------------------------
 
     // Step
