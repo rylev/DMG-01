@@ -135,6 +135,7 @@ Yout might be wondering, "how do we know what to do given a certain the instruct
 
 What are the other types of instructions that act on register data?
 
+* **ADDHL** (add to HL) - just like ADD except that the target is added to the HL register
 * **ADC** (add with carry) - just like ADD except that the value of the carry flag is also added to the number
 * **SUB** (subtract) - subtract the value stored in a specific register with the value in the A register
 * **SBC** (subtract with carry) - just like ADD except that the value of the carry flag is also subtracted from the number

@@ -3,7 +3,14 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
+use self::instruction::{
+    Instruction,
+    IncDecTarget,
+    ArithmeticTarget,
+    PrefixTarget,
+    BitPosition,
+    ADDHLTarget
+};
 
 /// # Macros
 ///
@@ -332,6 +339,28 @@ impl CPU {
                 arithmetic_instruction!(register, self.add_without_carry => a);
                 self.pc.wrapping_add(1)
             },
+            Instruction::ADDHL(register) => {
+                // DESCRIPTION: (add) - add the value stored in a specific register
+                // with the value in the HL register
+                // PC:+1
+                // Z:- S:0 H:? C:?
+                let value = match register {
+                    ADDHLTarget::BC => {
+                        let value = self.registers.get_bc();
+                        self.add_hl(value)
+                    }
+                    ADDHLTarget::DE => {
+                        let value = self.registers.get_de();
+                        self.add_hl(value)
+                    }
+                    ADDHLTarget::HL => {
+                        let value = self.registers.get_hl();
+                        self.add_hl(value)
+                    }
+                };
+                self.registers.set_hl(value);
+                self.pc.wrapping_add(1)
+            },
             Instruction::ADC(register) => {
                 // DESCRIPTION: (add with carry) - add the value stored in a specific
                 // register with the value in the A register and the value in the carry flag
@@ -579,6 +608,20 @@ impl CPU {
         // the lower nibble to the upper nibble.
         self.registers.f.half_carry = ((self.registers.a & 0xF) + (value & 0xF) + additional_carry) > 0xF;
         add2
+    }
+
+    #[inline(always)]
+    fn add_hl(&mut self, value: u16) -> u16 {
+        let hl = self.registers.get_hl();
+        let (result, carry) = hl.overflowing_add(value);
+        self.registers.f.carry = carry;
+        self.registers.f.subtract = false;
+        // Half carry tests if we flow over the 11th bit i.e. does adding the two
+        // numbers together cause the 11th bit to flip
+        let mask = 0b111_1111_1111; // mask out bits 11-15
+        self.registers.f.half_carry = (value & mask) + (hl & mask) > mask;
+
+        result
     }
 
     #[inline(always)]
