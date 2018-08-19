@@ -192,3 +192,67 @@ impl CPU {
 And there we have it! We have a working stack that we can used. But what sort of things is the stack used for? One built in use for the stack is creating a "call" stack that allows the game to "call" functions and return from them. Let's see how that works.
 
 ## Calling Functions
+
+In most programming languages when you call a function, the state of the calling function is saved somewhere, execution is allowed to happen for the called function, and then when the called function returns, the state of the called function is restored. It turns out the Game Boy has built in support for this mechanism where the state that is saved is simply just what the program counter was when the called function was called. This means we can "call a function" and that function itself can call functions, and when all of that is done, we'll return right back to the place we left off before we called the function.
+
+This functionality is handled by two types of instructions `CALL` and `RET` (a.k.a return). The way `CALL` works is by using a mixture of two instructions we already know about `PUSH` and `JP` (a.k.a jump). To execute the `CALL` instruction, we must do the following:
+* `PUSH` the next program counter (i.e. the program counter we would have if we were not jumping) on to the stack
+* `JP` (a.k.a jump) to the address specified in the next 2 bytes of memory (a.k.a the function).
+
+And that's it! We've called into our function. But what happens when we call `RET` (a.k.a return) from our called function? Here's what will happen:
+* `POP` the next program counter off the stack and jump back to it.
+
+Well that's easy! Let's see it in code:
+
+```rust,noplayground
+# struct FlagsRegister { zero: bool }
+# struct Registers { f: FlagsRegister }
+# struct CPU { pc: u16, registers: Registers }
+# enum Instruction { CALL(JumpTest), RET(JumpTest)}
+# enum JumpTest { NotZero }
+# impl CPU {
+# fn read_next_word(&self) -> u16 { 0 }
+# fn push(&self, value: u16) { }
+# fn pop(&self) -> u16 { 0 } }
+impl CPU {
+  fn execute(&mut self, instruction: Instruction) -> u16 {
+    match instruction {
+      Instruction::CALL(test) => {
+          let jump_condition = match test {
+              JumpTest::NotZero => !self.registers.f.zero,
+              _ => { panic!("TODO: support more conditions") }
+          };
+          self.call(jump_condition)
+      }
+      Instruction::RET(test) => {
+          let jump_condition = match test {
+              JumpTest::NotZero => !self.registers.f.zero,
+              _ => { panic!("TODO: support more conditions") }
+          };
+          self.return_(jump_condition)
+      }
+      _ => { panic!("TODO: support more instructions") }
+    }
+  }
+
+  fn call(&mut self, should_jump: bool) -> u16 {
+    let next_pc = self.pc.wrapping_add(3);
+    if should_jump {
+      self.push(next_pc);
+      self.read_next_word()
+    } else {
+      next_pc
+    }
+  }
+
+  fn return_(&mut self, should_jump: bool) -> u16 {
+    if should_jump {
+      self.pop()
+    } else {
+      self.pc.wrapping_add(1)
+    }
+  }
+}
+```
+
+Now we can easily call functions and return from them. We're now done with the vast majority of our CPU instructions!
