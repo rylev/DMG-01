@@ -10,6 +10,10 @@ pub enum IncDecTarget {
 pub enum ArithmeticTarget {
     A, B, C, D, E, H, L,
 }
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ADDHLTarget {
+    BC, DE, HL
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PrefixTarget {
@@ -41,6 +45,7 @@ pub enum Instruction {
     DEC(IncDecTarget),
 
     ADD(ArithmeticTarget),
+    ADDHL(ADDHLTarget),
     ADC(ArithmeticTarget),
     SUB(ArithmeticTarget),
     SBC(ArithmeticTarget),

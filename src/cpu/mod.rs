@@ -3,7 +3,20 @@ pub mod registers;
 pub mod instruction;
 
 use self::registers::Registers;
-use self::instruction::{Instruction,IncDecTarget,ArithmeticTarget,PrefixTarget,BitPosition};
+use self::instruction::{
+    Instruction,
+    IncDecTarget,
+    ArithmeticTarget,
+    PrefixTarget,
+    BitPosition,
+    JumpTest,
+    ADDHLTarget,
+    LoadType,
+    LoadByteSource,
+    LoadByteTarget,
+    LoadWordTarget,
+    Indirect
+};
 
 /// # Macros
 ///
@@ -117,6 +130,14 @@ macro_rules! arithmetic_instruction {
                 ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work),
                 ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work),
                 ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work),
+                ArithmeticTarget::D8 => {
+                    let value = $self.read_next_byte();
+                    $self.$work(value);
+                }
+                ArithmeticTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    $self.$work(value);
+                }
             }
         }
     };
@@ -140,6 +161,16 @@ macro_rules! arithmetic_instruction {
                 ArithmeticTarget::E => manipulate_8bit_register!($self: e => $work => a),
                 ArithmeticTarget::H => manipulate_8bit_register!($self: h => $work => a),
                 ArithmeticTarget::L => manipulate_8bit_register!($self: l => $work => a),
+                ArithmeticTarget::D8 => {
+                    let value = $self.read_next_byte();
+                    let result = $self.$work(value);
+                    $self.registers.a = result;
+                }
+                ArithmeticTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -166,6 +197,11 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: e => $work => e),
                 PrefixTarget::H => manipulate_8bit_register!($self: h => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: l => $work => l),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -189,6 +225,11 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work => e),
                 PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work => l),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let result = $self.$work(value, $bit_position);
+                    $self.registers.set_hl(result as u16);
+                }
             }
         }
     };
@@ -212,6 +253,10 @@ macro_rules! prefix_instruction {
                 PrefixTarget::E => manipulate_8bit_register!($self: (e @ $bit_position) => $work),
                 PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work),
                 PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work),
+                PrefixTarget::HLI => {
+                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    $self.$work(value, $bit_position);
+                }
             }
         }
     };
@@ -239,6 +284,14 @@ impl MemoryBus {
             panic!("Reading from unkown part of memory at address #{address}")
         }
     }
+    pub fn write_byte(&mut self, address: u16, value: u8) {
+        let address = address as usize;
+        if address < ROM_BANK_0_END {
+            self.rom_bank_0[address] = value;
+        } else {
+            panic!("Reading from unkown part of memory at address #{address}")
+        }
+    }
 }
 
 #[cfg_attr(feature = "serialize", derive(Serialize))]
@@ -258,12 +311,12 @@ impl CPU {
         }
     }
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            instruction_byte = self.bus.read_byte(self.pc + 1);
+            instruction_byte = self.read_next_byte();
         }
 
         let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
@@ -332,6 +385,28 @@ impl CPU {
                 // PC:+1
                 // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_without_carry => a);
+                self.pc.wrapping_add(1)
+            },
+            Instruction::ADDHL(register) => {
+                // DESCRIPTION: (add) - add the value stored in a specific register
+                // with the value in the HL register
+                // PC:+1
+                // Z:- S:0 H:? C:?
+                let value = match register {
+                    ADDHLTarget::BC => {
+                        let value = self.registers.get_bc();
+                        self.add_hl(value)
+                    }
+                    ADDHLTarget::DE => {
+                        let value = self.registers.get_de();
+                        self.add_hl(value)
+                    }
+                    ADDHLTarget::HL => {
+                        let value = self.registers.get_hl();
+                        self.add_hl(value)
+                    }
+                };
+                self.registers.set_hl(value);
                 self.pc.wrapping_add(1)
             },
             Instruction::ADC(register) => {
@@ -519,8 +594,202 @@ impl CPU {
                 // Z:? S:0 H:0 C:0
                 prefix_instruction!(register, self.swap_nibbles => reg);
                 self.pc.wrapping_add(2)
+            },
+            Instruction::JP(test) => {
+                // DESCRIPTION: conditionally jump to the address stored in the next word in memory
+                // PC:?/+3
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.jump(jump_condition)
+            }
+            Instruction::JR(test) => {
+                // DESCRIPTION: conditionally jump to the address that is N bytes away in memory
+                // where N is the next byte in memory interpreted as a signed byte
+                // PC:?/+2
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.jump_relative(jump_condition)
+            }
+            Instruction::JPI => {
+                // DESCRIPTION: jump to the address stored in HL
+                // 1
+                // PC:HL
+                // - - - -
+                self.registers.get_hl()
+            }
+            Instruction::LD(load_type) => {
+                match load_type {
+                    // DESCRIPTION: load byte store in a particular register into another
+                    // particular register
+                    // WHEN: source is d8
+                    // PC:+2
+                    // WHEN: source is (HL)
+                    // PC:+1
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::Byte(target, source) => {
+                        let source_value = match source {
+                            LoadByteSource::A => self.registers.a,
+                            LoadByteSource::B => self.registers.b,
+                            LoadByteSource::C => self.registers.c,
+                            LoadByteSource::D => self.registers.d,
+                            LoadByteSource::E => self.registers.e,
+                            LoadByteSource::H => self.registers.h,
+                            LoadByteSource::L => self.registers.l,
+                            LoadByteSource::D8 => self.read_next_byte(),
+                            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl())
+                        };
+                        match target {
+                            LoadByteTarget::A => self.registers.a = source_value,
+                            LoadByteTarget::B => self.registers.b = source_value,
+                            LoadByteTarget::C => self.registers.c = source_value,
+                            LoadByteTarget::D => self.registers.d = source_value,
+                            LoadByteTarget::E => self.registers.e = source_value,
+                            LoadByteTarget::H => self.registers.h = source_value,
+                            LoadByteTarget::L => self.registers.l = source_value,
+                            LoadByteTarget::HLI => self.bus.write_byte(self.registers.get_hl(), source_value)
+                        };
+                        match source {
+                            LoadByteSource::D8  => self.pc.wrapping_add(2),
+                            LoadByteSource::HLI => self.pc.wrapping_add(1),
+                            _                   => self.pc.wrapping_add(1),
+                        }
+                    },
+                    // DESCRIPTION: load next word in memory into a particular register
+                    // PC:+3
+                    // - - - -
+                    LoadType::Word(target) => {
+                        let word = self.read_next_word();
+                        match target {
+                            LoadWordTarget::BC => self.registers.set_bc(word),
+                            LoadWordTarget::DE => self.registers.set_de(word),
+                            LoadWordTarget::HL => self.registers.set_hl(word)
+                        };
+                        self.pc.wrapping_add(3)
+                    },
+                    // DESCRIPTION: load a particular value stored at the source address into A
+                    // WHEN: source is byte indirect
+                    // PC:+2
+                    // WHEN: source is word indirect
+                    // PC:+3
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::AFromIndirect(source) => {
+                        self.registers.a = match source {
+                            Indirect::BCIndirect => self.bus.read_byte(self.registers.get_bc()),
+                            Indirect::DEIndirect => self.bus.read_byte(self.registers.get_de()),
+                            Indirect::HLIndirectMinus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_sub(1));
+                                self.bus.read_byte(hl)
+                            }
+                            Indirect::HLIndirectPlus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_add(1));
+                                self.bus.read_byte(hl)
+                            }
+                            Indirect::WordIndirect => self.bus.read_byte(self.read_next_word()),
+                            Indirect::LastByteIndirect => self.bus.read_byte(0xFF00 + self.registers.c as u16),
+                        };
+
+                        let pc_offset = match source {
+                            Indirect::WordIndirect => 3,
+                            Indirect::LastByteIndirect => 2,
+                            _ => 1
+                        };
+                        self.pc.wrapping_add(pc_offset)
+                    },
+                    // DESCRIPTION: load the A register into memory at the source address
+                    // WHEN: instruction.source is byte indirect
+                    // PC:+2
+                    // WHEN: instruction.source is word indirect
+                    // PC:+3
+                    // ELSE:
+                    // PC:+1
+                    // - - - -
+                    LoadType::IndirectFromA(target) => {
+                        let a = self.registers.a;
+                        match target {
+                            Indirect::BCIndirect => {
+                                let bc = self.registers.get_bc();
+                                self.bus.write_byte(bc, a)
+                            }
+                            Indirect::DEIndirect => {
+                                let de = self.registers.get_de();
+                                self.bus.write_byte(de, a)
+                            }
+                            Indirect::HLIndirectMinus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_sub(1));
+                                self.bus.write_byte(hl, a);
+                            }
+                            Indirect::HLIndirectPlus => {
+                                let hl = self.registers.get_hl();
+                                self.registers.set_hl(hl.wrapping_add(1));
+                                self.bus.write_byte(hl, a);
+                            }
+                            Indirect::WordIndirect => {
+                                let word = self.read_next_word();
+                                self.bus.write_byte(word, a);
+                            },
+                            Indirect::LastByteIndirect => {
+                                let c = self.registers.c as u16;
+                                self.bus.write_byte(0xFF00 + c, a);
+                            }
+                        };
+
+                        let pc_offset = match target {
+                            Indirect::WordIndirect => 3,
+                            Indirect::LastByteIndirect => 2,
+                            _ => 1
+                        };
+                        self.pc.wrapping_add(pc_offset)
+                    },
+                    // DESCRIPTION: Load the value in A into memory location located at 0xFF plus
+                    // an offset stored as the next byte in memory
+                    // PC:+2
+                    // - - - -
+                    LoadType::ByteAddressFromA => {
+                        let offset = self.bus.read_byte(self.pc + 1) as u16;
+                        self.bus.write_byte(0xFF00 + offset, self.registers.a);
+                        self.pc.wrapping_add(2)
+                    },
+                    // DESCRIPTION: Load the value located at 0xFF plus an offset stored as the next byte in memory into A
+                    // PC:+2
+                    // - - - -
+                    LoadType::AFromByteAddress => {
+                        self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
+                        self.pc.wrapping_add(2)
+                    },
+                }
             }
         }
+    }
+
+    #[inline(always)]
+    fn read_next_word(&self) -> u16 {
+        // Gameboy is little endian so read pc + 2 as most significant bit
+        // and pc + 1 as least significant bit
+        ((self.bus.read_byte(self.pc + 2) as u16) << 8)  | (self.bus.read_byte(self.pc + 1) as u16)
+    }
+
+    #[inline(always)]
+    fn read_next_byte(&self) -> u8 {
+        self.bus.read_byte(self.pc + 1)
     }
 
     #[inline(always)]
@@ -581,6 +850,20 @@ impl CPU {
         // the lower nibble to the upper nibble.
         self.registers.f.half_carry = ((self.registers.a & 0xF) + (value & 0xF) + additional_carry) > 0xF;
         add2
+    }
+
+    #[inline(always)]
+    fn add_hl(&mut self, value: u16) -> u16 {
+        let hl = self.registers.get_hl();
+        let (result, carry) = hl.overflowing_add(value);
+        self.registers.f.carry = carry;
+        self.registers.f.subtract = false;
+        // Half carry tests if we flow over the 11th bit i.e. does adding the two
+        // numbers together cause the 11th bit to flip
+        let mask = 0b111_1111_1111; // mask out bits 11-15
+        self.registers.f.half_carry = (value & mask) + (hl & mask) > mask;
+
+        result
     }
 
     #[inline(always)]
@@ -802,6 +1085,30 @@ impl CPU {
         self.registers.f.carry = false;
         new_value
     }
+
+    #[inline(always)]
+    fn jump(&self, should_jump: bool) -> u16 {
+        if should_jump {
+            self.read_next_word()
+        } else {
+            self.pc.wrapping_add(3)
+        }
+    }
+
+    #[inline(always)]
+    fn jump_relative(&self, should_jump: bool) -> u16 {
+        let next_step = self.pc.wrapping_add(2);
+         if should_jump {
+            let offset = self.read_next_byte() as i8;
+            if offset >= 0 {
+                next_step.wrapping_add(offset as u16)
+            } else {
+                next_step.wrapping_sub(offset.abs() as u16)
+            }
+        } else {
+            next_step
+        }
+    }
 }
 
 #[cfg(test)]
@@ -953,6 +1260,15 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0x05);
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => true);
+    }
+
+    // ADDHL
+    #[test]
+    fn execute_add_hl() {
+        let cpu = test_instruction!(Instruction::ADDHL(ADDHLTarget::BC), b => 0x07, c => 0x00, h => 0x03, l => 0x00);
+
+        assert_eq!(cpu.registers.get_hl(), 0x0A00);
+        check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => false);
     }
 
     // ADC
@@ -1276,6 +1592,66 @@ mod tests {
 
         assert_eq!(cpu.registers.a, 0b0101_1011);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
+    }
+
+    // JP
+    #[test]
+    fn execute_jp() {
+        let mut cpu = CPU::new();
+        cpu.pc = 0xF8;
+        cpu.bus.rom_bank_0[0xF9] = 0xFC;
+        cpu.bus.rom_bank_0[0xFA] = 0x02;
+        let next_pc = cpu.execute(Instruction::JP(JumpTest::Always));
+
+        assert_eq!(next_pc, 0x02FC);
+
+        let next_pc = cpu.execute(Instruction::JP(JumpTest::Carry));
+
+        assert_eq!(next_pc, 0xFB);
+    }
+
+    // JR
+    #[test]
+    fn execute_jr() {
+        let mut cpu = CPU::new();
+        cpu.pc = 0xF8;
+        cpu.bus.rom_bank_0[0xF9] = 0x4;
+        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+
+        assert_eq!(next_pc, 0xFE);
+
+        cpu.bus.rom_bank_0[0xF9] = 0xFC; // == -4
+        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+        assert_eq!(next_pc, 0xF6);
+    }
+
+    // LD a, (??)
+    #[test]
+    fn execute_ld_a_indirect() {
+        let mut cpu = CPU::new();
+        cpu.registers.set_bc(0xF9);
+        cpu.bus.rom_bank_0[0xF9] = 0x4;
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::BCIndirect)));
+
+        assert_eq!(cpu.registers.a, 0x04);
+
+        cpu.registers.set_hl(0xA1);
+        cpu.bus.rom_bank_0[0xA1] = 0x9;
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::HLIndirectPlus)));
+
+        assert_eq!(cpu.registers.a, 0x09);
+        assert_eq!(cpu.registers.get_hl(), 0xA2);
+    }
+
+    // LD ?, ?
+    #[test]
+    fn execute_ld_byte() {
+        let mut cpu = CPU::new();
+        cpu.registers.b = 0x4;
+        cpu.execute(Instruction::LD(LoadType::Byte(LoadByteTarget::D, LoadByteSource::B)));
+
+        assert_eq!(cpu.registers.b, 0x4);
+        assert_eq!(cpu.registers.d, 0x4);
     }
 
     // -----------------------------------------------------------------------------
