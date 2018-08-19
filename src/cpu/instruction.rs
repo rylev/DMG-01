@@ -3,7 +3,7 @@ use std;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum IncDecTarget {
     A, B, C, D, E, H, L,
-    BC, DE, HL,
+    BC, DE, HL, SP
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -12,7 +12,7 @@ pub enum ArithmeticTarget {
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ADDHLTarget {
-    BC, DE, HL
+    BC, DE, HL, SP
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -35,7 +35,7 @@ pub enum LoadByteSource {
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LoadWordTarget {
-    BC, DE, HL
+    BC, DE, HL, SP
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Indirect {
@@ -55,6 +55,13 @@ pub enum LoadType {
     IndirectFromA(Indirect),
     AFromByteAddress,
     ByteAddressFromA,
+    SPFromHL,
+    IndirectFromSP
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum StackTarget {
+    AF, BC, DE, HL
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -85,6 +92,7 @@ pub enum Instruction {
     ADD(ArithmeticTarget),
     ADC(ArithmeticTarget),
     ADDHL(ADDHLTarget),
+    ADDSP,
     SUB(ArithmeticTarget),
     SBC(ArithmeticTarget),
     AND(ArithmeticTarget),
@@ -120,7 +128,13 @@ pub enum Instruction {
     JPI,
 
     // Load Instructions
-    LD(LoadType)
+    LD(LoadType),
+
+    // Stack Instructions
+    PUSH(StackTarget),
+    POP(StackTarget),
+    CALL(JumpTest),
+    RET(JumpTest),
 }
 
 impl Instruction {
@@ -599,6 +613,27 @@ impl Instruction {
 
             0xe0 => Some(Instruction::LD(LoadType::ByteAddressFromA)),
             0xf0 => Some(Instruction::LD(LoadType::AFromByteAddress)),
+
+            0xc5 => Some(Instruction::PUSH(StackTarget::BC)),
+            0xd5 => Some(Instruction::PUSH(StackTarget::DE)),
+            0xe5 => Some(Instruction::PUSH(StackTarget::HL)),
+            0xf5 => Some(Instruction::PUSH(StackTarget::AF)),
+            0xc1 => Some(Instruction::POP(StackTarget::BC)),
+            0xd1 => Some(Instruction::POP(StackTarget::DE)),
+            0xe1 => Some(Instruction::POP(StackTarget::HL)),
+            0xf1 => Some(Instruction::POP(StackTarget::AF)),
+
+            0xc4 => Some(Instruction::CALL(JumpTest::NotZero)),
+            0xd4 => Some(Instruction::CALL(JumpTest::NotCarry)),
+            0xcc => Some(Instruction::CALL(JumpTest::Zero)),
+            0xdc => Some(Instruction::CALL(JumpTest::Carry)),
+            0xcd => Some(Instruction::CALL(JumpTest::Always)),
+
+            0xc0 => Some(Instruction::RET(JumpTest::NotZero)),
+            0xd0 => Some(Instruction::RET(JumpTest::NotCarry)),
+            0xc8 => Some(Instruction::RET(JumpTest::Zero)),
+            0xd8 => Some(Instruction::RET(JumpTest::Carry)),
+            0xc9 => Some(Instruction::RET(JumpTest::Always)),
 
             _ => None
         }

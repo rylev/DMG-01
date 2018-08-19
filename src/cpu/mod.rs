@@ -15,7 +15,8 @@ use self::instruction::{
     LoadByteSource,
     LoadByteTarget,
     LoadWordTarget,
-    Indirect
+    Indirect,
+    StackTarget
 };
 
 /// # Macros
@@ -298,6 +299,7 @@ impl MemoryBus {
 pub struct CPU {
     pub registers: Registers,
     pc: u16,
+    sp: u16,
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     bus: MemoryBus,
 }
@@ -307,6 +309,7 @@ impl CPU {
         CPU {
             registers: Registers::new(),
             pc: 0x0,
+            sp: 0x00,
             bus: MemoryBus::new(),
         }
     }
@@ -352,6 +355,11 @@ impl CPU {
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl),
+                    IncDecTarget::SP => {
+                        let amount = self.sp;
+                        let result = self.inc_16bit(amount);
+                        self.sp = result;
+                    }
                 }
                 self.pc.wrapping_add(1)
             },
@@ -376,6 +384,11 @@ impl CPU {
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl),
+                    IncDecTarget::SP => {
+                        let amount = self.sp;
+                        let result = self.dec_16bit(amount);
+                        self.sp = result;
+                    }
                 }
                 self.pc.wrapping_add(1)
             },
@@ -393,21 +406,37 @@ impl CPU {
                 // PC:+1
                 // Z:- S:0 H:? C:?
                 let value = match register {
-                    ADDHLTarget::BC => {
-                        let value = self.registers.get_bc();
-                        self.add_hl(value)
-                    }
-                    ADDHLTarget::DE => {
-                        let value = self.registers.get_de();
-                        self.add_hl(value)
-                    }
-                    ADDHLTarget::HL => {
-                        let value = self.registers.get_hl();
-                        self.add_hl(value)
-                    }
+                    ADDHLTarget::BC => self.registers.get_bc(),
+                    ADDHLTarget::DE => self.registers.get_de(),
+                    ADDHLTarget::HL => self.registers.get_hl(),
+                    ADDHLTarget::SP => self.sp,
                 };
-                self.registers.set_hl(value);
+                let result = self.add_hl(value);
+                self.registers.set_hl(result);
                 self.pc.wrapping_add(1)
+            },
+            Instruction::ADDSP => {
+                // DESCRIPTION: (add stack pointer) - add a one byte signed number to
+                // the value stored in the stack pointer register
+                // PC:+2
+                // Z:0 S:0 H:? C:?
+
+                // First cast the byte as signed with `as i8` then extend it to 16 bits
+                // with `as i16` and then stop treating it like a signed integer with
+                // `as u16`
+                let value = self.read_next_byte() as i8 as i16 as u16;
+                let result = self.sp.wrapping_add(value);
+
+                // Half and whole carry are computed at the nibble and byte level instead
+                // of the byte and word level like you might expect for 16 bit values
+                let half_carry_mask = 0xF;
+                self.registers.f.half_carry = (self.sp & half_carry_mask) + (value & half_carry_mask) > half_carry_mask;
+                let carry_mask = 0xff;
+                self.registers.f.carry = (self.sp & carry_mask) + (value & carry_mask) > carry_mask;
+
+                self.sp = result;
+
+                self.pc.wrapping_add(2)
             },
             Instruction::ADC(register) => {
                 // DESCRIPTION: (add with carry) - add the value stored in a specific
@@ -676,7 +705,8 @@ impl CPU {
                         match target {
                             LoadWordTarget::BC => self.registers.set_bc(word),
                             LoadWordTarget::DE => self.registers.set_de(word),
-                            LoadWordTarget::HL => self.registers.set_hl(word)
+                            LoadWordTarget::HL => self.registers.set_hl(word),
+                            LoadWordTarget::SP => self.sp = word,
                         };
                         self.pc.wrapping_add(3)
                     },
@@ -775,9 +805,102 @@ impl CPU {
                         self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
                         self.pc.wrapping_add(2)
                     },
+                    // DESCRIPTION: Load the value in HL into SP
+                    // PC:+1
+                    // - - - -
+                    LoadType::SPFromHL => {
+                        self.sp = self.registers.get_hl();
+                        self.pc.wrapping_add(1)
+                    },
+                    // DESCRIPTION: Load memory address with the contents of SP
+                    // PC:+3
+                    // - - - -
+                    LoadType::IndirectFromSP => {
+                        let address = self.read_next_word();
+                        let sp = self.sp;
+                        self.bus.write_byte(address, (sp & 0xFF) as u8);
+                        self.bus.write_byte(address.wrapping_add(1), ((sp & 0xFF00) >> 8) as u8);
+                        self.pc.wrapping_add(3)
+                    },
                 }
             }
+            Instruction::PUSH(target) => {
+                // DESCRIPTION: push a value from a given register on to the stack
+                // 1
+                // - - - -
+                let value = match target {
+                    StackTarget::AF => self.registers.get_af(),
+                    StackTarget::BC => self.registers.get_bc(),
+                    StackTarget::DE => self.registers.get_de(),
+                    StackTarget::HL => self.registers.get_hl(),
+                };
+                self.push(value);
+                self.pc.wrapping_add(1)
+            }
+            Instruction::POP(target) => {
+                // DESCRIPTION: pop a value from the stack and store it in a given register
+                // 1
+                // WHEN: target is AF
+                // Z N H C
+                // ELSE:
+                // - - - -
+                let result = self.pop();
+                match target {
+                    StackTarget::AF => self.registers.set_af(result),
+                    StackTarget::BC => self.registers.set_bc(result),
+                    StackTarget::DE => self.registers.set_de(result),
+                    StackTarget::HL => self.registers.set_hl(result),
+                };
+                self.pc.wrapping_add(1)
+            }
+            Instruction::CALL(test) => {
+                // DESCRIPTION: Conditionally PUSH the would be instruction on to the
+                // stack and then jump to a specific address
+                // PC:?/+3
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.call(jump_condition)
+            }
+            Instruction::RET(test) => {
+                // DESCRIPTION: Conditionally POP two bytes from the stack and jump to that address
+                // PC:?/+1
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.return_(jump_condition)
+            }
         }
+    }
+
+    #[inline(always)]
+    fn push(&mut self, value: u16) {
+        self.sp = self.sp.wrapping_sub(1);
+        self.bus.write_byte(self.sp, ((value & 0xFF00) >> 8) as u8);
+
+        self.sp = self.sp.wrapping_sub(1);
+        self.bus.write_byte(self.sp, (value & 0xFF) as u8);
+    }
+
+    #[inline(always)]
+    fn pop(&mut self) -> u16 {
+        let lsb = self.bus.read_byte(self.sp) as u16;
+        self.sp = self.sp.wrapping_add(1);
+
+        let msb = self.bus.read_byte(self.sp) as u16;
+        self.sp = self.sp.wrapping_add(1);
+
+        (msb << 8) | lsb
     }
 
     #[inline(always)]
@@ -1107,6 +1230,26 @@ impl CPU {
             }
         } else {
             next_step
+        }
+    }
+
+    #[inline(always)]
+    fn call(&mut self, should_jump: bool) -> u16 {
+        let next_pc = self.pc.wrapping_add(3);
+        if should_jump {
+            self.push(next_pc);
+            self.read_next_word()
+        } else {
+            next_pc
+        }
+    }
+
+    #[inline(always)]
+    fn return_(&mut self, should_jump: bool) -> u16 {
+        if should_jump {
+            self.pop()
+        } else {
+            self.pc.wrapping_add(1)
         }
     }
 }
@@ -1652,6 +1795,25 @@ mod tests {
 
         assert_eq!(cpu.registers.b, 0x4);
         assert_eq!(cpu.registers.d, 0x4);
+    }
+
+    // PUSH/POP
+    #[test]
+    fn execute_push_pop() {
+        let mut cpu = CPU::new();
+        cpu.registers.b = 0x4;
+        cpu.registers.c = 0x89;
+        cpu.sp = 0x10;
+        cpu.execute(Instruction::PUSH(StackTarget::BC));
+
+        assert_eq!(cpu.bus.read_byte(0xF), 0x04);
+        assert_eq!(cpu.bus.read_byte(0xE), 0x89);
+        assert_eq!(cpu.sp, 0xE);
+
+        cpu.execute(Instruction::POP(StackTarget::DE));
+
+        assert_eq!(cpu.registers.d, 0x04);
+        assert_eq!(cpu.registers.e, 0x89);
     }
 
     // -----------------------------------------------------------------------------
