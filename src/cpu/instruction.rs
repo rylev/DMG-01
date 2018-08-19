@@ -58,6 +58,11 @@ pub enum LoadType {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub enum StackTarget {
+    AF, BC, DE, HL
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BitPosition {
     B0, B1, B2, B3, B4, B5, B6, B7
 }
@@ -120,7 +125,11 @@ pub enum Instruction {
     JPI,
 
     // Load Instructions
-    LD(LoadType)
+    LD(LoadType),
+
+    // Stack Instructions
+    PUSH(StackTarget),
+    POP(StackTarget),
 }
 
 impl Instruction {
@@ -599,6 +608,15 @@ impl Instruction {
 
             0xe0 => Some(Instruction::LD(LoadType::ByteAddressFromA)),
             0xf0 => Some(Instruction::LD(LoadType::AFromByteAddress)),
+
+            0xc5 => Some(Instruction::PUSH(StackTarget::BC)),
+            0xd5 => Some(Instruction::PUSH(StackTarget::DE)),
+            0xe5 => Some(Instruction::PUSH(StackTarget::HL)),
+            0xf5 => Some(Instruction::PUSH(StackTarget::AF)),
+            0xc1 => Some(Instruction::POP(StackTarget::BC)),
+            0xd1 => Some(Instruction::POP(StackTarget::DE)),
+            0xe1 => Some(Instruction::POP(StackTarget::HL)),
+            0xf1 => Some(Instruction::POP(StackTarget::AF)),
 
             _ => None
         }
