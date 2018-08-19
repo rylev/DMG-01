@@ -809,6 +809,33 @@ impl CPU {
                 };
                 self.pc.wrapping_add(1)
             }
+            Instruction::CALL(test) => {
+                // DESCRIPTION: Conditionally PUSH the would be instruction on to the
+                // stack and then jump to a specific address
+                // PC:?/+3
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.call(jump_condition)
+            }
+            Instruction::RET(test) => {
+                // DESCRIPTION: Conditionally POP two bytes from the stack and jump to that address
+                // PC:?/+1
+                // - - - -
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.return_(jump_condition)
+            }
         }
     }
 
@@ -1159,6 +1186,26 @@ impl CPU {
             }
         } else {
             next_step
+        }
+    }
+
+    #[inline(always)]
+    fn call(&mut self, should_jump: bool) -> u16 {
+        let next_pc = self.pc.wrapping_add(3);
+        if should_jump {
+            self.push(next_pc);
+            self.read_next_word()
+        } else {
+            next_pc
+        }
+    }
+
+    #[inline(always)]
+    fn return_(&mut self, should_jump: bool) -> u16 {
+        if should_jump {
+            self.pop()
+        } else {
+            self.pc.wrapping_add(1)
         }
     }
 }
