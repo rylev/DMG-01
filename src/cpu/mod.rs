@@ -599,54 +599,28 @@ impl CPU {
                 // DESCRIPTION: conditionally jump to the address stored in the next word in memory
                 // PC:?/+3
                 // - - - -
-                match test {
-                    JumpTest::NotZero => {
-                        let jump_condition = !self.registers.f.zero;
-                        self.jump(jump_condition)
-                    },
-                    JumpTest::NotCarry => {
-                        let jump_condition = !self.registers.f.carry;
-                        self.jump(jump_condition)
-                    }
-                    JumpTest::Zero => {
-                        let jump_condition = self.registers.f.zero;
-                        self.jump(jump_condition)
-                    }
-                    JumpTest::Carry => {
-                        let jump_condition = self.registers.f.carry;
-                        self.jump(jump_condition)
-                    }
-                    JumpTest::Always => {
-                        self.jump(true)
-                    }
-                }
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.jump(jump_condition)
             }
             Instruction::JR(test) => {
                 // DESCRIPTION: conditionally jump to the address that is N bytes away in memory
                 // where N is the next byte in memory interpreted as a signed byte
                 // PC:?/+2
                 // - - - -
-                match test {
-                    JumpTest::NotZero => {
-                        let jump_condition = !self.registers.f.zero;
-                        self.jump_relative(jump_condition)
-                    },
-                    JumpTest::NotCarry => {
-                        let jump_condition = !self.registers.f.carry;
-                        self.jump_relative(jump_condition)
-                    }
-                    JumpTest::Zero => {
-                        let jump_condition = self.registers.f.zero;
-                        self.jump_relative(jump_condition)
-                    }
-                    JumpTest::Carry => {
-                        let jump_condition = self.registers.f.carry;
-                        self.jump_relative(jump_condition)
-                    }
-                    JumpTest::Always => {
-                        self.jump_relative(true)
-                    }
-                }
+                let jump_condition = match test {
+                    JumpTest::NotZero => !self.registers.f.zero,
+                    JumpTest::NotCarry => !self.registers.f.carry,
+                    JumpTest::Zero => self.registers.f.zero,
+                    JumpTest::Carry => self.registers.f.carry,
+                    JumpTest::Always => true
+                };
+                self.jump_relative(jump_condition)
             }
             Instruction::JPI => {
                 // DESCRIPTION: jump to the address stored in HL
@@ -1113,9 +1087,8 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn jump(&mut self, should_jump: bool) -> u16 {
+    fn jump(&self, should_jump: bool) -> u16 {
         if should_jump {
-            println!("{:x}", self.read_next_word());
             self.read_next_word()
         } else {
             self.pc.wrapping_add(3)
@@ -1123,7 +1096,7 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn jump_relative(&mut self, should_jump: bool) -> u16 {
+    fn jump_relative(&self, should_jump: bool) -> u16 {
         let next_step = self.pc.wrapping_add(2);
          if should_jump {
             let offset = self.read_next_byte() as i8;

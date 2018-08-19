@@ -37,7 +37,9 @@ impl MemoryBus {
 }
 ```
 
-Ok, so we now have a program counter that can tell us at which address in memory the currently executing instruction is. Now we'll need to actually add the method to the CPU that uses the program counter to read the instruction from memory and execute it.
+We now have a program counter that can tell us at which address in memory the currently executing instruction is. We won't talk much more about the contents of memory or where certain things in memory live until later in the book. For now, you should just picture memory as a large array that we can read from.
+
+Now we'll need to actually add the method to the CPU that uses the program counter to read the instruction from memory and execute it.
 
 The full set of steps is as follows:
 * Use the program counter to read the instruction byte from memory.
@@ -135,12 +137,8 @@ Let's put it in code!
 # enum Instruction { INC(IncDecTarget), RLC(PrefixTarget) }
 # struct CPU { pc: u16, bus: Bus }
 # struct Bus {}
-# impl Bus {
-#   fn read_byte(&self, a: u16) -> u8 { 0 }
-# }
-# impl CPU {
-#   fn execute(&self, i: Instruction) -> u16 { 0 }
-# }
+# impl Bus { fn read_byte(&self, a: u16) -> u8 { 0 } }
+# impl CPU { fn execute(&self, i: Instruction) -> u16 { 0 } }
 impl CPU {
   fn step(&mut self) {
     let mut instruction_byte = self.bus.read_byte(self.pc);
@@ -185,4 +183,66 @@ impl Instruction {
 }
 ```
 
-And there we have it. We're now succesfully executing instructions that are stored in memory! We even have the ability to tell the difference between "prefixed" instructions and non-"prefixed" instructions. Next we'll look at bit closer at instructions that read and write to memory.
+The amount the program counter goes forward after each step of execution is determined by how "wide" the instruction - i.e. how many bytes it takes to describe the instruction in its entirety. For simple instructions, this is one byte - the byte the uniquely identifies the instruction. So far all the instructions we've seen either are 1 or 2 bytes wide (prefix instructions are two bytes - the prefix and the instruction identifier - while the other instructions are only one 1 byte - just for indentifier). In the future we'll see other instructions which have "operands" or data the instruction needs to execute. These instructions can sometimes be even 3 bytes wide.
+
+However, the program counter doesn't have to go forward by a set amount. In fact, there are instructions that manipulate the program counter in arbitrary ways sometimes sending the program counter to somewhere far away from its previous location.
+
+## Jump Instructions
+
+The real power of computers are their ability to "make decisions" - i.e., do one thing given one condition and do another thing given another condition. At the hardware level this is usually implemented with "jumps" or the ability to change where in our program we are (as indicated by the program counter) based on certain conditions. In the case of the Game Boy's CPU these conditions are specificed by the flags register. For example, there is an instruction that says to "jump" (i.e., set the program counter) to a certain location if the flags register's zero flag is true. This gives the game a way to perform certain instructions and then change to different parts of the game code if the result of the instruction resulted in setting particular flags. Let's list out the types of jumps there:
+
+* JP: Jump to a particular address dependent on one of the following conditions: the zero flag is true, the zero flag is flase, the carry flag is true, the carry flag is false, or always jump.
+* JR: Jump a certain amount relative to the current program counter dependent on the same conditions above.
+* JPI: Jump to the address stored in HI
+
+You can find the specifics of how these jump instructions work in the [instruction guide](../appendix/instruction_guide/index.html).
+
+Implementation of jump is pretty trivial:
+
+```rust,noplaypen
+# struct FlagsRegister { zero: bool, carry: bool }
+# struct Registers { f: FlagsRegister }
+# struct CPU { registers: Registers, pc: u16 }
+# impl CPU { fn read_next_word(&self) -> u16 { 0 } }
+enum JumpTest {
+  NotZero,
+  Zero,
+  NotCarry,
+  Carry,
+  Always
+}
+enum Instruction {
+  JP(JumpTest),
+}
+
+impl CPU {
+  fn execute(&mut self, instruction: Instruction) -> u16 {
+    match instruction {
+      Instruction::JP(test) => {
+        let jump_condition = match test {
+            JumpTest::NotZero => !self.registers.f.zero,
+            JumpTest::NotCarry => !self.registers.f.carry,
+            JumpTest::Zero => self.registers.f.zero,
+            JumpTest::Carry => self.registers.f.carry,
+            JumpTest::Always => true
+        };
+        self.jump(jump_condition)
+      }
+      _ => { /* TODO: support more instructions */ self.pc }
+    }
+  }
+
+  fn jump(&self, should_jump: bool) -> u16 {
+    if should_jump {
+      self.read_next_word()
+    } else {
+      // If we don't jump we need to still move the program
+      // counter forward by 3 since the jump instruction is
+      // 3 bytes wide (1 byte for tag and 2 bytes for jump address)
+      self.pc.wrapping_add(3)
+    }
+  }
+}
+```
+
+And there we have it. We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.
