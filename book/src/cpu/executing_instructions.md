@@ -202,7 +202,9 @@ Implementation of jump is pretty trivial:
 ```rust,noplaypen
 # struct FlagsRegister { zero: bool, carry: bool }
 # struct Registers { f: FlagsRegister }
-# struct CPU { registers: Registers, pc: u16 }
+# struct CPU { registers: Registers, bus: Bus, pc: u16 }
+# struct Bus {}
+# impl Bus { fn read_byte(&self, addr: u16) -> u8 { 0 } }
 enum JumpTest {
   NotZero,
   Zero,
@@ -235,7 +237,7 @@ impl CPU {
     if should_jump {
       // Gameboy is little endian so read pc + 2 as most significant bit
       // and pc + 1 as least significant bit
-      let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16
+      let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16;
       let most_significant_byte = self.bus.read_byte(self.pc + 2) as u16;
       (most_significant_byte << 8) | least_significant_byte
     } else {
