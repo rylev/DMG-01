@@ -3,7 +3,7 @@ use std;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum IncDecTarget {
     A, B, C, D, E, H, L,
-    BC, DE, HL,
+    BC, DE, HL, SP
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -12,7 +12,7 @@ pub enum ArithmeticTarget {
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ADDHLTarget {
-    BC, DE, HL
+    BC, DE, HL, SP
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -35,7 +35,7 @@ pub enum LoadByteSource {
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LoadWordTarget {
-    BC, DE, HL
+    BC, DE, HL, SP
 }
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Indirect {
@@ -55,6 +55,8 @@ pub enum LoadType {
     IndirectFromA(Indirect),
     AFromByteAddress,
     ByteAddressFromA,
+    SPFromHL,
+    IndirectFromSP
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -90,6 +92,7 @@ pub enum Instruction {
     ADD(ArithmeticTarget),
     ADC(ArithmeticTarget),
     ADDHL(ADDHLTarget),
+    ADDSP,
     SUB(ArithmeticTarget),
     SBC(ArithmeticTarget),
     AND(ArithmeticTarget),
