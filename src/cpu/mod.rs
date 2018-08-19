@@ -139,6 +139,10 @@ macro_rules! arithmetic_instruction {
                     let value = $self.bus.read_byte($self.registers.get_hl());
                     $self.$work(value);
                 }
+            };
+            match $register {
+                ArithmeticTarget::D8 => $self.pc.wrapping_add(2),
+                _                    => $self.pc.wrapping_add(1)
             }
         }
     };
@@ -172,6 +176,10 @@ macro_rules! arithmetic_instruction {
                     let result = $self.$work(value);
                     $self.registers.set_hl(result as u16);
                 }
+            };
+            match $register {
+                ArithmeticTarget::D8 => $self.pc.wrapping_add(2),
+                _                    => $self.pc.wrapping_add(1)
             }
         }
     };
@@ -263,34 +271,92 @@ macro_rules! prefix_instruction {
     };
 }
 
-const ROM_BANK_0_SIZE: usize = 0x3fff;
-const ROM_BANK_0_END: usize = 0x3fff;
+const BOOT_ROM_SIZE: usize = 0x100;
+const ROM_BANK_0_BEGIN: usize = 0x0000;
+const ROM_BANK_0_END: usize = 0x3FFF;
+const ROM_BANK_0_SIZE: usize = ROM_BANK_0_END - ROM_BANK_0_BEGIN + 1;
+const VRAM_BEGIN: usize = 0x8000;
+const VRAM_END: usize = 0x9FFF;
+const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
+const EXTERNAL_RAM_BEGIN: usize = 0xA000;
+const EXTERNAL_RAM_END: usize = 0xBFFF;
+const EXTERNAL_RAM_SIZE: usize = EXTERNAL_RAM_END - EXTERNAL_RAM_BEGIN + 1;
+const WORKING_RAM_BEGIN: usize = 0xC000;
+const WORKING_RAM_END: usize = 0xDFFF;
+const WORKING_RAM_SIZE: usize = WORKING_RAM_END - WORKING_RAM_BEGIN + 1;
+const IO_REGISTERS_BEGIN: usize = 0xFF00;
+const IO_REGISTERS_END: usize = 0xFF7F;
+const IO_REGISTERS_SIZE: usize = IO_REGISTERS_END - IO_REGISTERS_BEGIN + 1;
+const ZERO_PAGE_BEGIN: usize = 0xFF80;
+const ZERO_PAGE_END: usize = 0xFFFE;
+const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 struct MemoryBus {
-    rom_bank_0: [u8; ROM_BANK_0_SIZE]
+    rom_bank_0: [u8; ROM_BANK_0_SIZE],
+    vram: [u8; VRAM_SIZE],
+    external_ram: [u8; EXTERNAL_RAM_SIZE],
+    working_ram: [u8; WORKING_RAM_SIZE],
+    io_registers: [u8; IO_REGISTERS_SIZE],
+    zero_page: [u8; ZERO_PAGE_SIZE]
 }
 
 impl MemoryBus {
-    pub fn new() -> MemoryBus {
+    pub fn new(boot_rom: Option<Vec<u8>>) -> MemoryBus {
+        let mut rom_bank_0 = [0; ROM_BANK_0_SIZE];
+        if let Some(boot_rom) = boot_rom {
+            if boot_rom.len() != BOOT_ROM_SIZE {
+                panic!("Boot ROM is the wrong size. Is {} bytes but should be {} bytes", boot_rom.len(), BOOT_ROM_SIZE);
+            }
+            for (i, byte) in boot_rom.iter().enumerate() {
+                rom_bank_0[i] = *byte;
+            }
+        }
         MemoryBus {
             // Note: instead of modeling memory as one array of length 0xFFFF, we'll
             // break memory up into it's logical parts.
-            rom_bank_0: [0; ROM_BANK_0_SIZE]
+            rom_bank_0,
+            vram: [0; VRAM_SIZE],
+            external_ram: [0; EXTERNAL_RAM_SIZE],
+            working_ram: [0; WORKING_RAM_SIZE],
+            io_registers: [0; IO_REGISTERS_SIZE],
+            zero_page: [0; ZERO_PAGE_SIZE]
         }
     }
+
     pub fn read_byte(&self, address: u16) -> u8 {
         let address = address as usize;
         if address < ROM_BANK_0_END {
             self.rom_bank_0[address]
+        } else if address >= VRAM_BEGIN && address <= VRAM_END {
+            self.vram[address - VRAM_BEGIN]
+        } else if address >= EXTERNAL_RAM_BEGIN && address <= EXTERNAL_RAM_END {
+            self.external_ram[address - EXTERNAL_RAM_BEGIN]
+        } else if address >= WORKING_RAM_BEGIN && address <= WORKING_RAM_END {
+            self.working_ram[address - WORKING_RAM_BEGIN]
+        } else if address >= IO_REGISTERS_BEGIN && address <= IO_REGISTERS_END {
+            self.io_registers[address - IO_REGISTERS_BEGIN]
+        } else if address >= ZERO_PAGE_BEGIN && address <= ZERO_PAGE_END {
+            self.zero_page[address - ZERO_PAGE_BEGIN]
         } else {
-            panic!("Reading from unkown part of memory at address #{address}")
+            panic!("Reading from an unkown part of memory at address 0x{:x}", address);
         }
     }
+
     pub fn write_byte(&mut self, address: u16, value: u8) {
         let address = address as usize;
-        if address < ROM_BANK_0_END {
+        if address >= ROM_BANK_0_BEGIN && address <= ROM_BANK_0_END {
             self.rom_bank_0[address] = value;
+        } else if address >= VRAM_BEGIN && address <= VRAM_END {
+            self.vram[address - VRAM_BEGIN] = value;
+        } else if address >= EXTERNAL_RAM_BEGIN && address <= EXTERNAL_RAM_END {
+            self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
+        } else if address >= WORKING_RAM_BEGIN && address <= WORKING_RAM_END {
+            self.working_ram[address - WORKING_RAM_BEGIN] = value;
+        } else if address >= IO_REGISTERS_BEGIN && address <= IO_REGISTERS_END {
+            self.io_registers[address - IO_REGISTERS_BEGIN] = value;
+        } else if address >= ZERO_PAGE_BEGIN && address <= ZERO_PAGE_END {
+            self.zero_page[address - ZERO_PAGE_BEGIN] = value;
         } else {
-            panic!("Reading from unkown part of memory at address #{address}")
+            panic!("Writing to an unkown part of memory at address 0x{:x}", address);
         }
     }
 }
@@ -306,12 +372,12 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new() -> CPU {
+    pub fn new(boot_rom: Option<Vec<u8>>) -> CPU {
         CPU {
             registers: Registers::new(),
             pc: 0x0,
             sp: 0x00,
-            bus: MemoryBus::new(),
+            bus: MemoryBus::new(boot_rom),
             is_halted: false,
         }
     }
@@ -327,6 +393,7 @@ impl CPU {
         }
 
         let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+            println!("0x{:x}: Executing: {:?}", self.pc, instruction);
             self.execute(instruction)
         } else {
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
@@ -357,6 +424,12 @@ impl CPU {
                     IncDecTarget::E => manipulate_8bit_register!(self: e => inc_8bit => e),
                     IncDecTarget::H => manipulate_8bit_register!(self: h => inc_8bit => h),
                     IncDecTarget::L => manipulate_8bit_register!(self: l => inc_8bit => l),
+                    IncDecTarget::HLI => {
+                        let hl = self.registers.get_hl();
+                        let amount = self.bus.read_byte(hl);
+                        let result = self.inc_8bit(amount);
+                        self.bus.write_byte(hl, result);
+                    }
                     // 16 bit target
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
@@ -386,6 +459,12 @@ impl CPU {
                     IncDecTarget::E => manipulate_8bit_register!(self: e => dec_8bit => e),
                     IncDecTarget::H => manipulate_8bit_register!(self: h => dec_8bit => h),
                     IncDecTarget::L => manipulate_8bit_register!(self: l => dec_8bit => l),
+                    IncDecTarget::HLI => {
+                        let hl = self.registers.get_hl();
+                        let amount = self.bus.read_byte(hl);
+                        let result = self.dec_8bit(amount);
+                        self.bus.write_byte(hl, result);
+                    }
                     // 16 bit target
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
@@ -449,56 +528,49 @@ impl CPU {
                 // register with the value in the A register and the value in the carry flag
                 // PC:+1
                 // Z:? S:0 H:? C:?
-                arithmetic_instruction!(register, self.add_with_carry => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.add_with_carry => a)
             },
             Instruction::SUB(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register
                 // PC:+1
                 // Z:? S:1 H:? C:?
-                arithmetic_instruction!(register, self.sub_without_carry => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.sub_without_carry => a)
             },
             Instruction::SBC(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register and the value in the carry flag
                 // PC:+1
                 // Z:? S:1 H:? C:?
-                arithmetic_instruction!(register, self.sub_with_carry => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.sub_with_carry => a)
             },
             Instruction::AND(register) => {
                 // DESCRIPTION: (AND) - do a bitwise and on the value in a specific
                 // register and the value in the A register
                 // PC:+1
                 // Z:? S:0 H:1 C:0
-                arithmetic_instruction!(register, self.and => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.and => a)
             },
             Instruction::OR(register) => {
                 // DESCRIPTION: (OR) - do a bitwise or on the value in a specific
                 // register and the value in the A register
                 // PC:+1
                 // Z:? S:0 H:0 C:0
-                arithmetic_instruction!(register, self.or => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.or => a)
             },
             Instruction::XOR(register) => {
                 // DESCRIPTION: (XOR) - do a bitwise xor on the value in a specific
                 // register and the value in the A register
                 // PC:+1
                 // Z:? S:0 H:0 C:0
-                arithmetic_instruction!(register, self.xor => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.xor => a)
             },
             Instruction::CP(register) => {
                 // DESCRIPTION: (compare) - just like SUB except the result of the
                 // subtraction is not stored back into A
                 // PC:+1
                 // Z:? S:1 H:? C:?
-                arithmetic_instruction!(register, self.compare);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.compare)
             },
             Instruction::CCF => {
                 // DESCRIPTION: (complement carry flag) - toggle the value of the carry flag
@@ -827,6 +899,21 @@ impl CPU {
                         self.bus.write_byte(address, (sp & 0xFF) as u8);
                         self.bus.write_byte(address.wrapping_add(1), ((sp & 0xFF00) >> 8) as u8);
                         self.pc.wrapping_add(3)
+                    },
+                    // DESCRIPTION: load HL with SP plus some specified byte
+                    // PC:+2
+                    // Z:0 N:0 H:? C:?
+                    LoadType::HLFromSPN => {
+                        let value = self.read_next_byte() as i8 as i16 as u16;
+                        let result = self.sp.wrapping_add(value);
+                        self.registers.set_hl(result);
+                        self.registers.f.zero = false;
+                        self.registers.f.subtract = false;
+                        // Half and whole carry are computed at the nibble and byte level instead
+                        // of the byte and word level like you might expect for 16 bit values
+                        self.registers.f.half_carry = (self.sp & 0xF) + (value & 0xF) > 0xF;
+                        self.registers.f.carry = (self.sp & 0xFF) + (value & 0xFF) > 0xFF;
+                        self.pc.wrapping_add(2)
                     },
                 }
             }
@@ -1278,7 +1365,7 @@ mod tests {
     macro_rules! test_instruction {
         ( $instruction:expr, $( $($register:ident).* => $value:expr ),* ) => {
             {
-                let mut cpu = CPU::new();
+                let mut cpu = CPU::new(None);
                 $(
                     cpu.registers$(.$register)* = $value;
                  )*
@@ -1328,7 +1415,7 @@ mod tests {
     #[test]
     fn execute_inc_16bit_byte_overflow() {
         let instruction = Instruction::INC(IncDecTarget::BC);
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.set_bc(0xFF);
         cpu.execute(instruction);
 
@@ -1341,7 +1428,7 @@ mod tests {
     #[test]
     fn execute_inc_16bit_overflow() {
         let instruction = Instruction::INC(IncDecTarget::BC);
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.set_bc(0xFFFF);
         cpu.execute(instruction);
 
@@ -1379,7 +1466,7 @@ mod tests {
     #[test]
     fn execute_dec_16bit_underflow() {
         let instruction = Instruction::DEC(IncDecTarget::BC);
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.set_bc(0x0000);
         cpu.execute(instruction);
 
@@ -1757,7 +1844,7 @@ mod tests {
     // JP
     #[test]
     fn execute_jp() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.pc = 0xF8;
         cpu.bus.rom_bank_0[0xF9] = 0xFC;
         cpu.bus.rom_bank_0[0xFA] = 0x02;
@@ -1773,7 +1860,7 @@ mod tests {
     // JR
     #[test]
     fn execute_jr() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.pc = 0xF8;
         cpu.bus.rom_bank_0[0xF9] = 0x4;
         let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
@@ -1788,7 +1875,7 @@ mod tests {
     // LD a, (??)
     #[test]
     fn execute_ld_a_indirect() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.set_bc(0xF9);
         cpu.bus.rom_bank_0[0xF9] = 0x4;
         cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::BCIndirect)));
@@ -1806,7 +1893,7 @@ mod tests {
     // LD ?, ?
     #[test]
     fn execute_ld_byte() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.b = 0x4;
         cpu.execute(Instruction::LD(LoadType::Byte(LoadByteTarget::D, LoadByteSource::B)));
 
@@ -1817,7 +1904,7 @@ mod tests {
     // PUSH/POP
     #[test]
     fn execute_push_pop() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.registers.b = 0x4;
         cpu.registers.c = 0x89;
         cpu.sp = 0x10;
@@ -1838,7 +1925,7 @@ mod tests {
     // Step
     #[test]
     fn test_step() {
-        let mut cpu = CPU::new();
+        let mut cpu = CPU::new(None);
         cpu.bus.rom_bank_0[0] = 0x23; //INC(HL)
         cpu.bus.rom_bank_0[1] = 0xB5; //OR(L)
         cpu.bus.rom_bank_0[2] = 0xCB; //PREFIX
