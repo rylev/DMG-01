@@ -302,6 +302,7 @@ pub struct CPU {
     sp: u16,
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     bus: MemoryBus,
+    is_halted: bool,
 }
 
 impl CPU {
@@ -311,10 +312,13 @@ impl CPU {
             pc: 0x0,
             sp: 0x00,
             bus: MemoryBus::new(),
+            is_halted: false,
         }
     }
 
     pub fn step(&mut self) {
+        if self.is_halted { return }
+
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
         let prefixed = instruction_byte == 0xCB;
@@ -329,7 +333,9 @@ impl CPU {
             panic!("Unkown instruction found for: {}", description)
         };
 
-        self.pc = next_pc;
+        if !self.is_halted {
+            self.pc = next_pc;
+        }
     }
 
     pub fn execute(&mut self, instruction: Instruction) -> u16 {
@@ -627,7 +633,7 @@ impl CPU {
             Instruction::JP(test) => {
                 // DESCRIPTION: conditionally jump to the address stored in the next word in memory
                 // PC:?/+3
-                // - - - -
+                // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -641,7 +647,7 @@ impl CPU {
                 // DESCRIPTION: conditionally jump to the address that is N bytes away in memory
                 // where N is the next byte in memory interpreted as a signed byte
                 // PC:?/+2
-                // - - - -
+                // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -655,7 +661,7 @@ impl CPU {
                 // DESCRIPTION: jump to the address stored in HL
                 // 1
                 // PC:HL
-                // - - - -
+                // Z:- N:- H:- C:-
                 self.registers.get_hl()
             }
             Instruction::LD(load_type) => {
@@ -668,7 +674,7 @@ impl CPU {
                     // PC:+1
                     // ELSE:
                     // PC:+1
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::Byte(target, source) => {
                         let source_value = match source {
                             LoadByteSource::A => self.registers.a,
@@ -699,7 +705,7 @@ impl CPU {
                     },
                     // DESCRIPTION: load next word in memory into a particular register
                     // PC:+3
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::Word(target) => {
                         let word = self.read_next_word();
                         match target {
@@ -717,7 +723,7 @@ impl CPU {
                     // PC:+3
                     // ELSE:
                     // PC:+1
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::AFromIndirect(source) => {
                         self.registers.a = match source {
                             Indirect::BCIndirect => self.bus.read_byte(self.registers.get_bc()),
@@ -750,7 +756,7 @@ impl CPU {
                     // PC:+3
                     // ELSE:
                     // PC:+1
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::IndirectFromA(target) => {
                         let a = self.registers.a;
                         match target {
@@ -792,7 +798,7 @@ impl CPU {
                     // DESCRIPTION: Load the value in A into memory location located at 0xFF plus
                     // an offset stored as the next byte in memory
                     // PC:+2
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::ByteAddressFromA => {
                         let offset = self.bus.read_byte(self.pc + 1) as u16;
                         self.bus.write_byte(0xFF00 + offset, self.registers.a);
@@ -800,21 +806,21 @@ impl CPU {
                     },
                     // DESCRIPTION: Load the value located at 0xFF plus an offset stored as the next byte in memory into A
                     // PC:+2
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::AFromByteAddress => {
                         self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
                         self.pc.wrapping_add(2)
                     },
                     // DESCRIPTION: Load the value in HL into SP
                     // PC:+1
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::SPFromHL => {
                         self.sp = self.registers.get_hl();
                         self.pc.wrapping_add(1)
                     },
                     // DESCRIPTION: Load memory address with the contents of SP
                     // PC:+3
-                    // - - - -
+                    // Z:- N:- H:- C:-
                     LoadType::IndirectFromSP => {
                         let address = self.read_next_word();
                         let sp = self.sp;
@@ -827,7 +833,7 @@ impl CPU {
             Instruction::PUSH(target) => {
                 // DESCRIPTION: push a value from a given register on to the stack
                 // 1
-                // - - - -
+                // Z:- N:- H:- C:-
                 let value = match target {
                     StackTarget::AF => self.registers.get_af(),
                     StackTarget::BC => self.registers.get_bc(),
@@ -843,7 +849,7 @@ impl CPU {
                 // WHEN: target is AF
                 // Z N H C
                 // ELSE:
-                // - - - -
+                // Z:- N:- H:- C:-
                 let result = self.pop();
                 match target {
                     StackTarget::AF => self.registers.set_af(result),
@@ -857,7 +863,7 @@ impl CPU {
                 // DESCRIPTION: Conditionally PUSH the would be instruction on to the
                 // stack and then jump to a specific address
                 // PC:?/+3
-                // - - - -
+                // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -870,7 +876,7 @@ impl CPU {
             Instruction::RET(test) => {
                 // DESCRIPTION: Conditionally POP two bytes from the stack and jump to that address
                 // PC:?/+1
-                // - - - -
+                // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
                     JumpTest::NotCarry => !self.registers.f.carry,
@@ -879,6 +885,17 @@ impl CPU {
                     JumpTest::Always => true
                 };
                 self.return_(jump_condition)
+            }
+            Instruction::NOP => {
+                // PC:+1
+                // Z:- N:- H:- C:-
+                self.pc.wrapping_add(1)
+            }
+            Instruction::HALT => {
+                // PC:+1
+                // Z:- N:- H:- C:-
+                self.is_halted = true;
+                self.pc.wrapping_add(1)
             }
         }
     }
