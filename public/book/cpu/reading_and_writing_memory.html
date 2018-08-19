@@ -3,27 +3,27 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - DMG-01: How to Emulate a Game Boy</title>
+        <title>Instructions for Reading and Writting to Memory - DMG-01: How to Emulate a Game Boy</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
         <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
         
@@ -32,7 +32,7 @@
     </head>
     <body class="light">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">var path_to_root = "";</script>
+        <script type="text/javascript">var path_to_root = "../";</script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script type="text/javascript">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li></ol></li><li><a href="appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html" class="active"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -105,7 +105,7 @@
                         <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
 
                         <div class="right-buttons">
-                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
                         </div>
@@ -136,33 +136,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#introduction" id="introduction"><h1>Introduction</h1></a>
-<p>If you really want to know how a particular computer works, there's no better way to learn than by emulating that computer. In this book, we'll be looking at one of the most loved computers of all time, Nintendo's Game Boy. We'll be going through the process from nothing and building the Game Boy up piece by piece. In the process not only will we learn more about the Game Boy itself, but we'll also get a good glimpse into how computers work in general as well as how to build emulators for other computer systems.</p>
-<a class="header" href="#what-you-need-to-know" id="what-you-need-to-know"><h2>What You Need to Know</h2></a>
-<p>We'll be assuming only basic programming knowledge and basic knowledge of the terminal. If you've programmed in almost any other language before you should be good to go. The particular language we'll be using is the <a href="https://www.rust-lang.org">Rust programming language</a>, but if you've never used Rust, don't worry; we'll be taking things slow, and I'll do my best to link to relevant learning material as things come up. If you want to get a head start on learning the basics of Rust, the amazing <a href="https://doc.rust-lang.org/book/second-edition/index.html">Rust book</a> is a great way to learn.</p>
-<p>If you've already build emulators before, and are just looking for a reference specific to the Game Boy, you might find this book to be too detailed. I recommend the <a href="http://bgb.bircd.org/pandocs.htm">Pan Docs</a> as a great place to quickly learn the nity-grity of the Game Boy. You'll find even more resources in the <a href="./appendix/resources.html">resources guide</a>.</p>
-<a class="header" href="#why-rust" id="why-rust"><h2>Why Rust?</h2></a>
-<p>For many emulation projects performance is a key consideration. This means that emulators are often written in low-level languages that allow the programmer to easily write performant code. While our Game Boy emulator could be written in other languages like JavaScript or Python, it's best to use a language that would be appropriate for more resource intensive emulation (e.g. Sony's PlayStation 2 or Nintendo's Wii) so these skills can be used for future emulation projects. Rust fits the bill perfectly here.</p>
-<p>While there are other languages that allow the performance needed for emulation like C and C++, Rust has the added bonus of being much more beginner friendly than C or C++. Unlike these older languages Rust has a solid package manager, testing framework and build tool that will feel familiar to users of more modern languages. Rust's community is also fantastic and generally very helpful.</p>
-<p>Finally, Rust also has a great cross platform story - we'll be focusing on web and on desktop, but in the future, we might also be able to bring our emualtor to mobile platforms and embedded devices!</p>
-<a class="header" href="#setup" id="setup"><h2>Setup</h2></a>
-<p>In order to get started, you'll only need your favorite text editor and Rust related tooling. Follow the instructions <a href="https://www.rust-lang.org/en-US/install.html">on the Rust website</a> for how to install the rustup tool which gives you access to the Rust compiler, the Rust build tool and package manager called Cargo, as well as some other tools that we'll be using later on in our journey.</p>
-<p>If you've successfully been able to install Rust you can create a new project by running the following command in your terminal:</p>
-<pre><code class="language-bash">cargo new emulator
-</code></pre>
-<p>Navigate into your project's directory and have a look around. To run your project run the following:</p>
-<pre><code class="language-bash">cargo run
-</code></pre>
-<p>You're all good to go! Let's get emulating!</p>
+                        <a class="header" href="#instructions-for-reading-and-writting-to-memory" id="instructions-for-reading-and-writting-to-memory"><h1>Instructions for Reading and Writting to Memory</h1></a>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
+                            <a rel="prev" href="../cpu/executing_instructions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
 
                         
-                            <a rel="next" href="architecture_overview.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../appendix/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -174,9 +161,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
+                    <a href="../cpu/executing_instructions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
                 
-                    <a href="architecture_overview.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../appendix/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
@@ -191,14 +182,14 @@
         
 
         
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
         
 
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         

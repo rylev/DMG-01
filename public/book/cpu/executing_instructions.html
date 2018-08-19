@@ -1,0 +1,427 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Instruction Execution and Control Flow - DMG-01: How to Emulate a Game Boy</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "../";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html" class="active"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#program-counter" id="program-counter"><h1>Program Counter</h1></a>
+<p>So far we've seen instructions that can operate on register data. But how does the CPU which instruction to execute? To understand this, we'll first need to understand where our instructions are stored.</p>
+<a class="header" href="#game-rom" id="game-rom"><h2>Game ROM</h2></a>
+<p>So far we know that the Game Boy has a CPU that executes instructions and it has memory. Memory can be thought of as one very large array of 8-bit numbers.</p>
+<p>At the beginning of this very long array are 255 bytes (from index 0x0000 to index 0x00FF) that are hard coded into the Game Boy's circuitry. These 255 bytes are instructions that tell the Game Boy how to &quot;bootstrap&quot; itself (i.e. get itself ready to execute a game) as well as display the <a href="https://www.youtube.com/watch?v=ClJWTR_lCL4">iconic splash screen</a>. Later in the book we'll be looking at specifically what these instructions do, but for now just imagine them as a collection of instructions many of which we learned in the previous chapter and the rest of which we'll learn in this chapter and the next few to come.</p>
+<p>When the user of a Game Boy inserts a game cartridge, the contents of that cartridge become available to the CPU right after these 255 bytes. We'll talk later about where other things such as the contents of the screen and graphics data live in memory later in the book. For now we just need to know that the contents of memory starting at index 0x100 until index 0x3FFF include the contents of the cartridge.</p>
+<p>So our memory is simply an long array of 8-bit numbers (0xFFFF or 65,536 of them to be exact). Each of these numbers can be decoded as an instruction that our CPU knows how to run. But how does the CPU know which of these to execute?</p>
+<a class="header" href="#the-program-counter" id="the-program-counter"><h2>The Program Counter</h2></a>
+<p>Along with the register data, our CPU also holds on to a 16-bit number called the progam counter (often abbreviated as PC) which tells us which instruction the Game Boy is currently executing. This 16-bit number is capable of addressing of the of 0xFFFF numbers that live in memory. In fact, when we talk about the memory array we don't usually use the term &quot;index&quot;, but instead the term &quot;address&quot;.</p>
+<p>Let's add a program counter to our CPU as well as memory that we can address from the CPU.</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct Registers {}
+struct CPU {
+  registers: Registers,
+  pc: u16,
+  bus: MemoryBus,
+}
+
+struct MemoryBus {
+  memory: [u8; 0xFFFF]
+}
+
+impl MemoryBus {
+  fn read_byte(&amp;self, address: u16) -&gt; u8 {
+    self.memory[address as usize]
+  }
+}
+#}</code></pre></pre>
+<p>We now have a program counter that can tell us at which address in memory the currently executing instruction is. We won't talk much more about the contents of memory or where certain things in memory live until later in the book. For now, you should just picture memory as a large array that we can read from.</p>
+<p>Now we'll need to actually add the method to the CPU that uses the program counter to read the instruction from memory and execute it.</p>
+<p>The full set of steps is as follows:</p>
+<ul>
+<li>Use the program counter to read the instruction byte from memory.</li>
+<li>Translate the byte to one of the instances of the <code>Instruction</code> enum</li>
+<li>If we can successfully translate the instruction call our <code>execute</code> method else panic which now returns the next program counter</li>
+<li>Set this next program counter on our CPU</li>
+</ul>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# enum Instruction { }
+# struct CPU { pc: u16, bus: Bus }
+# struct Bus {}
+# impl Bus {
+#   fn read_byte(&amp;self, a: u16) -&gt; u8 { 0 }
+# }
+# impl CPU {
+#   fn execute(&amp;self, i: Instruction) -&gt; u16 { 0 }
+# }
+# impl Instruction {
+#   fn from_byte(b: u8) -&gt; Option&lt;Instruction&gt; { None }
+# }
+impl CPU {
+  fn step(&amp;mut self) {
+    let mut instruction_byte = self.bus.read_byte(self.pc);
+
+    let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte) {
+      self.execute(instruction)
+    } else {
+      panic!(&quot;Unkown instruction found for: 0x{:x}&quot;, instruction_byte);
+    };
+
+    self.pc = next_pc;
+  }
+}
+#}</code></pre></pre>
+<p>So there's two things we'll need to add for the above to work. We'll need to change our execute method to return the next program counter, and we'll need to add a function that takes a byte and returns an <code>Instruction</code>. Let's start with latter. Decoding our instruction byte as an <code>Instruction</code> is very straight forward. Instructions are uniquely identified by the byte number. For instance, a logical <code>OR</code> with the <code>A</code> register as its target is identified by the byte 0x87. Want to do an <code>OR</code> with the <code>H</code> register as the target? That's the number 0xB4. The <code>SCF</code> (or Set Carry Flag) instruction is identified by the byte 0x37. We can use our <a href="../appendix/instruction_guide/index.html">instruction guide</a> to find out which byte value corresponds to which <code>Instruction</code>.</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# enum IncDecTarget { BC, DE }
+# enum Instruction { INC(IncDecTarget) }
+impl Instruction {
+  fn from_byte(byte: u8) -&gt; Option&lt;Instruction&gt; {
+    match byte {
+      0x02 =&gt; Some(Instruction::INC(IncDecTarget::BC)),
+      0x13 =&gt; Some(Instruction::INC(IncDecTarget::DE)),
+      _ =&gt; /* TODO: Add mapping for rest of instructions */ None
+    }
+  }
+}
+#}</code></pre></pre>
+<p>And now let's change our <code>execute</code> method so that it now returns the next program counter:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct Registers { a:u8, c: u8 }
+# struct CPU { pc: u16, registers: Registers }
+# enum Instruction { ADD(ArithmeticTarget), }
+# enum ArithmeticTarget { A, B, C, D, E, H, L, }
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::ADD(target) =&gt; {
+        match target {
+          ArithmeticTarget::C =&gt; {
+            let value = self.registers.c;
+            let new_value = self.add(value);
+            self.registers.a = new_value;
+            self.pc.wrapping_add(1)
+          }
+          _ =&gt; { /* TODO: support more targets */ self.pc }
+        }
+      }
+      _ =&gt; { /* TODO: support more instructions */ self.pc }
+    }
+  }
+  # fn add(&amp;self, value: u8) -&gt; u8 {
+  #   0
+  # }
+}
+#}</code></pre></pre>
+<p>Now we have the ability to read the instruction byte from memory that's pointed to by our program counter, decode that instruction byte as one of the variants of our <code>Instruction</code> enum, execute that instruction and get back the new program counter and finally set the new program counter on our CPU. This is how all instructions in the Game Boy get executed! Well, except...</p>
+<a class="header" href="#prefix-instructions" id="prefix-instructions"><h2>Prefix Instructions</h2></a>
+<p>The process we've laid out for how instructions get executed is true for roughly half of the total instructions the Game Boy can perform. The other half of instructions work the same way except that instead of being identified by a single byte they're first indentified by a prefix byte. This prefix byte tells the CPU, &quot;Hey! The next instruction byte you read shouldn't be interpreted as a normal instruction, but rather as a prefix instruction&quot;.</p>
+<p>This prefix byte is the number &quot;0xCB&quot;. So, we'll need to add logic that first checks to see if the byte we read from memory is 0xCB. If it is, we then need to read one more byte and interpret this byte as an &quot;prefix instruction&quot;. For example, if we read 0xCB from memory, we know that we're going to be decoding a prefix instruction. We then read another byte. If that byte is, say, 0xB4, we should <em>not</em> interpret this as <code>OR</code> with <code>H</code> as the target like we normally would but rather as a <code>RES</code> instruction with the 6th bit of the <code>H</code> register as the target. Again we can use the <a href="../appendix/instruction_guide/index.html">instruction guide</a> to help us know what a given byte should decode as.</p>
+<p>Let's put it in code!</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# enum IncDecTarget { BC }
+# enum PrefixTarget { B }
+# enum Instruction { INC(IncDecTarget), RLC(PrefixTarget) }
+# struct CPU { pc: u16, bus: Bus }
+# struct Bus {}
+# impl Bus { fn read_byte(&amp;self, a: u16) -&gt; u8 { 0 } }
+# impl CPU { fn execute(&amp;self, i: Instruction) -&gt; u16 { 0 } }
+impl CPU {
+  fn step(&amp;mut self) {
+    let mut instruction_byte = self.bus.read_byte(self.pc);
+    let prefixed = instruction_byte == 0xCB;
+    if prefixed {
+      instruction_byte = self.bus.read_byte(self.pc + 1);
+    }
+
+    let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+      self.execute(instruction)
+    } else {
+      let description = format!(&quot;0x{}{:x}&quot;, if prefixed { &quot;cb&quot; } else { &quot;&quot; }, instruction_byte);
+      panic!(&quot;Unkown instruction found for: {}&quot;, description)
+    };
+
+    self.pc = next_pc;
+  }
+}
+
+impl Instruction {
+  fn from_byte(byte: u8, prefixed: bool) -&gt; Option&lt;Instruction&gt; {
+    if prefixed {
+      Instruction::from_byte_prefixed(byte)
+    } else {
+      Instruction::from_byte_not_prefixed(byte)
+    }
+  }
+
+  fn from_byte_prefixed(byte: u8) -&gt; Option&lt;Instruction&gt; {
+    match byte {
+      0x00 =&gt; Some(Instruction::RLC(PrefixTarget::B)),
+      _ =&gt; /* TODO: Add mapping for rest of instructions */ None
+    }
+  }
+
+  fn from_byte_not_prefixed(byte: u8) -&gt; Option&lt;Instruction&gt; {
+    match byte {
+      0x02 =&gt; Some(Instruction::INC(IncDecTarget::BC)),
+      _ =&gt; /* TODO: Add mapping for rest of instructions */ None
+    }
+  }
+}
+#}</code></pre></pre>
+<p>The amount the program counter goes forward after each step of execution is determined by how &quot;wide&quot; the instruction - i.e. how many bytes it takes to describe the instruction in its entirety. For simple instructions, this is one byte - the byte the uniquely identifies the instruction. So far all the instructions we've seen either are 1 or 2 bytes wide (prefix instructions are two bytes - the prefix and the instruction identifier - while the other instructions are only one 1 byte - just for indentifier). In the future we'll see other instructions which have &quot;operands&quot; or data the instruction needs to execute. These instructions can sometimes be even 3 bytes wide.</p>
+<p>However, the program counter doesn't have to go forward by a set amount. In fact, there are instructions that manipulate the program counter in arbitrary ways sometimes sending the program counter to somewhere far away from its previous location.</p>
+<a class="header" href="#jump-instructions" id="jump-instructions"><h2>Jump Instructions</h2></a>
+<p>The real power of computers are their ability to &quot;make decisions&quot; - i.e., do one thing given one condition and do another thing given another condition. At the hardware level this is usually implemented with &quot;jumps&quot; or the ability to change where in our program we are (as indicated by the program counter) based on certain conditions. In the case of the Game Boy's CPU these conditions are specificed by the flags register. For example, there is an instruction that says to &quot;jump&quot; (i.e., set the program counter) to a certain location if the flags register's zero flag is true. This gives the game a way to perform certain instructions and then change to different parts of the game code if the result of the instruction resulted in setting particular flags. Let's list out the types of jumps there:</p>
+<ul>
+<li>JP: Jump to a particular address dependent on one of the following conditions: the zero flag is true, the zero flag is flase, the carry flag is true, the carry flag is false, or always jump.</li>
+<li>JR: Jump a certain amount relative to the current program counter dependent on the same conditions above.</li>
+<li>JPI: Jump to the address stored in HI</li>
+</ul>
+<p>You can find the specifics of how these jump instructions work in the <a href="../appendix/instruction_guide/index.html">instruction guide</a>.</p>
+<p>Implementation of jump is pretty trivial:</p>
+<pre><code class="language-rust noplaypen"># struct FlagsRegister { zero: bool, carry: bool }
+# struct Registers { f: FlagsRegister }
+# struct CPU { registers: Registers, pc: u16 }
+# impl CPU { fn read_next_word(&amp;self) -&gt; u16 { 0 } }
+enum JumpTest {
+  NotZero,
+  Zero,
+  NotCarry,
+  Carry,
+  Always
+}
+enum Instruction {
+  JP(JumpTest),
+}
+
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::JP(test) =&gt; {
+        let jump_condition = match test {
+            JumpTest::NotZero =&gt; !self.registers.f.zero,
+            JumpTest::NotCarry =&gt; !self.registers.f.carry,
+            JumpTest::Zero =&gt; self.registers.f.zero,
+            JumpTest::Carry =&gt; self.registers.f.carry,
+            JumpTest::Always =&gt; true
+        };
+        self.jump(jump_condition)
+      }
+      _ =&gt; { /* TODO: support more instructions */ self.pc }
+    }
+  }
+
+  fn jump(&amp;self, should_jump: bool) -&gt; u16 {
+    if should_jump {
+      self.read_next_word()
+    } else {
+      // If we don't jump we need to still move the program
+      // counter forward by 3 since the jump instruction is
+      // 3 bytes wide (1 byte for tag and 2 bytes for jump address)
+      self.pc.wrapping_add(3)
+    }
+  }
+}
+</code></pre>
+<p>And there we have it. We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../cpu/register_data_instructions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../cpu/reading_and_writing_memory.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../cpu/register_data_instructions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../cpu/reading_and_writing_memory.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
