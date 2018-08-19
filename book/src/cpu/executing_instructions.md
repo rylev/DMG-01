@@ -203,7 +203,6 @@ Implementation of jump is pretty trivial:
 # struct FlagsRegister { zero: bool, carry: bool }
 # struct Registers { f: FlagsRegister }
 # struct CPU { registers: Registers, pc: u16 }
-# impl CPU { fn read_next_word(&self) -> u16 { 0 } }
 enum JumpTest {
   NotZero,
   Zero,
@@ -234,7 +233,11 @@ impl CPU {
 
   fn jump(&self, should_jump: bool) -> u16 {
     if should_jump {
-      self.read_next_word()
+      // Gameboy is little endian so read pc + 2 as most significant bit
+      // and pc + 1 as least significant bit
+      let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16
+      let most_significant_byte = self.bus.read_byte(self.pc + 2) as u16;
+      (most_significant_byte << 8) | least_significant_byte
     } else {
       // If we don't jump we need to still move the program
       // counter forward by 3 since the jump instruction is
@@ -245,4 +248,13 @@ impl CPU {
 }
 ```
 
-And there we have it. We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.
+It's important to note that the address we jump to is located in the two bytes following the instruction identifier. As the comment in the code example explains, the Game Boy is little endian which means that when you have numbers that are larger than 1 byte, the least significant is stored first in memory and then the most significant byte.
+
+```ignore
++-------------+-------------- +--------------+
+| Instruction | Least Signif- | Most Signif-
+| Identifier  | icant Byte    | icant Byte   |
++-------------+-------------- +--------------+
+```
+
+We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.
