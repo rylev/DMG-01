@@ -15,3 +15,4 @@
   - [Bit Manipulation](./appendix/bit_manipulation.md)
   - [Resources](./appendix/resources.md)
   - [Instruction Guide](./appendix/instruction_guide/index.html)
+  - [Cartridge Header](./appendix/cartridge_header.md)
