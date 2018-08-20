@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li></ol></li><li><a href="appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="memory_map.html"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -627,8 +627,9 @@ impl Instruction {
 <p>Implementation of jump is pretty trivial:</p>
 <pre><code class="language-rust noplaypen"># struct FlagsRegister { zero: bool, carry: bool }
 # struct Registers { f: FlagsRegister }
-# struct CPU { registers: Registers, pc: u16 }
-# impl CPU { fn read_next_word(&amp;self) -&gt; u16 { 0 } }
+# struct CPU { registers: Registers, bus: Bus, pc: u16 }
+# struct Bus {}
+# impl Bus { fn read_byte(&amp;self, addr: u16) -&gt; u8 { 0 } }
 enum JumpTest {
   NotZero,
   Zero,
@@ -659,7 +660,11 @@ impl CPU {
 
   fn jump(&amp;self, should_jump: bool) -&gt; u16 {
     if should_jump {
-      self.read_next_word()
+      // Gameboy is little endian so read pc + 2 as most significant bit
+      // and pc + 1 as least significant bit
+      let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16;
+      let most_significant_byte = self.bus.read_byte(self.pc + 2) as u16;
+      (most_significant_byte &lt;&lt; 8) | least_significant_byte
     } else {
       // If we don't jump we need to still move the program
       // counter forward by 3 since the jump instruction is
@@ -669,8 +674,300 @@ impl CPU {
   }
 }
 </code></pre>
-<p>And there we have it. We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.</p>
+<p>It's important to note that the address we jump to is located in the two bytes following the instruction identifier. As the comment in the code example explains, the Game Boy is little endian which means that when you have numbers that are larger than 1 byte, the least significant is stored first in memory and then the most significant byte.</p>
+<pre><code class="language-ignore">+-------------+-------------- +--------------+
+| Instruction | Least Signif- | Most Signif-
+| Identifier  | icant Byte    | icant Byte   |
++-------------+-------------- +--------------+
+</code></pre>
+<p>We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.</p>
 <a class="header" href="#instructions-for-reading-and-writting-to-memory" id="instructions-for-reading-and-writting-to-memory"><h1>Instructions for Reading and Writting to Memory</h1></a>
+<p>Now that we've seen how instructions get executed and the very basics of reading from memory in order to fetch the instructions to be read, we'll look now at instructions that are used to read and write from different parts of memory.</p>
+<a class="header" href="#loading-memory" id="loading-memory"><h2>Loading Memory</h2></a>
+<p>First, when we talk about reading and writing memory, we usually use the term &quot;load&quot;. We'll be loading data from some place to some place - for example, loading the contents of register A into memory at location 0xFF0A or loading register C with the contents from memory location 0x0040. Loading doesn't have to be between a register and a place in memory, it can also be between two registers or even two places in memory.</p>
+<p>All of the instructions we'll be looking are called <code>LD</code> instructions. We'll be differentiating between the types of loads with the <code>LoadType</code> enum. The enum will describe what kind of load we're doing.</p>
+<p>Let's take a look at the implementation of the <code>LD</code> instruction with the <code>LoadType</code> of <code>Byte</code> which loads a byte from one place to another.</p>
+<pre><code class="language-rust noplaypen"># struct Bus {}
+# struct Registers { a: u8 }
+# struct CPU { registers: Registers, bus: Bus, pc: u16 }
+# impl Registers { fn get_hl(&amp;self) -&gt; u16 { 0 } }
+# impl CPU { fn read_next_byte(&amp;self) -&gt; u8 { 0 } }
+# impl Bus { fn read_byte(&amp;self, addr: u16) -&gt; u8 { 0 }
+             fn write_byte(&amp;self, addr: u16, byte: u8) {} }
+enum LoadByteTarget {
+    A, B, C, D, E, H, L, HLI
+}
+enum LoadByteSource {
+    A, B, C, D, E, H, L, D8, HLI
+}
+enum LoadType {
+  Byte(LoadByteTarget, LoadByteSource),
+}
+enum Instruction {
+  LD(LoadType),
+}
+
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::LD(load_type) =&gt; {
+        match load_type {
+          LoadType::Byte(target, source) =&gt; {
+            let source_value = match source {
+              LoadByteSource::A =&gt; self.registers.a,
+              LoadByteSource::D8 =&gt; self.read_next_byte(),
+              LoadByteSource::HLI =&gt; self.bus.read_byte(self.registers.get_hl()),
+              _ =&gt; { panic!(&quot;TODO: implement other sources&quot;) }
+            };
+            match target {
+              LoadByteTarget::A =&gt; self.registers.a = source_value,
+              LoadByteTarget::HLI =&gt; self.bus.write_byte(self.registers.get_hl(), source_value),
+              _ =&gt; { panic!(&quot;TODO: implement other targets&quot;) }
+            };
+            match source {
+              LoadByteSource::D8  =&gt; self.pc.wrapping_add(2),
+              _                   =&gt; self.pc.wrapping_add(1),
+            }
+          }
+          _ =&gt; { panic!(&quot;TODO: implement other load types&quot;) }
+        }
+      }
+      _ =&gt; { panic!(&quot;TODO: support more instructions&quot;) }
+    }
+  }
+}
+</code></pre>
+<p>For loads with a register as a source, we simply read the register's value. If the source is a <code>D8</code> (meaning &quot;direct 8 bit value&quot;), the value is stored directly after the instruction, so we can simply call <code>read_next_byte</code> which reads the byte directly after the byte the program counter is currently pointing to. Lastly, if the source is <code>HLI</code> we use the value inside of the <code>HL</code> register as an address from which we read an 8 bit value from memory.</p>
+<p>The target is merely the reverse of the source (except that we can't have <code>D8</code> as a target). If the target is a register, we write the source value into that register, and if the target is <code>HLI</code> we write to the address that is stored inside of the <code>HL</code> register.</p>
+<p>The use of the 16-bit registers <code>BC</code>, <code>DE</code>, and <code>HL</code> to store addresses is very common.</p>
+<p>Let's take a look at the other types of loads that there are:</p>
+<ul>
+<li><code>Word</code>: just like the <code>Byte</code> type except with 16-bit values</li>
+<li><code>AFromIndirect</code>: load the A register with the contents from a value from a memory location whose address is stored in some location</li>
+<li><code>IndirectFromA</code>: load a memory location whose address is stored in some location with the contents of the A register</li>
+<li><code>AFromByteAddress</code>: Just like <code>AFromIndirect</code> except the memory address is some address in the very last byte of memory.</li>
+<li><code>ByteAddressFromA</code>: Just like <code>IndirectFromA</code> except the memory address is some address in the very last byte of memory.</li>
+</ul>
+<p>For more detail on these instructions checkout the <a href="../appendix/instruction_guide/index.html">instruction guide</a>.</p>
+<p>These instructions have been for writing and writing to anywhere in memory, but there are a set of instructions that deal with a specific piece of memory called the stack. Let's take a look at what the stack is and the instructions that are used to manipulate the stack.</p>
+<a class="header" href="#the-stack" id="the-stack"><h2>The Stack</h2></a>
+<p>Before we can look at the piece of memory in the Game Boy known as the stack, we need to have a good understanding of what a stack is more generally. A stack is a simple data structure that allows you to add values to it (a.k.a &quot;push&quot; values) and then get these values back (a.k.a pop them off the stack). The key thing to remember with a stack is that you pop items off the stack in reverse order from which you pushed the items on - i.e., if you pushed three items &quot;A&quot;, &quot;B&quot;, &quot;C&quot; on to a stack in that order, the order you will get them back when poping them off is &quot;C&quot;, &quot;B&quot;, &quot;A&quot;.</p>
+<p>The Game Boy CPU has built in support for a stack like data structure in memory. This stack lives somewhere in memory (we'll talk about how it's location in memory is set in just a minute), and it holds on to 16 bit values. How is it built?</p>
+<p>First, the CPU has an additional 16-bit register on it that indicates the top of the stack. This register is called <code>SP</code> or stack pointer because it &quot;points&quot; to where the top of the stack is. Let's add this register to our CPU:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct Registers {}
+# struct MemoryBus {}
+struct CPU {
+  registers: Registers,
+  pc: u16,
+  sp: u16,
+  bus: MemoryBus,
+}
+#}</code></pre></pre>
+<p>We have a stack pointer now so we know where our stack is, but how do we push and pop from this stack?</p>
+<p>The Game Boy's CPU understands two insructions for doing just that. <code>PUSH</code> will write the contents of any 16-bit register into the stack and <code>POP</code> writes the head of stack into any 16-bit register.</p>
+<p>Here's what's actually happening when a <code>PUSH</code> is performed:</p>
+<ul>
+<li><em>Decrease</em> the stack pointer by 1.</li>
+<li>Write the most significant byte of the 16 bit value into memory at the location the stack pointer is now pointing to</li>
+<li><em>Decrease</em> the stack pointer by 1 again.</li>
+<li>Write the least significant byte of the 16 bit value into memory at the location the stack pointer is now pointing to</li>
+</ul>
+<p>Notice that the stack pointer is decresed by 1 and not increased. This is because the stack grows downward in memory. This is extra helpful since the normal place for the stack to live is at the very end of memory. In a later chapter we'll see that it's actually the Game Boy's boot ROM that sets the stack pointer to the very end of memory. Thus, when the stack grows it grows away from the end of memory towards the beginning of memory.</p>
+<p>Let's implement <code>PUSH</code>:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct Registers { }
+# impl Registers { fn get_bc(&amp;self) -&gt; u16 { 0 } }
+# struct CPU { pc: u16, bus: Bus, sp: u16, registers: Registers }
+# struct Bus {}
+# impl Bus { fn write_byte(&amp;self, addr: u16, value: u8) { } }
+# enum Instruction { PUSH(StackTarget), }
+# enum StackTarget { BC, DE }
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::PUSH(target) =&gt; {
+        let value = match target {
+          StackTarget::BC =&gt; self.registers.get_bc(),
+          _ =&gt; { panic!(&quot;TODO: support more targets&quot;) }
+        };
+        self.push(value);
+        self.pc.wrapping_add(1)
+      }
+      _ =&gt; { panic!(&quot;TODO: support more instructions&quot;) }
+    }
+  }
+
+  fn push(&amp;mut self, value: u16) {
+    self.sp = self.sp.wrapping_sub(1);
+    self.bus.write_byte(self.sp, ((value &amp; 0xFF00) &gt;&gt; 8) as u8);
+
+    self.sp = self.sp.wrapping_sub(1);
+    self.bus.write_byte(self.sp, (value &amp; 0xFF) as u8);
+  }
+}
+#}</code></pre></pre>
+<p>We can now push elements on to the stack. Here's what's actually happening when a <code>PUSH</code> is performed:</p>
+<ul>
+<li>Read the least significant byte of the 16 bit value from memory at the location the stack pointer is pointing to</li>
+<li><em>Increase</em> the stack pointer by 1.</li>
+<li>Read the most significant byte of the 16 bit value from memory at the location the stack pointer is now pointing to</li>
+<li><em>Increase</em> the stack pointer by 1 again.</li>
+<li>Return the value with the most and least significant byte combined together</li>
+</ul>
+<p>Let's write <code>POP</code>:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct Registers { }
+# impl Registers { fn set_bc(&amp;self, value: u16) { } }
+# struct CPU { pc: u16, bus: Bus, sp: u16, registers: Registers }
+# struct Bus {}
+# impl Bus { fn read_byte(&amp;self, addr: u16) -&gt; u8 { 0 } }
+# enum Instruction { POP(StackTarget), }
+# enum StackTarget { BC, DE }
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::POP(target) =&gt; {
+        let result = self.pop();
+        match target {
+            StackTarget::BC =&gt; self.registers.set_bc(result),
+            _ =&gt; { panic!(&quot;TODO: support more targets&quot;) }
+        };
+        self.pc.wrapping_add(1)
+      }
+      _ =&gt; { panic!(&quot;TODO: support more instructions&quot;) }
+    }
+  }
+
+  fn pop(&amp;mut self) -&gt; u16 {
+    let lsb = self.bus.read_byte(self.sp) as u16;
+    self.sp = self.sp.wrapping_add(1);
+
+    let msb = self.bus.read_byte(self.sp) as u16;
+    self.sp = self.sp.wrapping_add(1);
+
+    (msb &lt;&lt; 8) | lsb
+  }
+}
+#}</code></pre></pre>
+<p>And there we have it! We have a working stack that we can used. But what sort of things is the stack used for? One built in use for the stack is creating a &quot;call&quot; stack that allows the game to &quot;call&quot; functions and return from them. Let's see how that works.</p>
+<a class="header" href="#calling-functions" id="calling-functions"><h2>Calling Functions</h2></a>
+<p>In most programming languages when you call a function, the state of the calling function is saved somewhere, execution is allowed to happen for the called function, and then when the called function returns, the state of the called function is restored. It turns out the Game Boy has built in support for this mechanism where the state that is saved is simply just what the program counter was when the called function was called. This means we can &quot;call a function&quot; and that function itself can call functions, and when all of that is done, we'll return right back to the place we left off before we called the function.</p>
+<p>This functionality is handled by two types of instructions <code>CALL</code> and <code>RET</code> (a.k.a return). The way <code>CALL</code> works is by using a mixture of two instructions we already know about <code>PUSH</code> and <code>JP</code> (a.k.a jump). To execute the <code>CALL</code> instruction, we must do the following:</p>
+<ul>
+<li><code>PUSH</code> the next program counter (i.e. the program counter we would have if we were not jumping) on to the stack</li>
+<li><code>JP</code> (a.k.a jump) to the address specified in the next 2 bytes of memory (a.k.a the function).</li>
+</ul>
+<p>And that's it! We've called into our function. But what happens when we call <code>RET</code> (a.k.a return) from our called function? Here's what will happen:</p>
+<ul>
+<li><code>POP</code> the next program counter off the stack and jump back to it.</li>
+</ul>
+<p>Well that's easy! Let's see it in code:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct FlagsRegister { zero: bool }
+# struct Registers { f: FlagsRegister }
+# struct CPU { pc: u16, registers: Registers }
+# enum Instruction { CALL(JumpTest), RET(JumpTest)}
+# enum JumpTest { NotZero }
+# impl CPU {
+# fn read_next_word(&amp;self) -&gt; u16 { 0 }
+# fn push(&amp;self, value: u16) { }
+# fn pop(&amp;self) -&gt; u16 { 0 } }
+impl CPU {
+  fn execute(&amp;mut self, instruction: Instruction) -&gt; u16 {
+    match instruction {
+      Instruction::CALL(test) =&gt; {
+          let jump_condition = match test {
+              JumpTest::NotZero =&gt; !self.registers.f.zero,
+              _ =&gt; { panic!(&quot;TODO: support more conditions&quot;) }
+          };
+          self.call(jump_condition)
+      }
+      Instruction::RET(test) =&gt; {
+          let jump_condition = match test {
+              JumpTest::NotZero =&gt; !self.registers.f.zero,
+              _ =&gt; { panic!(&quot;TODO: support more conditions&quot;) }
+          };
+          self.return_(jump_condition)
+      }
+      _ =&gt; { panic!(&quot;TODO: support more instructions&quot;) }
+    }
+  }
+
+  fn call(&amp;mut self, should_jump: bool) -&gt; u16 {
+    let next_pc = self.pc.wrapping_add(3);
+    if should_jump {
+      self.push(next_pc);
+      self.read_next_word()
+    } else {
+      next_pc
+    }
+  }
+
+  fn return_(&amp;mut self, should_jump: bool) -&gt; u16 {
+    if should_jump {
+      self.pop()
+    } else {
+      self.pc.wrapping_add(1)
+    }
+  }
+}
+#}</code></pre></pre>
+<p>Now we can easily call functions and return from them. We're now done with the vast majority of our CPU instructions!</p>
+<a class="header" href="#finishing-up-the-cpu" id="finishing-up-the-cpu"><h1>Finishing Up the CPU</h1></a>
+<p>We've nearly reached the end of building our CPU. There are a few instructions left to implement, many of which we won't touch on here, since they're closely tied with other parts of the Game Boy that we've yet to talk about.</p>
+<a class="header" href="#remaining-instructions" id="remaining-instructions"><h2>Remaining Instructions</h2></a>
+<p>In this chapter, we'll look at two more instructions: <code>NOP</code> and <code>HALT</code></p>
+<a class="header" href="#nop" id="nop"><h3>NOP</h3></a>
+<p><code>NOP</code> is perhaps the simplest of the Game Boy's instructions. It stands for no-operation and it effectively does nothing except advance the program counter by 1.</p>
+<a class="header" href="#halt" id="halt"><h3>HALT</h3></a>
+<p><code>HALT</code> is a big more complicated than <code>NOP</code>. When the Game Boy is running, it is constantly in a loop executing instructions. The <code>HALT</code> instruction gives the game the ability to stop the CPU from executing any more instructions. How the Game Boy eventually continues executing instructions will be discussed later in the book, but for now, we have the ability to stop the Game Boy dead in its tracks. Reasons a game might want to do this include saving battery. If the game doesn't have anything to do, it can halt the CPU and save a bit energy.</p>
+<p>For now, we'll implement <code>HALT</code> by adding a <code>is_halted</code> boolean to the CPU. At the beginning of <code>execute</code> we can check if the CPU is halted. If it is, we simply return. The <code>HALT</code> instruction simply sets this field to true.</p>
+<a class="header" href="#where-we-are" id="where-we-are"><h2>Where We Are</h2></a>
+<p>So far we've learned about the CPU and the many different instructions that the CPU can execute. We learned that these instructions live in memory which is just a long array of 8-bit numbers. The CPU reads in these bytes, decodes them as instructions and executes them. Some instructions simply do different arithmetic operations on the contents of the CPU's registers. Some instructions can cause the CPU to change its program counters, effectively &quot;jumping&quot; it to a different place in the game code. Some instructions read from and write to memory including a special part of memory we call the stack which behaves like a stack data structure. Finally, we learned about two special instructions: <code>NOP</code> which does nothing and <code>HALT</code> which stops the CPU from executing more instructions.</p>
+<p>In the next section of the book, we'll be leaving the comfort of the CPU and exploring memory more closely.</p>
+<a class="header" href="#memory-map" id="memory-map"><h1>Memory Map</h1></a>
+<p>Up until now we've been treating the Game Boy's memory as one long array with 0xFFFF entries in it. While this was a helpful simplification for our work on the CPU (which doesn't know anything more about memory than that), in reality things are bit more complex. Sections of memory are actually used for very specific purposes. In fact there are parts of &quot;memory&quot; that are not actually backed by a RAM chip but instead are directly tied to things like the Game Boy screen or the Game Boy's audio device. Below we'll be &quot;mapping&quot; out memory and talking at a high level about what the different sections of the Game Boy's memory map do. We'll start at the very beginning of memory with address 0x0000 and work our way all the up to the top. This chapter should serve as the jumping off point for the rest of the book, so if you don't understand exactly how something works don't worry, we'll be going in much more detail later on.</p>
+<a class="header" href="#a0x0000---0x00ff-boot-rom" id="a0x0000---0x00ff-boot-rom"><h2>0x0000 - 0x00FF: Boot ROM</h2></a>
+<p>When the Game Boy first boot's the very bottom 256 bytes of memory is occuppied with the boot ROM. We've talked a little bit about the boot ROM before - how it's responsible for bootstrapping the Game Boy to be able to run a game as well as for playing the <a href="https://www.youtube.com/watch?v=ClJWTR_lCL4">iconic splash screen</a> on boot. Later in the book, we'll be examining the boot ROM very closely.</p>
+<a class="header" href="#a0x0000---0x3fff-game-rom-bank-0" id="a0x0000---0x3fff-game-rom-bank-0"><h2>0x0000 - 0x3FFF: Game ROM Bank 0</h2></a>
+<p>Once the Game Boy is done booting, it unmaps the boot ROM from memory so it is no longer available. From this point the area once occupied by the boot ROM all the way up to address 0x3FFF is occupied by game code loaded in from the cartridge. Inside of this memory are two areas worth noting:</p>
+<ul>
+<li>0x0000 - 0x00FF - the area once occupied by the Boot ROM now holds memory called the &quot;Interrupt Table&quot;. We'll be talking at length in the future about interrupt's, but for now the best way to think about them is just like &quot;events&quot; in higher level programming. When specific things happen the hardware automatically looks inside the interrupt table at specific locations for how to handle those events.</li>
+<li>0x0100 - 0x014F - This area is known as the cartridge header area. It contains data about the cartridge that was loaded into Game Boy including its name, the size of cartridge ROM and even the nintendo logo. We'll talk about more about the contents of the cartridge when we talk about the boot ROM since it directly references this header area. If you want to really dive into specifics checkout <a href="./appendix/cartridge_header.html">the cartridge header guide</a></li>
+</ul>
+<p>After these special areas is plain game code. The reason this area is refered to as Bank 0 is explained in the next section.</p>
+<a class="header" href="#a0x4000---0x7fff-game-rom-bank-n" id="a0x4000---0x7fff-game-rom-bank-n"><h2>0x4000 - 0x7FFF: Game ROM Bank N</h2></a>
+<p>Game ROMs can be quite large - much larger than what can fit into the memory area available. To handle this, the Game Boy allows for ROM &quot;bank switching&quot;. A ROM bank is simply a chunk of the cartirdge ROM. The game can switch in these chunks at run time into the area between 0x4000 - 0x7FFF. The first bank, bank 0, is always the same memory and cannot be switched out. Only the area of memory between 0x4000 and 0x7FFF is capable of being switched out. Later in the book we'll go into specifics of how this works.</p>
+<a class="header" href="#a0x8000---0x97ff-tile-ram" id="a0x8000---0x97ff-tile-ram"><h2>0x8000 - 0x97FF: Tile RAM</h2></a>
+<p>This area of memory contains data about the graphics that can be displayed to the screen. The Game Boy uses a tiling system for grapics meaning that a game doesn't control the specific pixels that get drawn to the screen, at least not directly. Instead, the game creates a set of tiles which are square chunks of pixels. It can then place these tiles on the screen. So instead of saying &quot;draw pixel 438 light green&quot;, it first says &quot;create a tile with these pixels values&quot; and then later &quot;place that tile I made earlier in positon 5&quot;. The placement of tiles at certain positions happens in the next chunk of memory...</p>
+<a class="header" href="#a0x9800---0x9fff-background-map" id="a0x9800---0x9fff-background-map"><h2>0x9800 - 0x9FFF: Background Map</h2></a>
+<p>As we described above, the Game Boy uses a tiling system for graphics. In memory 0x8000 to 0x97FF the game creates different tiles. These tiles however don't show up on screen. That happens in this section of memory where the game can map tiles to sections of the screen.</p>
+<a class="header" href="#a0xa000---0xbfff-cartridge-ram" id="a0xa000---0xbfff-cartridge-ram"><h2>0xA000 - 0xBFFF: Cartridge RAM</h2></a>
+<p>Cartridges (being physical devices) sometimes had extra RAM on them. This gave games even more memory to work with. If the cartridge had this extra RAM the Game Boy automatically mapped the RAM into this area of memory.</p>
+<a class="header" href="#a0xc000---0xdfff-working-ram" id="a0xc000---0xdfff-working-ram"><h2>0xC000 - 0xDFFF: Working RAM</h2></a>
+<p>This is the RAM that the Game Boy allows a game to use. Our idea of RAM really just being a plain old array where the game could read and write bytes to really only applies to this section of memory.</p>
+<a class="header" href="#a0xe000---0xfdff-echo-ram" id="a0xe000---0xfdff-echo-ram"><h2>0xE000 - 0xFDFF: Echo RAM</h2></a>
+<p>This section of memory directly mirrors the working RAM section - meaning if you write into the first address of working RAM (0xC000), the same value will appear in the first spot of echo RAM (0xE000). Nintendo actively discouraged developers from using this area of memory and as such we can just pretend it doesn't exist.</p>
+<a class="header" href="#a0xfe00---0xfe9f-oam-object-atribute-memory" id="a0xfe00---0xfe9f-oam-object-atribute-memory"><h2>0xFE00 - 0xFE9F: OAM (Object Atribute Memory)</h2></a>
+<p>This area of memory contains the description of graphical sprites. The tiles we talked about above were used for backgrounds and levels but not for characters, enemies or objects the user interacted with. These entities, known as sprites, have extra capabilties. The description for how they should look lives here.</p>
+<a class="header" href="#a0xfea0---0xfeff-unused" id="a0xfea0---0xfeff-unused"><h2>0xFEA0 - 0xFEFF: Unused</h2></a>
+<p>This area is completely unmapped: reading from it just returns 0s and writing to it does nothing.</p>
+<a class="header" href="#a0xff00---0xff7f-io-registers" id="a0xff00---0xff7f-io-registers"><h2>0xFF00 - 0xFF7F: I/O Registers</h2></a>
+<p>This is one of the most dense areas of memory. Practically every byte has a special meaning. It's used by both the screen and the sound system to determine different settings. We'll be talking a lot about this in the future.</p>
+<a class="header" href="#a0xff80---0xfffe-high-ram-area" id="a0xff80---0xfffe-high-ram-area"><h2>0xFF80 - 0xFFFE: High RAM Area</h2></a>
+<p>This area is also just normal RAM but is used a lot because some of the <code>LD</code> instructions we've already seen can easily target this area in memory. This area is also sometimes used for the stack, but the top of working RAM is also used for this purpose.</p>
+<a class="header" href="#a0xffff-interrupt-enabled-register" id="a0xffff-interrupt-enabled-register"><h2>0xFFFF: Interrupt Enabled Register</h2></a>
+<p>The very last byte of memory has special meaning used for handling interrupt events. We'll be looking at this closely later in the book.</p>
+<p>Now that we have an idea of what all the areas of memory are used for we can start diving more in detail. The first area we'll be looking at is at tile RAM and the background map along with a few of the I/O registers that will help us finally get some graphics on a screen!</p>
 <a class="header" href="#appendix" id="appendix"><h1>Appendix</h1></a>
 <a class="header" href="#numbers-in-computers" id="numbers-in-computers"><h1>Numbers in Computers</h1></a>
 <p>In this guide, we'll look at how numbers are stored in the Gameboy's CPU, RAM, and ROM. In this guide we'll be using different types of number notations: binary, decimal and hexadecimal. If you're unfamiliar with these different ways of writing numbers, check out our <a href="./number_notations.html">guide on number notations</a>.</p>
@@ -1179,6 +1476,7 @@ false || false == false
   <script src="cpu.js"></script>
   <script src="index.js"></script>
 </html>
+<a class="header" href="#cartridge-header" id="cartridge-header"><h1>Cartridge Header</h1></a>
 
                     </main>
 

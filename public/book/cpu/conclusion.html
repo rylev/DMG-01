@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>CPU - DMG-01: How to Emulate a Game Boy</title>
+        <title>Finishing Up the CPU - DMG-01: How to Emulate a Game Boy</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html" class="active"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="../cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="../memory_map.html"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="../appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="../appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="../cpu/conclusion.html" class="active"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="../memory_map.html"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="../appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="../appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,23 +136,31 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#cpu" id="cpu"><h1>CPU</h1></a>
-<p>The Game Boy's CPU is a custom chip called the Sharp LR35902. The chip is very similar to the much more popular <a href="https://en.wikipedia.org/wiki/Intel_8080">Intel 8080</a> and the <a href="https://en.wikipedia.org/wiki/Zilog_Z80">Zilog Z80</a>. The 8080 was used by lots of different computers in the 70s and 80s including the very first comercially successful personal computer the <a href="https://en.wikipedia.org/wiki/Altair_8800">Altair 8800</a>. The Z80 was also a very popular chip being used in many home electronic devices including in many Sega home consoles such as the Master System and the Sega Genesis/Mega Drive.</p>
-<p>We won't go into the specifics of what makes the LR35902 different from the Intel 8080 or Z80, but in general it's good to know that a large portion of what we'll learn about this custom chip will be applicable to other popular chips from yesteryear.</p>
-<p>In the next few sections we'll be looking at the different CPU instructions that the LR35902 can execute as long with how it reads instructions from memory, decodes them and updates its internal state as well as the contents of memory and different I/O devices.</p>
+                        <a class="header" href="#finishing-up-the-cpu" id="finishing-up-the-cpu"><h1>Finishing Up the CPU</h1></a>
+<p>We've nearly reached the end of building our CPU. There are a few instructions left to implement, many of which we won't touch on here, since they're closely tied with other parts of the Game Boy that we've yet to talk about.</p>
+<a class="header" href="#remaining-instructions" id="remaining-instructions"><h2>Remaining Instructions</h2></a>
+<p>In this chapter, we'll look at two more instructions: <code>NOP</code> and <code>HALT</code></p>
+<a class="header" href="#nop" id="nop"><h3>NOP</h3></a>
+<p><code>NOP</code> is perhaps the simplest of the Game Boy's instructions. It stands for no-operation and it effectively does nothing except advance the program counter by 1.</p>
+<a class="header" href="#halt" id="halt"><h3>HALT</h3></a>
+<p><code>HALT</code> is a big more complicated than <code>NOP</code>. When the Game Boy is running, it is constantly in a loop executing instructions. The <code>HALT</code> instruction gives the game the ability to stop the CPU from executing any more instructions. How the Game Boy eventually continues executing instructions will be discussed later in the book, but for now, we have the ability to stop the Game Boy dead in its tracks. Reasons a game might want to do this include saving battery. If the game doesn't have anything to do, it can halt the CPU and save a bit energy.</p>
+<p>For now, we'll implement <code>HALT</code> by adding a <code>is_halted</code> boolean to the CPU. At the beginning of <code>execute</code> we can check if the CPU is halted. If it is, we simply return. The <code>HALT</code> instruction simply sets this field to true.</p>
+<a class="header" href="#where-we-are" id="where-we-are"><h2>Where We Are</h2></a>
+<p>So far we've learned about the CPU and the many different instructions that the CPU can execute. We learned that these instructions live in memory which is just a long array of 8-bit numbers. The CPU reads in these bytes, decodes them as instructions and executes them. Some instructions simply do different arithmetic operations on the contents of the CPU's registers. Some instructions can cause the CPU to change its program counters, effectively &quot;jumping&quot; it to a different place in the game code. Some instructions read from and write to memory including a special part of memory we call the stack which behaves like a stack data structure. Finally, we learned about two special instructions: <code>NOP</code> which does nothing and <code>HALT</code> which stops the CPU from executing more instructions.</p>
+<p>In the next section of the book, we'll be leaving the comfort of the CPU and exploring memory more closely.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../architecture_overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../cpu/reading_and_writing_memory.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../cpu/registers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../memory_map.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -164,13 +172,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="../architecture_overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../cpu/reading_and_writing_memory.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="../cpu/registers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../memory_map.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 

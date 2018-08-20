@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html" class="active"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li></ol></li><li><a href="../appendix/index.html"><strong aria-hidden="true">4.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">4.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">4.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">4.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">4.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">4.5.</strong> Instruction Guide</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html" class="active"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="../cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="../memory_map.html"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="../appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="../appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -321,8 +321,9 @@ impl Instruction {
 <p>Implementation of jump is pretty trivial:</p>
 <pre><code class="language-rust noplaypen"># struct FlagsRegister { zero: bool, carry: bool }
 # struct Registers { f: FlagsRegister }
-# struct CPU { registers: Registers, pc: u16 }
-# impl CPU { fn read_next_word(&amp;self) -&gt; u16 { 0 } }
+# struct CPU { registers: Registers, bus: Bus, pc: u16 }
+# struct Bus {}
+# impl Bus { fn read_byte(&amp;self, addr: u16) -&gt; u8 { 0 } }
 enum JumpTest {
   NotZero,
   Zero,
@@ -353,7 +354,11 @@ impl CPU {
 
   fn jump(&amp;self, should_jump: bool) -&gt; u16 {
     if should_jump {
-      self.read_next_word()
+      // Gameboy is little endian so read pc + 2 as most significant bit
+      // and pc + 1 as least significant bit
+      let least_significant_byte = self.bus.read_byte(self.pc + 1) as u16;
+      let most_significant_byte = self.bus.read_byte(self.pc + 2) as u16;
+      (most_significant_byte &lt;&lt; 8) | least_significant_byte
     } else {
       // If we don't jump we need to still move the program
       // counter forward by 3 since the jump instruction is
@@ -363,7 +368,13 @@ impl CPU {
   }
 }
 </code></pre>
-<p>And there we have it. We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.</p>
+<p>It's important to note that the address we jump to is located in the two bytes following the instruction identifier. As the comment in the code example explains, the Game Boy is little endian which means that when you have numbers that are larger than 1 byte, the least significant is stored first in memory and then the most significant byte.</p>
+<pre><code class="language-ignore">+-------------+-------------- +--------------+
+| Instruction | Least Signif- | Most Signif-
+| Identifier  | icant Byte    | icant Byte   |
++-------------+-------------- +--------------+
+</code></pre>
+<p>We're now succesfully executing instructions that are stored in memory! We learned that the current executing instruction is kept track of by the program counter. We then read the instruction from memory and execute it, getting back our next program counter. With this, we were even able to add some new instructions that let the game conditionally control exactly where the next program counter will be. Next we'll look at bit closer at instructions that read and write to memory.</p>
 
                     </main>
 

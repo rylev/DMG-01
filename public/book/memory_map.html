@@ -1,0 +1,233 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Memory Map - DMG-01: How to Emulate a Game Boy</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">var path_to_root = "";</script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = 'light'; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="memory_map.html" class="active"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light <span class="default">(default)</span></button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">DMG-01: How to Emulate a Game Boy</h1> 
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#memory-map" id="memory-map"><h1>Memory Map</h1></a>
+<p>Up until now we've been treating the Game Boy's memory as one long array with 0xFFFF entries in it. While this was a helpful simplification for our work on the CPU (which doesn't know anything more about memory than that), in reality things are bit more complex. Sections of memory are actually used for very specific purposes. In fact there are parts of &quot;memory&quot; that are not actually backed by a RAM chip but instead are directly tied to things like the Game Boy screen or the Game Boy's audio device. Below we'll be &quot;mapping&quot; out memory and talking at a high level about what the different sections of the Game Boy's memory map do. We'll start at the very beginning of memory with address 0x0000 and work our way all the up to the top. This chapter should serve as the jumping off point for the rest of the book, so if you don't understand exactly how something works don't worry, we'll be going in much more detail later on.</p>
+<a class="header" href="#a0x0000---0x00ff-boot-rom" id="a0x0000---0x00ff-boot-rom"><h2>0x0000 - 0x00FF: Boot ROM</h2></a>
+<p>When the Game Boy first boot's the very bottom 256 bytes of memory is occuppied with the boot ROM. We've talked a little bit about the boot ROM before - how it's responsible for bootstrapping the Game Boy to be able to run a game as well as for playing the <a href="https://www.youtube.com/watch?v=ClJWTR_lCL4">iconic splash screen</a> on boot. Later in the book, we'll be examining the boot ROM very closely.</p>
+<a class="header" href="#a0x0000---0x3fff-game-rom-bank-0" id="a0x0000---0x3fff-game-rom-bank-0"><h2>0x0000 - 0x3FFF: Game ROM Bank 0</h2></a>
+<p>Once the Game Boy is done booting, it unmaps the boot ROM from memory so it is no longer available. From this point the area once occupied by the boot ROM all the way up to address 0x3FFF is occupied by game code loaded in from the cartridge. Inside of this memory are two areas worth noting:</p>
+<ul>
+<li>0x0000 - 0x00FF - the area once occupied by the Boot ROM now holds memory called the &quot;Interrupt Table&quot;. We'll be talking at length in the future about interrupt's, but for now the best way to think about them is just like &quot;events&quot; in higher level programming. When specific things happen the hardware automatically looks inside the interrupt table at specific locations for how to handle those events.</li>
+<li>0x0100 - 0x014F - This area is known as the cartridge header area. It contains data about the cartridge that was loaded into Game Boy including its name, the size of cartridge ROM and even the nintendo logo. We'll talk about more about the contents of the cartridge when we talk about the boot ROM since it directly references this header area. If you want to really dive into specifics checkout <a href="./appendix/cartridge_header.html">the cartridge header guide</a></li>
+</ul>
+<p>After these special areas is plain game code. The reason this area is refered to as Bank 0 is explained in the next section.</p>
+<a class="header" href="#a0x4000---0x7fff-game-rom-bank-n" id="a0x4000---0x7fff-game-rom-bank-n"><h2>0x4000 - 0x7FFF: Game ROM Bank N</h2></a>
+<p>Game ROMs can be quite large - much larger than what can fit into the memory area available. To handle this, the Game Boy allows for ROM &quot;bank switching&quot;. A ROM bank is simply a chunk of the cartirdge ROM. The game can switch in these chunks at run time into the area between 0x4000 - 0x7FFF. The first bank, bank 0, is always the same memory and cannot be switched out. Only the area of memory between 0x4000 and 0x7FFF is capable of being switched out. Later in the book we'll go into specifics of how this works.</p>
+<a class="header" href="#a0x8000---0x97ff-tile-ram" id="a0x8000---0x97ff-tile-ram"><h2>0x8000 - 0x97FF: Tile RAM</h2></a>
+<p>This area of memory contains data about the graphics that can be displayed to the screen. The Game Boy uses a tiling system for grapics meaning that a game doesn't control the specific pixels that get drawn to the screen, at least not directly. Instead, the game creates a set of tiles which are square chunks of pixels. It can then place these tiles on the screen. So instead of saying &quot;draw pixel 438 light green&quot;, it first says &quot;create a tile with these pixels values&quot; and then later &quot;place that tile I made earlier in positon 5&quot;. The placement of tiles at certain positions happens in the next chunk of memory...</p>
+<a class="header" href="#a0x9800---0x9fff-background-map" id="a0x9800---0x9fff-background-map"><h2>0x9800 - 0x9FFF: Background Map</h2></a>
+<p>As we described above, the Game Boy uses a tiling system for graphics. In memory 0x8000 to 0x97FF the game creates different tiles. These tiles however don't show up on screen. That happens in this section of memory where the game can map tiles to sections of the screen.</p>
+<a class="header" href="#a0xa000---0xbfff-cartridge-ram" id="a0xa000---0xbfff-cartridge-ram"><h2>0xA000 - 0xBFFF: Cartridge RAM</h2></a>
+<p>Cartridges (being physical devices) sometimes had extra RAM on them. This gave games even more memory to work with. If the cartridge had this extra RAM the Game Boy automatically mapped the RAM into this area of memory.</p>
+<a class="header" href="#a0xc000---0xdfff-working-ram" id="a0xc000---0xdfff-working-ram"><h2>0xC000 - 0xDFFF: Working RAM</h2></a>
+<p>This is the RAM that the Game Boy allows a game to use. Our idea of RAM really just being a plain old array where the game could read and write bytes to really only applies to this section of memory.</p>
+<a class="header" href="#a0xe000---0xfdff-echo-ram" id="a0xe000---0xfdff-echo-ram"><h2>0xE000 - 0xFDFF: Echo RAM</h2></a>
+<p>This section of memory directly mirrors the working RAM section - meaning if you write into the first address of working RAM (0xC000), the same value will appear in the first spot of echo RAM (0xE000). Nintendo actively discouraged developers from using this area of memory and as such we can just pretend it doesn't exist.</p>
+<a class="header" href="#a0xfe00---0xfe9f-oam-object-atribute-memory" id="a0xfe00---0xfe9f-oam-object-atribute-memory"><h2>0xFE00 - 0xFE9F: OAM (Object Atribute Memory)</h2></a>
+<p>This area of memory contains the description of graphical sprites. The tiles we talked about above were used for backgrounds and levels but not for characters, enemies or objects the user interacted with. These entities, known as sprites, have extra capabilties. The description for how they should look lives here.</p>
+<a class="header" href="#a0xfea0---0xfeff-unused" id="a0xfea0---0xfeff-unused"><h2>0xFEA0 - 0xFEFF: Unused</h2></a>
+<p>This area is completely unmapped: reading from it just returns 0s and writing to it does nothing.</p>
+<a class="header" href="#a0xff00---0xff7f-io-registers" id="a0xff00---0xff7f-io-registers"><h2>0xFF00 - 0xFF7F: I/O Registers</h2></a>
+<p>This is one of the most dense areas of memory. Practically every byte has a special meaning. It's used by both the screen and the sound system to determine different settings. We'll be talking a lot about this in the future.</p>
+<a class="header" href="#a0xff80---0xfffe-high-ram-area" id="a0xff80---0xfffe-high-ram-area"><h2>0xFF80 - 0xFFFE: High RAM Area</h2></a>
+<p>This area is also just normal RAM but is used a lot because some of the <code>LD</code> instructions we've already seen can easily target this area in memory. This area is also sometimes used for the stack, but the top of working RAM is also used for this purpose.</p>
+<a class="header" href="#a0xffff-interrupt-enabled-register" id="a0xffff-interrupt-enabled-register"><h2>0xFFFF: Interrupt Enabled Register</h2></a>
+<p>The very last byte of memory has special meaning used for handling interrupt events. We'll be looking at this closely later in the book.</p>
+<p>Now that we have an idea of what all the areas of memory are used for we can start diving more in detail. The first area we'll be looking at is at tile RAM and the background map along with a few of the I/O registers that will help us finally get some graphics on a screen!</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="cpu/conclusion.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="appendix/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="cpu/conclusion.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="appendix/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
