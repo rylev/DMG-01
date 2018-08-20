@@ -271,7 +271,9 @@ macro_rules! prefix_instruction {
     };
 }
 
-const BOOT_ROM_SIZE: usize = 0x100;
+const BOOT_ROM_BEGIN: usize = 0x00;
+const BOOT_ROM_END: usize = 0xFF;
+const BOOT_ROM_SIZE: usize = BOOT_ROM_END - BOOT_ROM_BEGIN + 1;
 const ROM_BANK_0_BEGIN: usize = 0x0000;
 const ROM_BANK_0_END: usize = 0x3FFF;
 const ROM_BANK_0_SIZE: usize = ROM_BANK_0_END - ROM_BANK_0_BEGIN + 1;
@@ -284,6 +286,9 @@ const EXTERNAL_RAM_SIZE: usize = EXTERNAL_RAM_END - EXTERNAL_RAM_BEGIN + 1;
 const WORKING_RAM_BEGIN: usize = 0xC000;
 const WORKING_RAM_END: usize = 0xDFFF;
 const WORKING_RAM_SIZE: usize = WORKING_RAM_END - WORKING_RAM_BEGIN + 1;
+const OAM_BEGIN: usize = 0xFE00;
+const OAM_END: usize = 0xFE9F;
+const OAM_SIZE: usize = OAM_END - OAM_BEGIN + 1;
 const IO_REGISTERS_BEGIN: usize = 0xFF00;
 const IO_REGISTERS_END: usize = 0xFF7F;
 const IO_REGISTERS_SIZE: usize = IO_REGISTERS_END - IO_REGISTERS_BEGIN + 1;
@@ -291,32 +296,35 @@ const ZERO_PAGE_BEGIN: usize = 0xFF80;
 const ZERO_PAGE_END: usize = 0xFFFE;
 const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 struct MemoryBus {
+    boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
     vram: [u8; VRAM_SIZE],
     external_ram: [u8; EXTERNAL_RAM_SIZE],
     working_ram: [u8; WORKING_RAM_SIZE],
+    oam: [u8; OAM_SIZE],
     io_registers: [u8; IO_REGISTERS_SIZE],
     zero_page: [u8; ZERO_PAGE_SIZE]
 }
 
 impl MemoryBus {
-    pub fn new(boot_rom: Option<Vec<u8>>) -> MemoryBus {
-        let mut rom_bank_0 = [0; ROM_BANK_0_SIZE];
-        if let Some(boot_rom) = boot_rom {
-            if boot_rom.len() != BOOT_ROM_SIZE {
-                panic!("Boot ROM is the wrong size. Is {} bytes but should be {} bytes", boot_rom.len(), BOOT_ROM_SIZE);
+    pub fn new(boot_rom_buffer: Option<Vec<u8>>) -> MemoryBus {
+        let boot_rom = boot_rom_buffer.map(|boot_rom_buffer| {
+            if boot_rom_buffer.len() != BOOT_ROM_SIZE {
+                panic!("Supplied boot ROM is the wrong size. Is {} bytes but should be {} bytes", boot_rom_buffer.len(), BOOT_ROM_SIZE);
             }
-            for (i, byte) in boot_rom.iter().enumerate() {
-                rom_bank_0[i] = *byte;
-            }
-        }
+            let mut boot_rom = [0; BOOT_ROM_SIZE];
+            boot_rom.copy_from_slice(&boot_rom_buffer);
+            boot_rom
+        });
         MemoryBus {
             // Note: instead of modeling memory as one array of length 0xFFFF, we'll
             // break memory up into it's logical parts.
-            rom_bank_0,
+            boot_rom: boot_rom,
+            rom_bank_0: [0; ROM_BANK_0_SIZE],
             vram: [0; VRAM_SIZE],
             external_ram: [0; EXTERNAL_RAM_SIZE],
             working_ram: [0; WORKING_RAM_SIZE],
+            oam: [0; OAM_SIZE],
             io_registers: [0; IO_REGISTERS_SIZE],
             zero_page: [0; ZERO_PAGE_SIZE]
         }
@@ -324,39 +332,68 @@ impl MemoryBus {
 
     pub fn read_byte(&self, address: u16) -> u8 {
         let address = address as usize;
-        if address < ROM_BANK_0_END {
-            self.rom_bank_0[address]
-        } else if address >= VRAM_BEGIN && address <= VRAM_END {
-            self.vram[address - VRAM_BEGIN]
-        } else if address >= EXTERNAL_RAM_BEGIN && address <= EXTERNAL_RAM_END {
-            self.external_ram[address - EXTERNAL_RAM_BEGIN]
-        } else if address >= WORKING_RAM_BEGIN && address <= WORKING_RAM_END {
-            self.working_ram[address - WORKING_RAM_BEGIN]
-        } else if address >= IO_REGISTERS_BEGIN && address <= IO_REGISTERS_END {
-            self.io_registers[address - IO_REGISTERS_BEGIN]
-        } else if address >= ZERO_PAGE_BEGIN && address <= ZERO_PAGE_END {
-            self.zero_page[address - ZERO_PAGE_BEGIN]
-        } else {
-            panic!("Reading from an unkown part of memory at address 0x{:x}", address);
+        match address {
+            BOOT_ROM_BEGIN ... BOOT_ROM_END => {
+                if let Some(boot_rom) = self.boot_rom {
+                    boot_rom[address]
+                } else {
+                    self.rom_bank_0[address]
+                }
+            }
+            ROM_BANK_0_BEGIN ... ROM_BANK_0_END => {
+                self.rom_bank_0[address]
+            }
+            VRAM_BEGIN ... VRAM_END => {
+                self.vram[address - VRAM_BEGIN]
+            }
+            EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
+                self.external_ram[address - EXTERNAL_RAM_BEGIN]
+            }
+            WORKING_RAM_BEGIN ... WORKING_RAM_END => {
+                self.working_ram[address - WORKING_RAM_BEGIN]
+            }
+            OAM_BEGIN ... OAM_END => {
+                self.oam[address - OAM_BEGIN]
+            }
+            IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
+                self.io_registers[address - IO_REGISTERS_BEGIN]
+            }
+            ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
+                self.zero_page[address - ZERO_PAGE_BEGIN]
+            }
+            _ => {
+                panic!("Reading from an unkown part of memory at address 0x{:x}", address);
+            }
         }
     }
 
     pub fn write_byte(&mut self, address: u16, value: u8) {
         let address = address as usize;
-        if address >= ROM_BANK_0_BEGIN && address <= ROM_BANK_0_END {
-            self.rom_bank_0[address] = value;
-        } else if address >= VRAM_BEGIN && address <= VRAM_END {
-            self.vram[address - VRAM_BEGIN] = value;
-        } else if address >= EXTERNAL_RAM_BEGIN && address <= EXTERNAL_RAM_END {
-            self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
-        } else if address >= WORKING_RAM_BEGIN && address <= WORKING_RAM_END {
-            self.working_ram[address - WORKING_RAM_BEGIN] = value;
-        } else if address >= IO_REGISTERS_BEGIN && address <= IO_REGISTERS_END {
-            self.io_registers[address - IO_REGISTERS_BEGIN] = value;
-        } else if address >= ZERO_PAGE_BEGIN && address <= ZERO_PAGE_END {
-            self.zero_page[address - ZERO_PAGE_BEGIN] = value;
-        } else {
-            panic!("Writing to an unkown part of memory at address 0x{:x}", address);
+        match address {
+            ROM_BANK_0_BEGIN ... ROM_BANK_0_END => {
+                self.rom_bank_0[address] = value;
+            }
+            VRAM_BEGIN ... VRAM_END => {
+                self.vram[address - VRAM_BEGIN] = value;
+            }
+            EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
+                self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
+            }
+            WORKING_RAM_BEGIN ... WORKING_RAM_END => {
+                self.working_ram[address - WORKING_RAM_BEGIN] = value;
+            }
+            OAM_BEGIN ... OAM_END => {
+                self.oam[address - OAM_BEGIN] = value;
+            }
+            IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
+                self.io_registers[address - IO_REGISTERS_BEGIN] = value;
+            }
+            ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
+                self.zero_page[address - ZERO_PAGE_BEGIN] = value;
+            }
+            _ => {
+                panic!("Writing to an unkown part of memory at address 0x{:x}", address);
+            }
         }
     }
 }
