@@ -143,8 +143,9 @@ macro_rules! arithmetic_instruction {
                 }
             };
             match $register {
-                ArithmeticTarget::D8 => $self.pc.wrapping_add(2),
-                _                    => $self.pc.wrapping_add(1)
+                ArithmeticTarget::D8  => ($self.pc.wrapping_add(2), 8),
+                ArithmeticTarget::HLI => ($self.pc.wrapping_add(1), 8),
+                _                     => ($self.pc.wrapping_add(1), 4)
             }
         }
     };
@@ -180,8 +181,9 @@ macro_rules! arithmetic_instruction {
                 }
             };
             match $register {
-                ArithmeticTarget::D8 => $self.pc.wrapping_add(2),
-                _                    => $self.pc.wrapping_add(1)
+                ArithmeticTarget::D8  => ($self.pc.wrapping_add(2), 8),
+                ArithmeticTarget::HLI => ($self.pc.wrapping_add(1), 8),
+                _                     => ($self.pc.wrapping_add(1), 4)
             }
         }
     };
@@ -214,6 +216,11 @@ macro_rules! prefix_instruction {
                     $self.registers.set_hl(result as u16);
                 }
             }
+            let cycles = match $register {
+                PrefixTarget::HLI => 16,
+                _                 => 8
+            };
+            ($self.pc.wrapping_add(2), cycles)
         }
     };
     // Macro pattern for matching a register and then manipulating the register at a specific bit
@@ -242,6 +249,11 @@ macro_rules! prefix_instruction {
                     $self.registers.set_hl(result as u16);
                 }
             }
+            let cycles = match $register {
+                PrefixTarget::HLI => 16,
+                _                 => 8
+            };
+            ($self.pc.wrapping_add(2), cycles)
         }
     };
     // Macro pattern for matching a register and then manipulating the register at a specific bit
@@ -269,6 +281,11 @@ macro_rules! prefix_instruction {
                     $self.$work(value, $bit_position);
                 }
             }
+            let cycles = match $register {
+                PrefixTarget::HLI => 16,
+                _                 => 8
+            };
+            ($self.pc.wrapping_add(2), cycles)
         }
     };
 }
@@ -364,6 +381,9 @@ impl GPU {
             line: 0
         }
     }
+
+    fn step(&mut self, cycles: u8) {
+    }
 }
 
 const BOOT_ROM_BEGIN: usize = 0x00;
@@ -428,6 +448,10 @@ impl MemoryBus {
             zero_page: [0; ZERO_PAGE_SIZE],
             gpu: GPU::new()
         }
+    }
+
+    fn step(&mut self, cycles: u8) {
+        self.gpu.step(cycles);
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
@@ -593,30 +617,36 @@ impl CPU {
             instruction_byte = self.read_next_byte();
         }
 
-        let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+        let (next_pc, cycles) = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
             self.execute(instruction)
         } else {
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
             panic!("Unkown instruction found for: {}", description)
         };
 
+        self.bus.step(cycles);
+
         if !self.is_halted {
             self.pc = next_pc;
         }
     }
 
-    pub fn execute(&mut self, instruction: Instruction) -> u16 {
+    pub fn execute(&mut self, instruction: Instruction) -> (u16, u8) {
         match instruction {
-            Instruction::INC(register) => {
+            Instruction::INC(target) => {
                 // DESCRIPTION: (increment) - increment the value in a specific register by 1
                 // WHEN: target is 16 bit register
                 // PC: +1
+                // Cycles: 12
                 // Z:- S:- H:- C:-
+                // WHEN: target is (HL)
+                // PC:+1
+                // Cycles: 8
                 // ELSE:
                 // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:? C:-
-                match register {
-                    // 8 bit target
+                match target {
                     IncDecTarget::A => manipulate_8bit_register!(self: a => inc_8bit => a),
                     IncDecTarget::B => manipulate_8bit_register!(self: b => inc_8bit => b),
                     IncDecTarget::C => manipulate_8bit_register!(self: c => inc_8bit => c),
@@ -630,7 +660,6 @@ impl CPU {
                         let result = self.inc_8bit(amount);
                         self.bus.write_byte(hl, result);
                     }
-                    // 16 bit target
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl),
@@ -639,19 +668,28 @@ impl CPU {
                         let result = self.inc_16bit(amount);
                         self.sp = result;
                     }
-                }
-                self.pc.wrapping_add(1)
+                };
+                let cycles = match target {
+                    IncDecTarget::BC | IncDecTarget::DE | IncDecTarget::HL | IncDecTarget::SP => 8,
+                    IncDecTarget::HLI => 12,
+                    _ => 4
+                };
+                (self.pc.wrapping_add(1), cycles)
             },
-            Instruction::DEC(register) => {
+            Instruction::DEC(target) => {
                 // DESCRIPTION: (decrement) - decrement the value in a specific register by 1
                 // WHEN: target is 16 bit register
                 // PC: +1
+                // Cycles: 12
                 // Z:- S:- H:- C:-
+                // WHEN: target is (HL)
+                // PC:+1
+                // Cycles: 8
                 // ELSE:
                 // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:? C:-
-                match register {
-                    // 8 bit target
+                match target {
                     IncDecTarget::A => manipulate_8bit_register!(self: a => dec_8bit => a),
                     IncDecTarget::B => manipulate_8bit_register!(self: b => dec_8bit => b),
                     IncDecTarget::C => manipulate_8bit_register!(self: c => dec_8bit => c),
@@ -665,7 +703,6 @@ impl CPU {
                         let result = self.dec_8bit(amount);
                         self.bus.write_byte(hl, result);
                     }
-                    // 16 bit target
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
                     IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl),
@@ -674,21 +711,34 @@ impl CPU {
                         let result = self.dec_16bit(amount);
                         self.sp = result;
                     }
-                }
-                self.pc.wrapping_add(1)
+                };
+                let cycles = match target {
+                    IncDecTarget::BC | IncDecTarget::DE | IncDecTarget::HL | IncDecTarget::SP => 8,
+                    IncDecTarget::HLI => 12,
+                    _ => 4
+                };
+                (self.pc.wrapping_add(1), cycles)
             },
             Instruction::ADD(register) => {
                 // DESCRIPTION: (add) - add the value stored in a specific register
                 // with the value in the A register
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:? C:?
-                arithmetic_instruction!(register, self.add_without_carry => a);
-                self.pc.wrapping_add(1)
+                arithmetic_instruction!(register, self.add_without_carry => a)
             },
             Instruction::ADDHL(register) => {
                 // DESCRIPTION: (add) - add the value stored in a specific register
                 // with the value in the HL register
                 // PC:+1
+                // Cycles: 8
                 // Z:- S:0 H:? C:?
                 let value = match register {
                     ADDHLTarget::BC => self.registers.get_bc(),
@@ -698,12 +748,13 @@ impl CPU {
                 };
                 let result = self.add_hl(value);
                 self.registers.set_hl(result);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 8)
             },
             Instruction::ADDSP => {
                 // DESCRIPTION: (add stack pointer) - add a one byte signed number to
                 // the value stored in the stack pointer register
                 // PC:+2
+                // Cycles: 16
                 // Z:0 S:0 H:? C:?
 
                 // First cast the byte as signed with `as i8` then extend it to 16 bits
@@ -721,190 +772,287 @@ impl CPU {
 
                 self.sp = result;
 
-                self.pc.wrapping_add(2)
+                (self.pc.wrapping_add(2), 16)
             },
             Instruction::ADC(register) => {
                 // DESCRIPTION: (add with carry) - add the value stored in a specific
                 // register with the value in the A register and the value in the carry flag
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_with_carry => a)
             },
             Instruction::SUB(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_without_carry => a)
             },
             Instruction::SBC(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register and the value in the carry flag
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_with_carry => a)
             },
             Instruction::AND(register) => {
                 // DESCRIPTION: (AND) - do a bitwise and on the value in a specific
                 // register and the value in the A register
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:1 C:0
                 arithmetic_instruction!(register, self.and => a)
             },
             Instruction::OR(register) => {
                 // DESCRIPTION: (OR) - do a bitwise or on the value in a specific
                 // register and the value in the A register
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.or => a)
             },
             Instruction::XOR(register) => {
                 // DESCRIPTION: (XOR) - do a bitwise xor on the value in a specific
                 // register and the value in the A register
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.xor => a)
             },
             Instruction::CP(register) => {
                 // DESCRIPTION: (compare) - just like SUB except the result of the
                 // subtraction is not stored back into A
+                // WHEN: target is D8
+                // PC:+2
+                // Cycles: 8
+                // WHEN: target is (HL)
                 // PC:+1
+                // Cycles: 8
+                // ELSE:
+                // PC: +1
+                // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.compare)
             },
             Instruction::CCF => {
                 // DESCRIPTION: (complement carry flag) - toggle the value of the carry flag
                 // PC:+1
+                // Cycles: 4
                 // Z:- S:0 H:0 C:?
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = false;
                 self.registers.f.carry = !self.registers.f.carry;
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::SCF => {
                 // DESCRIPTION: (set carry flag) - set the carry flag to true
                 // PC:+1
+                // Cycles: 4
                 // Z:- S:0 H:0 C:1
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = false;
                 self.registers.f.carry = true;
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::RRA => {
                 // DESCRIPTION: (rotate right A register) - bit rotate A register right through the carry flag
                 // PC:+1
+                // Cycles: 4
                 // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_through_carry_retain_zero => a);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::RLA => {
                 // DESCRIPTION: (rotate left A register) - bit rotate A register left through the carry flag
                 // PC:+1
+                // Cycles: 4
                 // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_through_carry_retain_zero => a);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::RRCA => {
                 // DESCRIPTION: (rotate right A register) - bit rotate A register right (not through the carry flag)
                 // PC:+1
+                // Cycles: 4
                 // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_right_retain_zero => a);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::RLCA => {
                 // DESCRIPTION: (rotate left A register) - bit rotate A register left (not through the carry flag)
                 // PC:+1
+                // Cycles: 4
                 // Z:0 S:0 H:0 C:?
                 manipulate_8bit_register!(self: a => rotate_left_retain_zero => a);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::CPL => {
                 // DESCRIPTION: (complement) - toggle every bit of the A register
                 // PC:+1
+                // Cycles: 4
                 // Z:- S:1 H:1 C:-
                 manipulate_8bit_register!(self: a => complement => a);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::BIT(register, bit_position) => {
                 // DESCRIPTION: (bit test) - test to see if a specific bit of a specific register is set
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:1 C:-
-                prefix_instruction!(register, self.bit_test @ bit_position);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.bit_test @ bit_position)
             }
             Instruction::RES(register, bit_position) => {
                 // DESCRIPTION: (bit reset) - set a specific bit of a specific register to 0
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:- S:- H:- C:-
-                prefix_instruction!(register, (self.reset_bit @ bit_position) => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, (self.reset_bit @ bit_position) => reg)
             }
             Instruction::SET(register, bit_position) => {
                 // DESCRIPTION: (bit set) - set a specific bit of a specific register to 1
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:- S:- H:- C:-
-                prefix_instruction!(register, (self.set_bit @ bit_position) => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, (self.set_bit @ bit_position) => reg)
             }
             Instruction::SRL(register) => {
                 // DESCRIPTION: (shift right logical) - bit shift a specific register right by 1
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.shift_right_logical => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.shift_right_logical => reg)
             }
             Instruction::RR(register) => {
                 // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 through the carry flag
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.rotate_right_through_carry_set_zero => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.rotate_right_through_carry_set_zero => reg)
             }
             Instruction::RL(register) => {
                 // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 through the carry flag
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.rotate_left_through_carry_set_zero => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.rotate_left_through_carry_set_zero => reg)
             }
             Instruction::RRC(register) => {
                 // DESCRIPTION: (rotate right) - bit rotate a specific register right by 1 (not through the carry flag)
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.rotate_right_set_zero => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.rotate_right_set_zero => reg)
             }
             Instruction::RLC(register) => {
                 // DESCRIPTION: (rotate left) - bit rotate a specific register left by 1 (not through the carry flag)
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.rotate_left_set_zero => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.rotate_left_set_zero => reg)
             }
             Instruction::SRA(register) => {
                 // DESCRIPTION: (shift right arithmetic) - arithmetic shift a specific register right by 1
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.shift_right_arithmetic => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.shift_right_arithmetic => reg)
             }
             Instruction::SLA(register) => {
                 // DESCRIPTION: (shift left arithmetic) - arithmetic shift a specific register left by 1
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:?
-                prefix_instruction!(register, self.shift_left_arithmetic => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.shift_left_arithmetic => reg)
             }
             Instruction::SWAP(register) => {
                 // DESCRIPTION: switch upper and lower nibble of a specific register
                 // PC:+2
+                // WHEN: target is (HL):
+                // Cycles: 16
+                // ELSE:
+                // Cycles: 8
                 // Z:? S:0 H:0 C:0
-                prefix_instruction!(register, self.swap_nibbles => reg);
-                self.pc.wrapping_add(2)
+                prefix_instruction!(register, self.swap_nibbles => reg)
             },
             Instruction::JP(test) => {
                 // DESCRIPTION: conditionally jump to the address stored in the next word in memory
                 // PC:?/+3
+                // Cycles: 16/12
                 // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
@@ -919,6 +1067,7 @@ impl CPU {
                 // DESCRIPTION: conditionally jump to the address that is N bytes away in memory
                 // where N is the next byte in memory interpreted as a signed byte
                 // PC:?/+2
+                // Cycles: 16/12
                 // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
@@ -933,8 +1082,9 @@ impl CPU {
                 // DESCRIPTION: jump to the address stored in HL
                 // 1
                 // PC:HL
+                // Cycles: 4
                 // Z:- N:- H:- C:-
-                self.registers.get_hl()
+                (self.registers.get_hl(), 4)
             }
             Instruction::LD(load_type) => {
                 match load_type {
@@ -942,10 +1092,13 @@ impl CPU {
                     // particular register
                     // WHEN: source is d8
                     // PC:+2
+                    // Cycles: 8
                     // WHEN: source is (HL)
                     // PC:+1
+                    // Cycles: 8
                     // ELSE:
                     // PC:+1
+                    // Cycles: 4
                     // Z:- N:- H:- C:-
                     LoadType::Byte(target, source) => {
                         let source_value = match source {
@@ -970,13 +1123,14 @@ impl CPU {
                             LoadByteTarget::HLI => self.bus.write_byte(self.registers.get_hl(), source_value)
                         };
                         match source {
-                            LoadByteSource::D8  => self.pc.wrapping_add(2),
-                            LoadByteSource::HLI => self.pc.wrapping_add(1),
-                            _                   => self.pc.wrapping_add(1),
+                            LoadByteSource::D8  => (self.pc.wrapping_add(2), 8),
+                            LoadByteSource::HLI => (self.pc.wrapping_add(1), 8),
+                            _                   => (self.pc.wrapping_add(1), 4),
                         }
                     },
                     // DESCRIPTION: load next word in memory into a particular register
                     // PC:+3
+                    // Cycles: 12
                     // Z:- N:- H:- C:-
                     LoadType::Word(target) => {
                         let word = self.read_next_word();
@@ -986,15 +1140,18 @@ impl CPU {
                             LoadWordTarget::HL => self.registers.set_hl(word),
                             LoadWordTarget::SP => self.sp = word,
                         };
-                        self.pc.wrapping_add(3)
+                        (self.pc.wrapping_add(3), 12)
                     },
                     // DESCRIPTION: load a particular value stored at the source address into A
                     // WHEN: source is byte indirect
                     // PC:+2
+                    // Cycles: 8
                     // WHEN: source is word indirect
                     // PC:+3
+                    // Cycles: 16
                     // ELSE:
                     // PC:+1
+                    // Cycles: 8
                     // Z:- N:- H:- C:-
                     LoadType::AFromIndirect(source) => {
                         self.registers.a = match source {
@@ -1014,20 +1171,22 @@ impl CPU {
                             Indirect::LastByteIndirect => self.bus.read_byte(0xFF00 + self.registers.c as u16),
                         };
 
-                        let pc_offset = match source {
-                            Indirect::WordIndirect => 3,
-                            Indirect::LastByteIndirect => 2,
-                            _ => 1
-                        };
-                        self.pc.wrapping_add(pc_offset)
+                        match source {
+                            Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
+                            Indirect::LastByteIndirect => (self.pc.wrapping_add(2), 8),
+                            _                          => (self.pc.wrapping_add(1), 8)
+                        }
                     },
                     // DESCRIPTION: load the A register into memory at the source address
                     // WHEN: instruction.source is byte indirect
                     // PC:+2
+                    // Cycles: 8
                     // WHEN: instruction.source is word indirect
                     // PC:+3
+                    // Cycles: 16
                     // ELSE:
                     // PC:+1
+                    // Cycles: 8
                     // Z:- N:- H:- C:-
                     LoadType::IndirectFromA(target) => {
                         let a = self.registers.a;
@@ -1060,48 +1219,52 @@ impl CPU {
                             }
                         };
 
-                        let pc_offset = match target {
-                            Indirect::WordIndirect => 3,
-                            Indirect::LastByteIndirect => 2,
-                            _ => 1
-                        };
-                        self.pc.wrapping_add(pc_offset)
+                        match target {
+                            Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
+                            Indirect::LastByteIndirect => (self.pc.wrapping_add(2), 8),
+                            _                          => (self.pc.wrapping_add(1), 8)
+                        }
                     },
                     // DESCRIPTION: Load the value in A into memory location located at 0xFF plus
                     // an offset stored as the next byte in memory
                     // PC:+2
+                    // Cycles: 12
                     // Z:- N:- H:- C:-
                     LoadType::ByteAddressFromA => {
                         let offset = self.bus.read_byte(self.pc + 1) as u16;
                         self.bus.write_byte(0xFF00 + offset, self.registers.a);
-                        self.pc.wrapping_add(2)
+                        (self.pc.wrapping_add(2), 12)
                     },
                     // DESCRIPTION: Load the value located at 0xFF plus an offset stored as the next byte in memory into A
                     // PC:+2
+                    // Cycles: 12
                     // Z:- N:- H:- C:-
                     LoadType::AFromByteAddress => {
                         self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
-                        self.pc.wrapping_add(2)
+                        (self.pc.wrapping_add(2), 12)
                     },
                     // DESCRIPTION: Load the value in HL into SP
                     // PC:+1
+                    // Cycles: 8
                     // Z:- N:- H:- C:-
                     LoadType::SPFromHL => {
                         self.sp = self.registers.get_hl();
-                        self.pc.wrapping_add(1)
+                        (self.pc.wrapping_add(1), 8)
                     },
                     // DESCRIPTION: Load memory address with the contents of SP
                     // PC:+3
+                    // Cycles: 20
                     // Z:- N:- H:- C:-
                     LoadType::IndirectFromSP => {
                         let address = self.read_next_word();
                         let sp = self.sp;
                         self.bus.write_byte(address, (sp & 0xFF) as u8);
                         self.bus.write_byte(address.wrapping_add(1), ((sp & 0xFF00) >> 8) as u8);
-                        self.pc.wrapping_add(3)
+                        (self.pc.wrapping_add(3), 20)
                     },
                     // DESCRIPTION: load HL with SP plus some specified byte
                     // PC:+2
+                    // Cycles: 12
                     // Z:0 N:0 H:? C:?
                     LoadType::HLFromSPN => {
                         let value = self.read_next_byte() as i8 as i16 as u16;
@@ -1113,13 +1276,14 @@ impl CPU {
                         // of the byte and word level like you might expect for 16 bit values
                         self.registers.f.half_carry = (self.sp & 0xF) + (value & 0xF) > 0xF;
                         self.registers.f.carry = (self.sp & 0xFF) + (value & 0xFF) > 0xFF;
-                        self.pc.wrapping_add(2)
+                        (self.pc.wrapping_add(2), 12)
                     },
                 }
             }
             Instruction::PUSH(target) => {
                 // DESCRIPTION: push a value from a given register on to the stack
-                // 1
+                // PC:+1
+                // Cycles: 16
                 // Z:- N:- H:- C:-
                 let value = match target {
                     StackTarget::AF => self.registers.get_af(),
@@ -1128,13 +1292,14 @@ impl CPU {
                     StackTarget::HL => self.registers.get_hl(),
                 };
                 self.push(value);
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 16)
             }
             Instruction::POP(target) => {
                 // DESCRIPTION: pop a value from the stack and store it in a given register
-                // 1
+                // PC:+1
+                // Cycles: 12
                 // WHEN: target is AF
-                // Z N H C
+                // Z:? N:? H:? C:?
                 // ELSE:
                 // Z:- N:- H:- C:-
                 let result = self.pop();
@@ -1144,12 +1309,13 @@ impl CPU {
                     StackTarget::DE => self.registers.set_de(result),
                     StackTarget::HL => self.registers.set_hl(result),
                 };
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 12)
             }
             Instruction::CALL(test) => {
                 // DESCRIPTION: Conditionally PUSH the would be instruction on to the
                 // stack and then jump to a specific address
                 // PC:?/+3
+                // Cycles: 24/12
                 // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
@@ -1163,6 +1329,10 @@ impl CPU {
             Instruction::RET(test) => {
                 // DESCRIPTION: Conditionally POP two bytes from the stack and jump to that address
                 // PC:?/+1
+                // WHEN: condition is 'always'
+                // Cycles: 16/8
+                // ELSE:
+                // Cycles: 20/8
                 // Z:- N:- H:- C:-
                 let jump_condition = match test {
                     JumpTest::NotZero => !self.registers.f.zero,
@@ -1171,18 +1341,29 @@ impl CPU {
                     JumpTest::Carry => self.registers.f.carry,
                     JumpTest::Always => true
                 };
-                self.return_(jump_condition)
+                let next_pc = self.return_(jump_condition);
+
+                let cycles = if jump_condition && test == JumpTest::Always {
+                    16
+                } else if jump_condition {
+                    20
+                } else {
+                    8
+                };
+                (next_pc, cycles)
             }
             Instruction::NOP => {
                 // PC:+1
+                // Cycles: 4
                 // Z:- N:- H:- C:-
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
             Instruction::HALT => {
                 // PC:+1
+                // Cycles: 4
                 // Z:- N:- H:- C:-
                 self.is_halted = true;
-                self.pc.wrapping_add(1)
+                (self.pc.wrapping_add(1), 4)
             }
         }
     }
@@ -1514,37 +1695,38 @@ impl CPU {
     }
 
     #[inline(always)]
-    fn jump(&self, should_jump: bool) -> u16 {
+    fn jump(&self, should_jump: bool) -> (u16, u8) {
         if should_jump {
-            self.read_next_word()
+            (self.read_next_word(), 16)
         } else {
-            self.pc.wrapping_add(3)
+            (self.pc.wrapping_add(3), 12)
         }
     }
 
     #[inline(always)]
-    fn jump_relative(&self, should_jump: bool) -> u16 {
+    fn jump_relative(&self, should_jump: bool) -> (u16, u8) {
         let next_step = self.pc.wrapping_add(2);
          if should_jump {
             let offset = self.read_next_byte() as i8;
-            if offset >= 0 {
+            let pc = if offset >= 0 {
                 next_step.wrapping_add(offset as u16)
             } else {
                 next_step.wrapping_sub(offset.abs() as u16)
-            }
+            };
+            (pc, 16)
         } else {
-            next_step
+            (next_step, 12)
         }
     }
 
     #[inline(always)]
-    fn call(&mut self, should_jump: bool) -> u16 {
+    fn call(&mut self, should_jump: bool) -> (u16, u8) {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
             self.push(next_pc);
-            self.read_next_word()
+            (self.read_next_word(), 24)
         } else {
-            next_pc
+            (next_pc, 12)
         }
     }
 
