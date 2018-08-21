@@ -2,6 +2,8 @@ pub mod flags_register;
 pub mod registers;
 pub mod instruction;
 
+use std;
+
 use self::registers::Registers;
 use self::instruction::{
     Instruction,
@@ -271,39 +273,138 @@ macro_rules! prefix_instruction {
     };
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum Color {
+    White,
+    LightGray,
+    DarkGray,
+    Black
+}
+impl std::convert::From<u8> for Color {
+     fn from(n: u8) -> Self {
+         match n {
+             0 => Color::White,
+             1 => Color::LightGray,
+             2 => Color::DarkGray,
+             3 => Color::Black,
+             _ => panic!("Cannot covert {} to color", n)
+         }
+     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct BackgroundColors(
+    Color,
+    Color,
+    Color,
+    Color
+);
+
+impl BackgroundColors {
+    fn new() -> BackgroundColors {
+        BackgroundColors(Color::White, Color::LightGray, Color::DarkGray, Color::Black)
+    }
+}
+
+impl std::convert::From<u8> for BackgroundColors {
+     fn from(value: u8) -> Self {
+        BackgroundColors(
+            (value >> 6).into(),
+            ((value >> 4) & 0b11).into(),
+            ((value >> 2) & 0b11).into(),
+            (value & 0b11).into()
+        )
+    }
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum TileMap {
+    X9800,
+    X9C00,
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum BackgroundAndWindowDataSelect {
+    X8000,
+    X8800,
+}
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum ObjectSize {
+    OS8X8,
+    OS8X16,
+}
+
+struct GPU {
+    vram: [u8; VRAM_SIZE],
+    background_colors: BackgroundColors,
+    scroll_y: u8,
+    lcd_display_enabled: bool,
+    window_display_enabled: bool,
+    background_display_enabled: bool,
+    object_display_enabled: bool,
+    window_tile_map: TileMap,
+    background_tile_map: TileMap,
+    background_and_window_data_select: BackgroundAndWindowDataSelect,
+    object_size: ObjectSize,
+    line: u8
+}
+
+impl GPU {
+    fn new() -> GPU {
+        GPU {
+            vram: [0; VRAM_SIZE],
+            background_colors: BackgroundColors::new(),
+            scroll_y: 0,
+            lcd_display_enabled: false,
+            window_display_enabled: false,
+            background_display_enabled: false,
+            object_display_enabled: false,
+            window_tile_map: TileMap::X9800,
+            background_tile_map: TileMap::X9800,
+            background_and_window_data_select: BackgroundAndWindowDataSelect::X8800,
+            object_size: ObjectSize::OS8X8,
+            line: 0
+        }
+    }
+}
+
 const BOOT_ROM_BEGIN: usize = 0x00;
 const BOOT_ROM_END: usize = 0xFF;
 const BOOT_ROM_SIZE: usize = BOOT_ROM_END - BOOT_ROM_BEGIN + 1;
+
 const ROM_BANK_0_BEGIN: usize = 0x0000;
 const ROM_BANK_0_END: usize = 0x3FFF;
 const ROM_BANK_0_SIZE: usize = ROM_BANK_0_END - ROM_BANK_0_BEGIN + 1;
+
 const VRAM_BEGIN: usize = 0x8000;
 const VRAM_END: usize = 0x9FFF;
 const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
+
 const EXTERNAL_RAM_BEGIN: usize = 0xA000;
 const EXTERNAL_RAM_END: usize = 0xBFFF;
 const EXTERNAL_RAM_SIZE: usize = EXTERNAL_RAM_END - EXTERNAL_RAM_BEGIN + 1;
+
 const WORKING_RAM_BEGIN: usize = 0xC000;
 const WORKING_RAM_END: usize = 0xDFFF;
 const WORKING_RAM_SIZE: usize = WORKING_RAM_END - WORKING_RAM_BEGIN + 1;
+
 const OAM_BEGIN: usize = 0xFE00;
 const OAM_END: usize = 0xFE9F;
 const OAM_SIZE: usize = OAM_END - OAM_BEGIN + 1;
+
 const IO_REGISTERS_BEGIN: usize = 0xFF00;
 const IO_REGISTERS_END: usize = 0xFF7F;
-const IO_REGISTERS_SIZE: usize = IO_REGISTERS_END - IO_REGISTERS_BEGIN + 1;
+
 const ZERO_PAGE_BEGIN: usize = 0xFF80;
 const ZERO_PAGE_END: usize = 0xFFFE;
 const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
+
 struct MemoryBus {
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
-    vram: [u8; VRAM_SIZE],
     external_ram: [u8; EXTERNAL_RAM_SIZE],
     working_ram: [u8; WORKING_RAM_SIZE],
     oam: [u8; OAM_SIZE],
-    io_registers: [u8; IO_REGISTERS_SIZE],
-    zero_page: [u8; ZERO_PAGE_SIZE]
+    zero_page: [u8; ZERO_PAGE_SIZE],
+    gpu: GPU
 }
 
 impl MemoryBus {
@@ -321,12 +422,11 @@ impl MemoryBus {
             // break memory up into it's logical parts.
             boot_rom: boot_rom,
             rom_bank_0: [0; ROM_BANK_0_SIZE],
-            vram: [0; VRAM_SIZE],
             external_ram: [0; EXTERNAL_RAM_SIZE],
             working_ram: [0; WORKING_RAM_SIZE],
             oam: [0; OAM_SIZE],
-            io_registers: [0; IO_REGISTERS_SIZE],
-            zero_page: [0; ZERO_PAGE_SIZE]
+            zero_page: [0; ZERO_PAGE_SIZE],
+            gpu: GPU::new()
         }
     }
 
@@ -344,7 +444,7 @@ impl MemoryBus {
                 self.rom_bank_0[address]
             }
             VRAM_BEGIN ... VRAM_END => {
-                self.vram[address - VRAM_BEGIN]
+                self.gpu.vram[address - VRAM_BEGIN]
             }
             EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN]
@@ -356,7 +456,7 @@ impl MemoryBus {
                 self.oam[address - OAM_BEGIN]
             }
             IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
-                self.io_registers[address - IO_REGISTERS_BEGIN]
+                self.read_io_register(address)
             }
             ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
                 self.zero_page[address - ZERO_PAGE_BEGIN]
@@ -374,7 +474,7 @@ impl MemoryBus {
                 self.rom_bank_0[address] = value;
             }
             VRAM_BEGIN ... VRAM_END => {
-                self.vram[address - VRAM_BEGIN] = value;
+                self.gpu.vram[address - VRAM_BEGIN] = value;
             }
             EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
@@ -386,7 +486,7 @@ impl MemoryBus {
                 self.oam[address - OAM_BEGIN] = value;
             }
             IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
-                self.io_registers[address - IO_REGISTERS_BEGIN] = value;
+                self.write_io_register(address, value);
             }
             ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
                 self.zero_page[address - ZERO_PAGE_BEGIN] = value;
@@ -394,6 +494,70 @@ impl MemoryBus {
             _ => {
                 panic!("Writing to an unkown part of memory at address 0x{:x}", address);
             }
+        }
+    }
+
+    fn read_io_register(&self, address: usize) -> u8 {
+        match address {
+            0xFF40 => {
+                // LCD Control
+                (if self.gpu.lcd_display_enabled { 1 } else { 0 })               << 7 |
+                (if self.gpu.window_tile_map == TileMap::X9C00 { 1 } else { 0 }) << 6 |
+                (if self.gpu.window_display_enabled { 1 } else { 0 })            << 5 |
+                (if self.gpu.background_and_window_data_select == BackgroundAndWindowDataSelect::X8000 { 1 } else { 0 }) << 4 |
+                (if self.gpu.background_tile_map == TileMap::X9C00 { 1 } else { 0 }) << 3 |
+                (if self.gpu.object_size == ObjectSize::OS8X16 { 1 } else { 0 }) << 2 |
+                (if self.gpu.object_display_enabled { 1 } else { 0 }) << 1 |
+                (if self.gpu.background_display_enabled { 1 } else { 0 })
+            }
+            0xFF44 => {
+                self.gpu.line
+            }
+            _ => panic!("Reading from an unknown I/O register {:x}", address)
+        }
+    }
+
+    fn write_io_register(&mut self, address: usize, value: u8) {
+        match address {
+            0xFF11 => { /* Channel 1 Sound Length and Wave */ }
+            0xFF25 => { /* Sound output terminal selection */ }
+            0xFF26 => { /* Sound on/off */ }
+            0xFF40 => {
+                // LCD Control
+                self.gpu.lcd_display_enabled = (value >> 7) == 1;
+                self.gpu.window_tile_map = if ((value >> 6) & 0b1) == 1 {
+                    TileMap::X9C00
+                } else {
+                    TileMap::X9800
+                };
+                self.gpu.window_display_enabled = ((value >> 5) & 0b1) == 1;
+                self.gpu.background_and_window_data_select = if ((value >> 4) & 0b1) == 1 {
+                    BackgroundAndWindowDataSelect::X8000
+                } else {
+                    BackgroundAndWindowDataSelect::X8800
+                };
+                self.gpu.background_tile_map = if ((value >> 3) & 0b1) == 1 {
+                    TileMap::X9C00
+                } else {
+                    TileMap::X9800
+                };
+                self.gpu.object_size = if ((value >> 2) & 0b1) == 1 {
+                    ObjectSize::OS8X16
+                } else {
+                    ObjectSize::OS8X8
+                };
+                self.gpu.object_display_enabled = ((value >> 1) & 0b1) == 1;
+                self.gpu.background_display_enabled = (value & 0b1) == 1;
+            }
+            0xFF42 => {
+                // Scroll Y Position
+                self.gpu.scroll_y = value;
+            }
+            0xFF47 => {
+                // Background Colors Setting
+                self.gpu.background_colors = value.into();
+            }
+            _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
         }
     }
 }
@@ -430,7 +594,6 @@ impl CPU {
         }
 
         let next_pc = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
-            println!("0x{:x}: Executing: {:?}", self.pc, instruction);
             self.execute(instruction)
         } else {
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
