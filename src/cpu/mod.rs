@@ -292,10 +292,10 @@ macro_rules! prefix_instruction {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Color {
-    White,
-    LightGray,
-    DarkGray,
-    Black
+    White = 255,
+    LightGray = 192,
+    DarkGray = 96,
+    Black = 0
 }
 impl std::convert::From<u8> for Color {
      fn from(n: u8) -> Self {
@@ -355,11 +355,23 @@ enum Mode {
     VerticalBlank,
     OAMAccess,
     VRAMAccess
-
 }
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum TileValue {
+    Zero,
+    One,
+    Two,
+    Three,
+}
+
+const WINDOW_WIDTH: usize = 160;
+const WINDOW_HEIGHT: usize = 144;
 struct GPU {
+    canvas_buffer: [u8; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
+    tile_set: [[[TileValue; 8]; 8]; 384],
     vram: [u8; VRAM_SIZE],
     background_colors: BackgroundColors,
+    scroll_x: u8,
     scroll_y: u8,
     lcd_display_enabled: bool,
     window_display_enabled: bool,
@@ -377,8 +389,11 @@ struct GPU {
 impl GPU {
     fn new() -> GPU {
         GPU {
+            canvas_buffer: [0; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
+            tile_set: [[[TileValue::Zero; 8]; 8]; 384],
             vram: [0; VRAM_SIZE],
             background_colors: BackgroundColors::new(),
+            scroll_x: 0,
             scroll_y: 0,
             lcd_display_enabled: false,
             window_display_enabled: false,
@@ -392,6 +407,37 @@ impl GPU {
             cycles: 0,
             mode: Mode::HorizontalBlank,
         }
+    }
+
+    fn write_vram(&mut self, index: usize, value: u8) {
+        self.vram[index] = value;
+        if index >= 0x1800 { return }
+
+        // Tiles are encoded in two bytes with the first byte always
+        // on an even address. Bitwise anding the address with 0xffe
+        // gives us the address of the first byte of the tile.
+        let normalized_index = index & 0xFFFE;
+        let tile_index = index / 16; // Tiles begin every 16 bytes
+        let y = (index % 16) / 2; // Every two bytes is a new row
+
+        let byte1 = self.vram[normalized_index];
+        let byte2 = self.vram[normalized_index + 1];
+
+        for x in 0..8 {
+            let mask = 1 << (7 - x);
+            let lsb = byte1 & mask;
+            let msb = byte2 & mask;
+
+            let value = match (lsb > 0, msb > 0) {
+                (true, true) => TileValue::Three,
+                (false, true) => TileValue::Two,
+                (true, false) => TileValue::One,
+                (false, false) => TileValue::Zero,
+            };
+
+            self.tile_set[tile_index][y][x] = value;
+        }
+
     }
 
     fn step(&mut self, cycles: u8) {
@@ -440,6 +486,62 @@ impl GPU {
     }
 
     fn render_scan_line(&mut self) {
+        if self.background_display_enabled {
+            // The current scan line's y-coordinate in the entire background space is a combination
+            // of both the line inside the view port we're currently on and the amount of scroll y there is.
+            let y_offset = self.line + self.scroll_y;
+             // The current tile we're on is equal to the total y offset broken up into 8 pixel chunks
+            // and multipled by the width of the entire background (i.e. 32)
+            let tile_offset = (y_offset / 8) * 32;
+
+            let background_tile_map = if self.background_tile_map == TileMap::X9800 { 0x9800 } else { 0x9C00 };
+            let tile_map_begin =  background_tile_map - VRAM_BEGIN;
+            let tile_map_offset = tile_map_begin + tile_offset as usize;
+
+            // When line and scrollY are zero we just start at the top of the tile
+            // If they're non-zero we must index into the tile cycling through 0 - 7
+            let tile_y_offset = y_offset % 8;
+
+            let mut x_offset = self.scroll_x / 8;
+            let mut tile_x_offset = self.scroll_x % 8;
+
+            let mut canvas_buffer_offset = self.line as usize * WINDOW_WIDTH * 4;
+            let mut tile_index = self.vram[tile_map_offset + x_offset as usize];
+
+            if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
+                panic!("TODO: support 0x8800 background and window data select");
+            }
+
+            for _ in 0..WINDOW_WIDTH {
+                let tile_value = self.tile_set[tile_index as usize][tile_y_offset as usize][tile_x_offset as usize];
+                let color = self.tile_value_to_background_color(tile_value);
+
+                self.canvas_buffer[canvas_buffer_offset] = color as u8;
+                self.canvas_buffer[canvas_buffer_offset + 1] = color as u8;
+                self.canvas_buffer[canvas_buffer_offset + 2] = color as u8;
+                self.canvas_buffer[canvas_buffer_offset + 3] = 255;
+                canvas_buffer_offset += 4;
+                tile_x_offset = tile_x_offset + 1;
+
+                if tile_x_offset == 8 {
+                    tile_x_offset = 0;
+                    x_offset = x_offset % 32; // reset every 32
+                    tile_index = self.vram[tile_map_offset + x_offset as usize];
+                }
+                if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
+                    panic!("TODO: support 0x8800 background and window data select");
+                }
+            }
+        }
+    }
+
+    fn tile_value_to_background_color(&self, tile_value: TileValue) -> Color {
+        match tile_value {
+            TileValue::Zero => self.background_colors.0,
+            TileValue::One => self.background_colors.1,
+            TileValue::Two => self.background_colors.2,
+            TileValue::Three => self.background_colors.3,
+        }
     }
 }
 
@@ -555,7 +657,7 @@ impl MemoryBus {
                 self.rom_bank_0[address] = value;
             }
             VRAM_BEGIN ... VRAM_END => {
-                self.gpu.vram[address - VRAM_BEGIN] = value;
+                self.gpu.write_vram(address - VRAM_BEGIN, value);
             }
             EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
