@@ -349,6 +349,14 @@ enum ObjectSize {
     OS8X16,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum Mode {
+    HorizontalBlank,
+    VerticalBlank,
+    OAMAccess,
+    VRAMAccess
+
+}
 struct GPU {
     vram: [u8; VRAM_SIZE],
     background_colors: BackgroundColors,
@@ -361,7 +369,9 @@ struct GPU {
     background_tile_map: TileMap,
     background_and_window_data_select: BackgroundAndWindowDataSelect,
     object_size: ObjectSize,
-    line: u8
+    line: u8,
+    cycles: u16,
+    mode: Mode
 }
 
 impl GPU {
@@ -378,11 +388,58 @@ impl GPU {
             background_tile_map: TileMap::X9800,
             background_and_window_data_select: BackgroundAndWindowDataSelect::X8800,
             object_size: ObjectSize::OS8X8,
-            line: 0
+            line: 0,
+            cycles: 0,
+            mode: Mode::HorizontalBlank,
         }
     }
 
     fn step(&mut self, cycles: u8) {
+        if !self.lcd_display_enabled { return }
+        self.cycles += cycles as u16;
+
+        let mode = self.mode;
+        match mode {
+            Mode::HorizontalBlank => {
+                if self.cycles >= 200 {
+                    self.cycles = self.cycles % 200;
+                    self.line += 1;
+
+                    if self.line >= 144 {
+                        // TODO: draw
+                        self.mode = Mode::VerticalBlank;
+                    } else {
+                        self.mode = Mode::OAMAccess;
+                    }
+                }
+            }
+            Mode::VerticalBlank => {
+                if self.cycles >= 456 {
+                    self.cycles = self.cycles % 200;
+                    self.line += 1;
+                    if self.line == 154 {
+                        self.mode = Mode::OAMAccess;
+                        self.line = 0;
+                    }
+                }
+            }
+            Mode::OAMAccess => {
+                if self.cycles >= 84 {
+                    self.cycles = self.cycles % 84;
+                    self.mode = Mode::VRAMAccess;
+                }
+            }
+            Mode::VRAMAccess => {
+                if self.cycles >= 172 {
+                    self.cycles = self.cycles % 172;
+                    self.mode = Mode::HorizontalBlank;
+                    self.render_scan_line()
+                }
+            }
+        }
+    }
+
+    fn render_scan_line(&mut self) {
     }
 }
 
@@ -534,7 +591,12 @@ impl MemoryBus {
                 (if self.gpu.object_display_enabled { 1 } else { 0 }) << 1 |
                 (if self.gpu.background_display_enabled { 1 } else { 0 })
             }
+            0xFF42 => {
+                // Scroll Y Position
+                self.gpu.scroll_y
+            }
             0xFF44 => {
+                // Current Line
                 self.gpu.line
             }
             _ => panic!("Reading from an unknown I/O register {:x}", address)
@@ -544,6 +606,7 @@ impl MemoryBus {
     fn write_io_register(&mut self, address: usize, value: u8) {
         match address {
             0xFF11 => { /* Channel 1 Sound Length and Wave */ }
+            0xFF13 => { /* Channel 1 Frequency lo */ }
             0xFF25 => { /* Sound output terminal selection */ }
             0xFF26 => { /* Sound on/off */ }
             0xFF40 => {
@@ -580,6 +643,10 @@ impl MemoryBus {
             0xFF47 => {
                 // Background Colors Setting
                 self.gpu.background_colors = value.into();
+            }
+            0xFF50 => {
+                // Unmap boot ROM
+                self.boot_rom = None;
             }
             _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
         }
