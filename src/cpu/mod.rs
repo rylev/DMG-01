@@ -489,10 +489,10 @@ impl GPU {
         if self.background_display_enabled {
             // The current scan line's y-coordinate in the entire background space is a combination
             // of both the line inside the view port we're currently on and the amount of scroll y there is.
-            let y_offset = self.line + self.scroll_y;
+            let y_offset = self.line as u16 + self.scroll_y as u16 ;
              // The current tile we're on is equal to the total y offset broken up into 8 pixel chunks
             // and multipled by the width of the entire background (i.e. 32)
-            let tile_offset = (y_offset / 8) * 32;
+            let tile_offset = (y_offset as u16 / 8) * 32u16;
 
             let background_tile_map = if self.background_tile_map == TileMap::X9800 { 0x9800 } else { 0x9C00 };
             let tile_map_begin =  background_tile_map - VRAM_BEGIN;
@@ -587,7 +587,7 @@ struct MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn new(boot_rom_buffer: Option<Vec<u8>>) -> MemoryBus {
+    pub fn new(boot_rom_buffer: Option<Vec<u8>>, game_rom: Vec<u8>) -> MemoryBus {
         let boot_rom = boot_rom_buffer.map(|boot_rom_buffer| {
             if boot_rom_buffer.len() != BOOT_ROM_SIZE {
                 panic!("Supplied boot ROM is the wrong size. Is {} bytes but should be {} bytes", boot_rom_buffer.len(), BOOT_ROM_SIZE);
@@ -596,11 +596,16 @@ impl MemoryBus {
             boot_rom.copy_from_slice(&boot_rom_buffer);
             boot_rom
         });
+
+        let mut rom_bank_0 = [0; ROM_BANK_0_SIZE];
+        for i in 0..ROM_BANK_0_SIZE {
+            rom_bank_0[i] = game_rom[i];
+        }
         MemoryBus {
             // Note: instead of modeling memory as one array of length 0xFFFF, we'll
             // break memory up into it's logical parts.
-            boot_rom: boot_rom,
-            rom_bank_0: [0; ROM_BANK_0_SIZE],
+            boot_rom,
+            rom_bank_0,
             external_ram: [0; EXTERNAL_RAM_SIZE],
             working_ram: [0; WORKING_RAM_SIZE],
             oam: [0; OAM_SIZE],
@@ -766,12 +771,12 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(boot_rom: Option<Vec<u8>>) -> CPU {
+    pub fn new(boot_rom: Option<Vec<u8>>, game_rom: Vec<u8>) -> CPU {
         CPU {
             registers: Registers::new(),
             pc: 0x0,
             sp: 0x00,
-            bus: MemoryBus::new(boot_rom),
+            bus: MemoryBus::new(boot_rom, game_rom),
             is_halted: false,
         }
     }
