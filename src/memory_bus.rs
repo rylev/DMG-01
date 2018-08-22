@@ -162,14 +162,15 @@ impl MemoryBus {
         match address {
             0xFF40 => {
                 // LCD Control
-                (if self.gpu.lcd_display_enabled { 1 } else { 0 })               << 7 |
-                (if self.gpu.window_tile_map == TileMap::X9C00 { 1 } else { 0 }) << 6 |
-                (if self.gpu.window_display_enabled { 1 } else { 0 })            << 5 |
-                (if self.gpu.background_and_window_data_select == BackgroundAndWindowDataSelect::X8000 { 1 } else { 0 }) << 4 |
-                (if self.gpu.background_tile_map == TileMap::X9C00 { 1 } else { 0 }) << 3 |
-                (if self.gpu.object_size == ObjectSize::OS8X16 { 1 } else { 0 }) << 2 |
-                (if self.gpu.object_display_enabled { 1 } else { 0 }) << 1 |
-                (if self.gpu.background_display_enabled { 1 } else { 0 })
+                bit(self.gpu.lcd_display_enabled)                   << 7 |
+                bit(self.gpu.window_tile_map == TileMap::X9C00)     << 6 |
+                bit(self.gpu.window_display_enabled)                << 5 |
+                bit(self.gpu.background_and_window_data_select ==
+                     BackgroundAndWindowDataSelect::X8000)           << 4 |
+                bit(self.gpu.background_tile_map == TileMap::X9C00) << 3 |
+                bit(self.gpu.object_size == ObjectSize::OS8X16)     << 2 |
+                bit(self.gpu.object_display_enabled)                << 1 |
+                bit(self.gpu.background_display_enabled)
             }
             0xFF42 => {
                 // Scroll Y Position
@@ -234,4 +235,9 @@ impl MemoryBus {
             _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
         }
     }
+}
+
+#[inline(always)]
+fn bit(condition: bool) -> u8 {
+    if condition { 1 } else { 0 }
 }
