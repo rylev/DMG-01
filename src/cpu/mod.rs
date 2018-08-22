@@ -177,7 +177,7 @@ macro_rules! arithmetic_instruction {
                 ArithmeticTarget::HLI => {
                     let value = $self.bus.read_byte($self.registers.get_hl());
                     let result = $self.$work(value);
-                    $self.registers.set_hl(result as u16);
+                    $self.registers.a = result;
                 }
             };
             match $register {
@@ -326,10 +326,10 @@ impl BackgroundColors {
 impl std::convert::From<u8> for BackgroundColors {
      fn from(value: u8) -> Self {
         BackgroundColors(
-            (value >> 6).into(),
-            ((value >> 4) & 0b11).into(),
+            (value & 0b11).into(),
             ((value >> 2) & 0b11).into(),
-            (value & 0b11).into()
+            ((value >> 4) & 0b11).into(),
+            (value >> 6).into(),
         )
     }
 }
@@ -366,8 +366,8 @@ enum TileValue {
 
 const WINDOW_WIDTH: usize = 160;
 const WINDOW_HEIGHT: usize = 144;
-struct GPU {
-    canvas_buffer: [u8; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
+pub struct GPU {
+    pub canvas_buffer: [u8; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
     tile_set: [[[TileValue; 8]; 8]; 384],
     vram: [u8; VRAM_SIZE],
     background_colors: BackgroundColors,
@@ -489,7 +489,7 @@ impl GPU {
         if self.background_display_enabled {
             // The current scan line's y-coordinate in the entire background space is a combination
             // of both the line inside the view port we're currently on and the amount of scroll y there is.
-            let y_offset = self.line as u16 + self.scroll_y as u16 ;
+            let y_offset = self.line.wrapping_add(self.scroll_y);
              // The current tile we're on is equal to the total y offset broken up into 8 pixel chunks
             // and multipled by the width of the entire background (i.e. 32)
             let tile_offset = (y_offset as u16 / 8) * 32u16;
@@ -505,14 +505,14 @@ impl GPU {
             let mut x_offset = self.scroll_x / 8;
             let mut tile_x_offset = self.scroll_x % 8;
 
-            let mut canvas_buffer_offset = self.line as usize * WINDOW_WIDTH * 4;
             let mut tile_index = self.vram[tile_map_offset + x_offset as usize];
 
             if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
                 panic!("TODO: support 0x8800 background and window data select");
             }
 
-            for _ in 0..WINDOW_WIDTH {
+            let mut canvas_buffer_offset = self.line as usize * WINDOW_WIDTH * 4;
+            for i in 0..WINDOW_WIDTH {
                 let tile_value = self.tile_set[tile_index as usize][tile_y_offset as usize][tile_x_offset as usize];
                 let color = self.tile_value_to_background_color(tile_value);
 
@@ -525,7 +525,7 @@ impl GPU {
 
                 if tile_x_offset == 8 {
                     tile_x_offset = 0;
-                    x_offset = x_offset % 32; // reset every 32
+                    x_offset = (x_offset + 1) & 0x1f;//x_offset % 32; // reset every 32
                     tile_index = self.vram[tile_map_offset + x_offset as usize];
                 }
                 if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
@@ -576,14 +576,14 @@ const ZERO_PAGE_BEGIN: usize = 0xFF80;
 const ZERO_PAGE_END: usize = 0xFFFE;
 const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 
-struct MemoryBus {
+pub struct MemoryBus {
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
     external_ram: [u8; EXTERNAL_RAM_SIZE],
     working_ram: [u8; WORKING_RAM_SIZE],
     oam: [u8; OAM_SIZE],
     zero_page: [u8; ZERO_PAGE_SIZE],
-    gpu: GPU
+    pub gpu: GPU
 }
 
 impl MemoryBus {
@@ -713,7 +713,10 @@ impl MemoryBus {
     fn write_io_register(&mut self, address: usize, value: u8) {
         match address {
             0xFF11 => { /* Channel 1 Sound Length and Wave */ }
+            0xFF12 => { /* Channel 1 Sound Control */ }
             0xFF13 => { /* Channel 1 Frequency lo */ }
+            0xFF14 => { /* Channel 1 Control */ }
+            0xFF24 => { /* Sound  Volume */ }
             0xFF25 => { /* Sound output terminal selection */ }
             0xFF26 => { /* Sound on/off */ }
             0xFF40 => {
@@ -766,7 +769,7 @@ pub struct CPU {
     pc: u16,
     sp: u16,
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
-    bus: MemoryBus,
+    pub bus: MemoryBus,
     is_halted: bool,
 }
 
@@ -781,8 +784,8 @@ impl CPU {
         }
     }
 
-    pub fn step(&mut self) {
-        if self.is_halted { return }
+    pub fn step(&mut self) -> u8 {
+        if self.is_halted { return 4 }
 
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
@@ -793,9 +796,10 @@ impl CPU {
 
         let (next_pc, cycles) = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
             self.execute(instruction)
+
         } else {
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
-            panic!("Unkown instruction found for: {}", description)
+            panic!("0x{:x}: Unknown instruction found - {}", self.pc, description)
         };
 
         self.bus.step(cycles);
@@ -803,6 +807,7 @@ impl CPU {
         if !self.is_halted {
             self.pc = next_pc;
         }
+        cycles
     }
 
     pub fn execute(&mut self, instruction: Instruction) -> (u16, u8) {
@@ -836,7 +841,9 @@ impl CPU {
                     }
                     IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
                     IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
-                    IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl),
+                    IncDecTarget::HL => {
+                        manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl)
+                    }
                     IncDecTarget::SP => {
                         let amount = self.sp;
                         let result = self.inc_16bit(amount);
@@ -1317,9 +1324,6 @@ impl CPU {
                         (self.pc.wrapping_add(3), 12)
                     },
                     // DESCRIPTION: load a particular value stored at the source address into A
-                    // WHEN: source is byte indirect
-                    // PC:+2
-                    // Cycles: 8
                     // WHEN: source is word indirect
                     // PC:+3
                     // Cycles: 16
@@ -1347,14 +1351,10 @@ impl CPU {
 
                         match source {
                             Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
-                            Indirect::LastByteIndirect => (self.pc.wrapping_add(2), 8),
                             _                          => (self.pc.wrapping_add(1), 8)
                         }
                     },
                     // DESCRIPTION: load the A register into memory at the source address
-                    // WHEN: instruction.source is byte indirect
-                    // PC:+2
-                    // Cycles: 8
                     // WHEN: instruction.source is word indirect
                     // PC:+3
                     // Cycles: 16
@@ -1395,7 +1395,6 @@ impl CPU {
 
                         match target {
                             Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
-                            Indirect::LastByteIndirect => (self.pc.wrapping_add(2), 8),
                             _                          => (self.pc.wrapping_add(1), 8)
                         }
                     },
@@ -1414,7 +1413,8 @@ impl CPU {
                     // Cycles: 12
                     // Z:- N:- H:- C:-
                     LoadType::AFromByteAddress => {
-                        self.registers.a = self.bus.read_byte(0xFF00 + self.read_next_byte() as u16);
+                        let offset = self.read_next_byte() as u16;
+                        self.registers.a = self.bus.read_byte(0xFF00 + offset);
                         (self.pc.wrapping_add(2), 12)
                     },
                     // DESCRIPTION: Load the value in HL into SP
