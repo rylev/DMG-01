@@ -13,6 +13,10 @@ pub const ROM_BANK_0_BEGIN: usize = 0x0000;
 pub const ROM_BANK_0_END: usize = 0x3FFF;
 pub const ROM_BANK_0_SIZE: usize = ROM_BANK_0_END - ROM_BANK_0_BEGIN + 1;
 
+pub const ROM_BANK_N_BEGIN: usize = 0x4000;
+pub const ROM_BANK_N_END: usize = 0x7FFF;
+pub const ROM_BANK_N_SIZE: usize = ROM_BANK_N_END - ROM_BANK_N_BEGIN + 1;
+
 pub const VRAM_BEGIN: usize = 0x8000;
 pub const VRAM_END: usize = 0x9FFF;
 pub const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
@@ -39,6 +43,7 @@ pub const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 pub struct MemoryBus {
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
+    rom_bank_n: [u8; ROM_BANK_N_SIZE],
     external_ram: [u8; EXTERNAL_RAM_SIZE],
     working_ram: [u8; WORKING_RAM_SIZE],
     oam: [u8; OAM_SIZE],
@@ -61,11 +66,16 @@ impl MemoryBus {
         for i in 0..ROM_BANK_0_SIZE {
             rom_bank_0[i] = game_rom[i];
         }
+        let mut rom_bank_n = [0; ROM_BANK_N_SIZE];
+        for i in 0..ROM_BANK_N_SIZE {
+            rom_bank_n[i] = game_rom[ROM_BANK_0_SIZE + i];
+        }
         MemoryBus {
             // Note: instead of modeling memory as one array of length 0xFFFF, we'll
             // break memory up into it's logical parts.
             boot_rom,
             rom_bank_0,
+            rom_bank_n,
             external_ram: [0; EXTERNAL_RAM_SIZE],
             working_ram: [0; WORKING_RAM_SIZE],
             oam: [0; OAM_SIZE],
@@ -90,6 +100,9 @@ impl MemoryBus {
             }
             ROM_BANK_0_BEGIN ... ROM_BANK_0_END => {
                 self.rom_bank_0[address]
+            }
+            ROM_BANK_N_BEGIN ... ROM_BANK_N_END => {
+                self.rom_bank_n[address - ROM_BANK_N_BEGIN]
             }
             VRAM_BEGIN ... VRAM_END => {
                 self.gpu.vram[address - VRAM_BEGIN]
