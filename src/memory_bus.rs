@@ -166,7 +166,7 @@ impl MemoryBus {
                 bit(self.gpu.window_tile_map == TileMap::X9C00)     << 6 |
                 bit(self.gpu.window_display_enabled)                << 5 |
                 bit(self.gpu.background_and_window_data_select ==
-                     BackgroundAndWindowDataSelect::X8000)           << 4 |
+                     BackgroundAndWindowDataSelect::X8000)          << 4 |
                 bit(self.gpu.background_tile_map == TileMap::X9C00) << 3 |
                 bit(self.gpu.object_size == ObjectSize::OS8X16)     << 2 |
                 bit(self.gpu.object_display_enabled)                << 1 |

@@ -11,15 +11,15 @@ pub enum Color {
 }
 
 impl std::convert::From<u8> for Color {
-     fn from(n: u8) -> Self {
-         match n {
-             0 => Color::White,
-             1 => Color::LightGray,
-             2 => Color::DarkGray,
-             3 => Color::Black,
-             _ => panic!("Cannot covert {} to color", n)
-         }
-     }
+    fn from(n: u8) -> Self {
+        match n {
+            0 => Color::White,
+            1 => Color::LightGray,
+            2 => Color::DarkGray,
+            3 => Color::Black,
+            _ => panic!("Cannot covert {} to color", n)
+        }
+    }
 }
 
 
@@ -38,13 +38,13 @@ impl BackgroundColors {
 }
 
 impl std::convert::From<u8> for BackgroundColors {
-     fn from(value: u8) -> Self {
+    fn from(value: u8) -> Self {
         BackgroundColors(
             (value & 0b11).into(),
             ((value >> 2) & 0b11).into(),
             ((value >> 4) & 0b11).into(),
             (value >> 6).into(),
-        )
+            )
     }
 }
 
@@ -238,13 +238,14 @@ impl GPU {
 
     fn render_scan_line(&mut self) {
         if self.background_display_enabled {
-            let mut x_offset = self.viewport_x_offset / 8;
+            // The x index of the current tile
+            let mut tile_x_index = self.viewport_x_offset / 8;
             // The current scan line's y-offset in the entire background space is a combination
             // of both the line inside the view port we're currently on and the amount of the view port is scrolled
-            let y_offset = self.line.wrapping_add(self.viewport_y_offset);
-             // The current tile we're on is equal to the total y offset broken up into 8 pixel chunks
+            let tile_y_index = self.line.wrapping_add(self.viewport_y_offset);
+            // The current tile we're on is equal to the total y offset broken up into 8 pixel chunks
             // and multipled by the width of the entire background (i.e. 32 tiles)
-            let tile_offset = (y_offset as u16 / 8) * 32u16;
+            let tile_offset = (tile_y_index as u16 / 8) * 32u16;
 
             // Where is our tile map defined?
             let background_tile_map = if self.background_tile_map == TileMap::X9800 { 0x9800 } else { 0x9C00 };
@@ -256,8 +257,8 @@ impl GPU {
 
             // When line and scrollY are zero we just start at the top of the tile
             // If they're non-zero we must index into the tile cycling through 0 - 7
-            let tile_y_offset = y_offset % 8;
-            let mut tile_x_offset = self.viewport_x_offset % 8;
+            let row_y_offset = tile_y_index % 8;
+            let mut pixel_x_index = self.viewport_x_offset % 8;
 
             if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
                 panic!("TODO: support 0x8800 background and window data select");
@@ -267,9 +268,9 @@ impl GPU {
             // Start at the beginning of the line and go pixel by pixel
             for _ in 0..WINDOW_WIDTH {
                 // Grab the tile index specified in the tile map
-                let mut tile_index = self.vram[tile_map_offset + x_offset as usize];
+                let mut tile_index = self.vram[tile_map_offset + tile_x_index as usize];
 
-                let tile_value = self.tile_set[tile_index as usize][tile_y_offset as usize][tile_x_offset as usize];
+                let tile_value = self.tile_set[tile_index as usize][row_y_offset as usize][pixel_x_index as usize];
                 let color = self.tile_value_to_background_color(tile_value);
 
                 self.canvas_buffer[canvas_buffer_offset] = color as u8;
@@ -277,10 +278,13 @@ impl GPU {
                 self.canvas_buffer[canvas_buffer_offset + 2] = color as u8;
                 self.canvas_buffer[canvas_buffer_offset + 3] = 255;
                 canvas_buffer_offset += 4;
-                tile_x_offset = (tile_x_offset + 1) % 8;
+                // Loop through the 8 pixels within the tile
+                pixel_x_index = (pixel_x_index + 1) % 8;
 
-                if tile_x_offset == 0 {
-                    x_offset = (x_offset + 1) % 21;
+                // Check if we've fully looped through the tile
+                if pixel_x_index == 0 {
+                    // Now increase the tile x_offset by 1
+                    tile_x_index = tile_x_index + 1;
                 }
                 if self.background_and_window_data_select == BackgroundAndWindowDataSelect::X8800 {
                     panic!("TODO: support 0x8800 background and window data select");
