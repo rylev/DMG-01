@@ -80,19 +80,24 @@ enum Mode {
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum TileValue {
+pub enum TilePixelValue {
     Zero,
     One,
     Two,
     Three,
 }
 
+type Tile = [[TilePixelValue; 8]; 8];
+#[inline(always)]
+fn empty_tile() -> Tile {
+    [[TilePixelValue::Zero; 8]; 8]
+}
 
 const WINDOW_WIDTH: usize = 160;
 const WINDOW_HEIGHT: usize = 144;
 pub struct GPU {
     pub canvas_buffer: [u8; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
-    pub tile_set: [[[TileValue; 8]; 8]; 384],
+    pub tile_set: [Tile; 384],
     pub vram: [u8; VRAM_SIZE],
     pub background_colors: BackgroundColors,
     pub viewport_x_offset: u8,
@@ -114,7 +119,7 @@ impl GPU {
     pub fn new() -> GPU {
         GPU {
             canvas_buffer: [0; WINDOW_WIDTH * WINDOW_HEIGHT * 4],
-            tile_set: [[[TileValue::Zero; 8]; 8]; 384],
+            tile_set: [empty_tile(); 384],
             vram: [0; VRAM_SIZE],
             background_colors: BackgroundColors::new(),
             viewport_x_offset: 0,
@@ -142,15 +147,16 @@ impl GPU {
         // gives us the address of the first byte.
         // For example: `12 & 0xFFFE == 12` and `13 & 0xFFFE == 12`
         let normalized_index = index & 0xFFFE;
+
+        // First we need to get the two bytes that encode the tile row.
+        let byte1 = self.vram[normalized_index];
+        let byte2 = self.vram[normalized_index + 1];
+
         // A tiles is 8 rows tall. Since each row is encoded with two bytes a tile
         // is therefore 16 bytes in total.
         let tile_index = index / 16;
         // Every two bytes is a new row
         let row_index = (index % 16) / 2;
-
-        // First we need to get the two bytes that encode the tile row.
-        let byte1 = self.vram[normalized_index];
-        let byte2 = self.vram[normalized_index + 1];
 
         // Now we're going to loop 8 times to get the 8 pixels that make up a given row.
         for pixel_index in 0..8 {
@@ -181,10 +187,10 @@ impl GPU {
             // significant byte's bit is 1 and the most significant byte's bit is also 1, then we
             // have tile value `Three`.
             let value = match (lsb != 0, msb != 0) {
-                (true, true) => TileValue::Three,
-                (false, true) => TileValue::Two,
-                (true, false) => TileValue::One,
-                (false, false) => TileValue::Zero,
+                (true, true) => TilePixelValue::Three,
+                (false, true) => TilePixelValue::Two,
+                (true, false) => TilePixelValue::One,
+                (false, false) => TilePixelValue::Zero,
             };
 
             self.tile_set[tile_index][row_index][pixel_index] = value;
@@ -293,12 +299,12 @@ impl GPU {
         }
     }
 
-    fn tile_value_to_background_color(&self, tile_value: TileValue) -> Color {
+    fn tile_value_to_background_color(&self, tile_value: TilePixelValue) -> Color {
         match tile_value {
-            TileValue::Zero => self.background_colors.0,
-            TileValue::One => self.background_colors.1,
-            TileValue::Two => self.background_colors.2,
-            TileValue::Three => self.background_colors.3,
+            TilePixelValue::Zero => self.background_colors.0,
+            TilePixelValue::One => self.background_colors.1,
+            TilePixelValue::Two => self.background_colors.2,
+            TilePixelValue::Three => self.background_colors.3,
         }
     }
 }
