@@ -8,6 +8,8 @@
   - [Instruction Execution and Control Flow](./cpu/executing_instructions.md)
   - [Instructions for Reading and Writting to Memory](./cpu/reading_and_writing_memory.md)
   - [Finishing Up the CPU](./cpu/conclusion.md)
+- [Graphics](./graphics/introduction.md)
+  - [Tile RAM](./graphics/tile_ram.md)
 - [Memory Map](./memory_map.md)
 - [Appendix](./appendix/index.md)
   - [Numbers](./appendix/numbers.md)
