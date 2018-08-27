@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="memory_map.html"><strong aria-hidden="true">4.</strong> Memory Map</a></li><li><a href="appendix/index.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">5.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">5.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">5.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">5.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">5.5.</strong> Instruction Guide</a></li><li><a href="appendix/cartridge_header.html"><strong aria-hidden="true">5.6.</strong> Cartridge Header</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="graphics/introduction.html"><strong aria-hidden="true">4.</strong> Graphics</a></li><li><ol class="section"><li><a href="graphics/tile_ram.html"><strong aria-hidden="true">4.1.</strong> Tile RAM</a></li></ol></li><li><a href="memory_map.html"><strong aria-hidden="true">5.</strong> Memory Map</a></li><li><a href="appendix/index.html"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li><a href="appendix/numbers.html"><strong aria-hidden="true">6.1.</strong> Numbers</a></li><li><a href="appendix/number_notations.html"><strong aria-hidden="true">6.2.</strong> Number Notations</a></li><li><a href="appendix/bit_manipulation.html"><strong aria-hidden="true">6.3.</strong> Bit Manipulation</a></li><li><a href="appendix/resources.html"><strong aria-hidden="true">6.4.</strong> Resources</a></li><li><a href="appendix/instruction_guide/index.html"><strong aria-hidden="true">6.5.</strong> Instruction Guide</a></li><li><a href="appendix/cartridge_header.html"><strong aria-hidden="true">6.6.</strong> Cartridge Header</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -934,6 +934,201 @@ impl CPU {
 <a class="header" href="#where-we-are" id="where-we-are"><h2>Where We Are</h2></a>
 <p>So far we've learned about the CPU and the many different instructions that the CPU can execute. We learned that these instructions live in memory which is just a long array of 8-bit numbers. The CPU reads in these bytes, decodes them as instructions and executes them. Some instructions simply do different arithmetic operations on the contents of the CPU's registers. Some instructions can cause the CPU to change its program counters, effectively &quot;jumping&quot; it to a different place in the game code. Some instructions read from and write to memory including a special part of memory we call the stack which behaves like a stack data structure. Finally, we learned about two special instructions: <code>NOP</code> which does nothing and <code>HALT</code> which stops the CPU from executing more instructions.</p>
 <p>In the next section of the book, we'll be leaving the comfort of the CPU and exploring memory more closely.</p>
+<a class="header" href="#graphics" id="graphics"><h1>Graphics</h1></a>
+<p>Up until this point, we've been reading and writting to memory and performing different operations in the CPU. Our CPU has lots of work that it is capable of doing and in many senses it can already 'run' games. But, of course, one of the main things that defines a video game is the video or graphics aspect of it.</p>
+<p>In the next section of the book, we'll be deep diving into how graphics work in the Game Boy. First, we'll start with how the Game Boy's background graphics work. This will be enough for us to get the iconic boot screen displaying. Once we're done with this, we'll move on to sprite graphics that allow things like characters and enemies to appear.</p>
+<p>So without further delay, let's get started!</p>
+<a class="header" href="#tile-ram" id="tile-ram"><h1>Tile Ram</h1></a>
+<p>Before we can display background graphics to the screen, we have to have a good understanding of how background graphics actually work and where those graphics are stored in memory.</p>
+<p>Game Boy games do not have direct control over what appears in the background. This is because the Game Boy is limited in how much it can store for graphics. The Game Boy has 0x1FFF (8191) bytes worth of storage for background graphics. Unlike more modern systems that employ a direct &quot;frame buffer&quot; (i.e., a long array of bytes where each byte or set of bytes describes how a corresponding pixel should be displayed on screen), the Game Boy uses a tiling system. This system allows the game to build 8 pixel by 8 pixel tiles and then place each tile on the screen at a certain index.</p>
+<p>TODO: Graphic showing the difference between the two</p>
+<a class="header" href="#creating-tiles" id="creating-tiles"><h2>Creating Tiles</h2></a>
+<p>So before we look at how pixels on the screen are shown, we first have to see how games manipulate and store tiles.</p>
+<p>As we've seen before in our overview of the memory map of the Game Boy, tile data is stored between 0x8000 and 0x97FF (0x1800 or 6144 bytes worth of memory). This area actually contains two seperate tile sets. This allows the game to very quickly switch between two differnt graphic styles without having to switch the tiles out in the time between two screens. We'll explore how the game switches between the two tile sets a bit later.</p>
+<p>For now, we'll be focusing on the first tile set in memory that resides at 0x8000 to 0x8FFF (for a total of 0x1000 or 4096 bytes worth of data). Each tile is encoded in 16 bytes (we'll talk about exactly what this encoding looks like below). So if we 0x1000 bytes worth of memory and each tile is encoded in 16 bytes, then we have 0x1000 / 0x10 or 0x100 (256) different tiles.</p>
+<p>An observant reader might wonder why the first tile set takes up 0x1000 of the 0x1800 or two thirds worth of space alloted for tile memory. The truth is that the second tile set starts at 0x8800 and goes to 0x97FF. The chunk between 0x8800 and 0x8FFF is therefore shared by the two tile sets.</p>
+<p>TODO: Make nicer chart</p>
+<pre><code class="language-ignore">8000-87FF: First part of tile set #1
+8800-8FFF: Second part of tile set #1
+           First part of tile set #2
+9000-97FF: Second part of tile set #2
+</code></pre>
+<p>So how are each of the tiles encoded? First, we need to understand how many different colors a pixel of the Game Boy can display. The Game Boy is capable of displaying 4 different colors: white, light gray, dark gray, and black. The minimal number of bits that we need to encode this information is 2 bits since two bits can encode 4 different numbers: 0b00, 0b01, 0b10, and 0b11.</p>
+<blockquote>
+<blockquote>
+<p><em>Learn More</em></p>
+<p>The way the Game Boy hardware displays the 4 different colors is simply by emitting 4 different levels of white light. For &quot;white&quot; for instance the light is fully on, while for black the light is fully off. Light and dark gray are at 33% light and 66% light respectively. In fact, calling these colors white, gray and black isn't really true since the screen of the original Game Boy was green so the colors players see are actually shades of green.</p>
+</blockquote>
+</blockquote>
+<p>The bit value to color mapping is as follows:</p>
+<pre><code class="language-ignore">+------+------------+
+| 0b11 | white      |
+| 0b10 | dark-gray  |
+| 0b01 | light-gray |
+| 0b00 | black      |
++------+------------+
+</code></pre>
+<p>So each pixel of our 8x8 pixel (i.e., 64 pixels in total) tile will take 2 bits to represent. That means we'll need 64 * 2 or 128 bits total to represent all the pixels. In terms of number of bytes that's 128 / 8 or 16 bytes total as we've said above.</p>
+<p>So this shouldn't be too hard to encode right? Just start from the top left most pixel and every two bits we encode that pixels value right? Unfortunately not. The actual encoding scheme is a little bit more complicated.</p>
+<p>Each row of a tile is 2 bytes worth of data (8 pixels with 2 bits per pixel equals 16 bits or 2 bytes). Instead of each pixels value coming one after the other, each pixel is split between the two bytes. So the first pixel is encoded with the left most (i.e., most signficant bit a.k.a bit 7) of each byte.</p>
+<p>For example, let's imagine that the first two bytes of our tile set memory were 0xB5 (0b10110101) and 0x65 (0b01100101). These two bytes together will encode the data for the first tile. Byte 1 contains the value of the upper (a.k.a most significant) bit and byte 2 contains the value of the lower (least significant) bit.</p>
+<p>Let's take a look at how this looks. In the following diagram that colors are represented by 1 letter &quot;B&quot; for black, &quot;D&quot; for dark-gray, &quot;L&quot; for light-gray and &quot;W&quot; for white.</p>
+<pre><code class="language-ignore">              Bit Position
+A            7 6 5 4 3 2 1 0
+d          +-----------------+
+d  0x8000  | 1 0 1 1 0 1 0 1 |
+r          |-----------------|
+e  0x8001  | 0 1 1 0 0 1 0 1 |
+s          +-----------------+
+s            D L W D B W B W
+                 Color
+</code></pre>
+<p>Since reading the tile data happens much more often than writing it, we can store the tile data internally in a more friendly way.</p>
+<p>Let's write some code to see what we need. First, we're going to create a new struct that will be responsible for all the graphics needs of the Game Boy. This loosely mimics the set up of actual hardware where the CPU knows nothing about graphics and all. There's no one chip responsible for graphics instead there is dedicated video RAM and the screen hardware. It would over complicate things if we tried to too closely mimic this set up. Instead we'll create the <code>GPU</code> or &quot;Graphic Processing Unit&quot; to model all of our video needs.</p>
+<p>For now, our GPU will hold on to video RAM and our tile set data. Our video ram is just a long array which holds on to raw byte values. The tile set will also be an array of tiles. A tile is simply an array of 8 rows where a row is an array of 8 <code>TileValue</code>s.</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+const VRAM_BEGIN: usize = 0x8000;
+const VRAM_END: usize = 0x9FFF;
+const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
+
+#[derive(Copy,Clone)]
+enum TilePixelValue {
+    Zero,
+    One,
+    Two,
+    Three,
+}
+
+type Tile = [[TilePixelValue; 8]; 8];
+fn empty_tile() -&gt; Tile {
+    [[TilePixelValue::Zero; 8]; 8]
+}
+
+struct GPU{
+    vram: [u8; VRAM_SIZE],
+    tile_set: [Tile; 384],
+}
+#}</code></pre></pre>
+<p>Let's go back to our memory bus to redirect any of writes in memory to our video ram to go to the GPU:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# const VRAM_BEGIN: usize = 0x8000;
+# const VRAM_END: usize = 0x9FFF;
+# struct GPU { }
+# impl GPU { fn read_vram(&amp;self,addr: usize) -&gt; u8 { 0 }
+             fn write_vram(&amp;self, addr: usize, value: u8) {  } }
+# struct MemoryBus { gpu: GPU }
+
+impl MemoryBus {
+    fn read_byte(&amp;self, address: u16) -&gt; u8 {
+        let address = address as usize;
+        match address {
+            VRAM_BEGIN ... VRAM_END =&gt; {
+                self.gpu.read_vram(address - VRAM_BEGIN)
+            }
+            _ =&gt; panic!(&quot;TODO: support other areas of memory&quot;)
+        }
+    }
+
+    fn write_byte(&amp;self, address: u16, value: u8) {
+        let address = address as usize;
+        match address {
+            VRAM_BEGIN ... VRAM_END =&gt; {
+                self.gpu.write_vram(address - VRAM_BEGIN, value)
+            }
+            _ =&gt; panic!(&quot;TODO: support other areas of memory&quot;)
+        }
+    }
+}
+#}</code></pre></pre>
+<p>Notice how from the <code>MemoryBus</code> we don't directly access the vram but instead go through two methods <code>read_vram</code> and <code>write_vram</code>. This is so we can easily cache our tile set in the <code>tile_set</code> field of our CPU. Let's take a look at how these are implemented.</p>
+<p><code>read_vram</code> is very simple as it actually just reads from the vram array:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# struct GPU { vram: Vec&lt;u8&gt; }
+impl GPU {
+  fn read_vram(&amp;self, address: usize) -&gt; u8 {
+    self.vram[address]
+  }
+}
+#}</code></pre></pre>
+<p>However, <code>write_vram</code> is much more involved. Let's take a look at the code and go line by line to see what's happening:</p>
+<pre><pre class="playpen"><code class="language-rust noplayground">
+# #![allow(unused_variables)]
+#fn main() {
+# #[derive(Copy,Clone)]
+# enum TilePixelValue { Three, Two, One, Zero }
+# struct GPU { vram: Vec&lt;u8&gt;, tile_set: [[[TilePixelValue; 8]; 8]; 384]  }
+impl GPU {
+    fn write_vram(&amp;mut self, index: usize, value: u8) {
+        self.vram[index] = value;
+        // If our index is greater than 0x1800, we're not writing to the tile set storage
+        // so we can just return.
+        if index &gt;= 0x1800 { return }
+
+        // Tiles rows are encoded in two bytes with the first byte always
+        // on an even address. Bitwise ANDing the address with 0xffe
+        // gives us the address of the first byte.
+        // For example: `12 &amp; 0xFFFE == 12` and `13 &amp; 0xFFFE == 12`
+        let normalized_index = index &amp; 0xFFFE;
+
+        // First we need to get the two bytes that encode the tile row.
+        let byte1 = self.vram[normalized_index];
+        let byte2 = self.vram[normalized_index + 1];
+
+        // A tiles is 8 rows tall. Since each row is encoded with two bytes a tile
+        // is therefore 16 bytes in total.
+        let tile_index = index / 16;
+        // Every two bytes is a new row
+        let row_index = (index % 16) / 2;
+
+        // Now we're going to loop 8 times to get the 8 pixels that make up a given row.
+        for pixel_index in 0..8 {
+            // To determine a pixel's value we must first find the corresponding bit that encodes
+            // that pixels value:
+            // 1111_1111
+            // 0123 4567
+            //
+            // As you can see the bit that corresponds to the nth pixel is the bit in the nth
+            // position *from the left*. Bits are normally indexed from the right.
+            //
+            // To find the first pixel (a.k.a pixel 0) we find the left most bit (a.k.a bit 7). For
+            // the second pixel (a.k.a pixel 1) we first the second most left bit (a.k.a bit 6) and
+            // so on.
+            //
+            // We then create a mask with a 1 at that position and 0s everywhere else.
+            //
+            // Bitwise ANDing this mask with our bytes will leave that particular bit with its
+            // original value and every other bit with a 0.
+            let mask = 1 &lt;&lt; (7 - pixel_index);
+            let lsb = byte1 &amp; mask;
+            let msb = byte2 &amp; mask;
+
+            // If the masked values are not 0 the masked bit must be 1. If they are 0, the masked
+            // bit must be 0.
+            //
+            // Finally we can tell which of the four tile values the pixel is. For example, if the least
+            // significant byte's bit is 1 and the most significant byte's bit is also 1, then we
+            // have tile value `Three`.
+            let value = match (lsb != 0, msb != 0) {
+                (true, true) =&gt; TilePixelValue::Three,
+                (false, true) =&gt; TilePixelValue::Two,
+                (true, false) =&gt; TilePixelValue::One,
+                (false, false) =&gt; TilePixelValue::Zero,
+            };
+
+            self.tile_set[tile_index][row_index][pixel_index] = value;
+        }
+
+    }
+}
+#}</code></pre></pre>
+<p>We now have a cache of our tile ram so that not only do we have the information directly in VRAM but we also have it in a more accessible format.</p>
+<p>Next we'll get into the details of rendering.</p>
 <a class="header" href="#memory-map" id="memory-map"><h1>Memory Map</h1></a>
 <p>Up until now we've been treating the Game Boy's memory as one long array with 0xFFFF entries in it. While this was a helpful simplification for our work on the CPU (which doesn't know anything more about memory than that), in reality things are bit more complex. Sections of memory are actually used for very specific purposes. In fact there are parts of &quot;memory&quot; that are not actually backed by a RAM chip but instead are directly tied to things like the Game Boy screen or the Game Boy's audio device. Below we'll be &quot;mapping&quot; out memory and talking at a high level about what the different sections of the Game Boy's memory map do. We'll start at the very beginning of memory with address 0x0000 and work our way all the up to the top. This chapter should serve as the jumping off point for the rest of the book, so if you don't understand exactly how something works don't worry, we'll be going in much more detail later on.</p>
 <a class="header" href="#a0x0000---0x00ff-boot-rom" id="a0x0000---0x00ff-boot-rom"><h2>0x0000 - 0x00FF: Boot ROM</h2></a>
