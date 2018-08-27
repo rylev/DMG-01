@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Appendix - DMG-01: How to Emulate a Game Boy</title>
+        <title>Graphics - DMG-01: How to Emulate a Game Boy</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="../cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="../graphics/introduction.html"><strong aria-hidden="true">4.</strong> Graphics</a></li><li><ol class="section"><li><a href="../graphics/tile_ram.html"><strong aria-hidden="true">4.1.</strong> Tile RAM</a></li></ol></li><li><a href="../memory_map.html"><strong aria-hidden="true">5.</strong> Memory Map</a></li><li><a href="../appendix/index.html" class="active"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">6.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">6.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">6.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">6.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">6.5.</strong> Instruction Guide</a></li><li><a href="../appendix/cartridge_header.html"><strong aria-hidden="true">6.6.</strong> Cartridge Header</a></li></ol></li></ol>
+            <ol class="chapter"><li><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><a href="../architecture_overview.html"><strong aria-hidden="true">2.</strong> Architecture Overview</a></li><li><a href="../cpu/introduction.html"><strong aria-hidden="true">3.</strong> CPU</a></li><li><ol class="section"><li><a href="../cpu/registers.html"><strong aria-hidden="true">3.1.</strong> CPU Registers</a></li><li><a href="../cpu/register_data_instructions.html"><strong aria-hidden="true">3.2.</strong> Instructions on Register Data</a></li><li><a href="../cpu/executing_instructions.html"><strong aria-hidden="true">3.3.</strong> Instruction Execution and Control Flow</a></li><li><a href="../cpu/reading_and_writing_memory.html"><strong aria-hidden="true">3.4.</strong> Instructions for Reading and Writting to Memory</a></li><li><a href="../cpu/conclusion.html"><strong aria-hidden="true">3.5.</strong> Finishing Up the CPU</a></li></ol></li><li><a href="../graphics/introduction.html" class="active"><strong aria-hidden="true">4.</strong> Graphics</a></li><li><ol class="section"><li><a href="../graphics/tile_ram.html"><strong aria-hidden="true">4.1.</strong> Tile RAM</a></li></ol></li><li><a href="../memory_map.html"><strong aria-hidden="true">5.</strong> Memory Map</a></li><li><a href="../appendix/index.html"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li><a href="../appendix/numbers.html"><strong aria-hidden="true">6.1.</strong> Numbers</a></li><li><a href="../appendix/number_notations.html"><strong aria-hidden="true">6.2.</strong> Number Notations</a></li><li><a href="../appendix/bit_manipulation.html"><strong aria-hidden="true">6.3.</strong> Bit Manipulation</a></li><li><a href="../appendix/resources.html"><strong aria-hidden="true">6.4.</strong> Resources</a></li><li><a href="../appendix/instruction_guide/index.html"><strong aria-hidden="true">6.5.</strong> Instruction Guide</a></li><li><a href="../appendix/cartridge_header.html"><strong aria-hidden="true">6.6.</strong> Cartridge Header</a></li></ol></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,20 +136,23 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#appendix" id="appendix"><h1>Appendix</h1></a>
+                        <a class="header" href="#graphics" id="graphics"><h1>Graphics</h1></a>
+<p>Up until this point, we've been reading and writting to memory and performing different operations in the CPU. Our CPU has lots of work that it is capable of doing and in many senses it can already 'run' games. But, of course, one of the main things that defines a video game is the video or graphics aspect of it.</p>
+<p>In the next section of the book, we'll be deep diving into how graphics work in the Game Boy. First, we'll start with how the Game Boy's background graphics work. This will be enough for us to get the iconic boot screen displaying. Once we're done with this, we'll move on to sprite graphics that allow things like characters and enemies to appear.</p>
+<p>So without further delay, let's get started!</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../memory_map.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../cpu/conclusion.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../appendix/numbers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../graphics/tile_ram.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -161,13 +164,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="../memory_map.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../cpu/conclusion.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="../appendix/numbers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="../graphics/tile_ram.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
