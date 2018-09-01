@@ -209,6 +209,9 @@ impl GPU {
 }
 ```
 
+TODO: other tile set
+TODO: tile map
+
 We now have a cache of our tile ram so that not only do we have the information directly in VRAM but we also have it in a more accessible format.
 
 Next we'll get into the details of rendering.

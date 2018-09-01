@@ -218,7 +218,7 @@ impl GPU {
             }
             Mode::VerticalBlank => {
                 if self.cycles >= 456 {
-                    self.cycles = self.cycles % 200;
+                    self.cycles = self.cycles % 456;
                     self.line += 1;
                     if self.line == 154 {
                         self.mode = Mode::OAMAccess;
@@ -227,8 +227,8 @@ impl GPU {
                 }
             }
             Mode::OAMAccess => {
-                if self.cycles >= 84 {
-                    self.cycles = self.cycles % 84;
+                if self.cycles >= 80 {
+                    self.cycles = self.cycles % 80;
                     self.mode = Mode::VRAMAccess;
                 }
             }

@@ -1,19 +1,21 @@
-extern crate piston_window;
+extern crate minifb;
 extern crate image;
 extern crate clap;
 
-use piston_window::*;
 use clap::{Arg, App};
+use minifb::{WindowOptions, Window, Key};
 
 use std::io::Read;
+use std::time::{Instant, Duration};
+use std::thread::sleep;
 
-pub mod cpu;
+mod cpu;
 mod gpu;
 mod memory_bus;
 
 const ENLARGEMENT_FACTOR: usize = 1;
-const WINDOW_DIMENSIONS: [u32; 2] = [(160 * ENLARGEMENT_FACTOR) as u32,
-                                     (144 * ENLARGEMENT_FACTOR) as u32];
+const WINDOW_DIMENSIONS: [usize; 2] = [(160 * ENLARGEMENT_FACTOR),
+                                     (144 * ENLARGEMENT_FACTOR)];
 fn main() {
     let matches = App::new("DMG-01")
         .author("Ryan Levick <ryan.levick@gmail.com>")
@@ -36,40 +38,34 @@ fn main() {
     let mut game = std::fs::File::open(rom_path).expect("File not there");
     let mut game_buffer = Vec::new();
     game.read_to_end(&mut game_buffer).expect("Could not read file");
+
     let mut cpu = cpu::CPU::new(boot_buffer, game_buffer);
-    let mut window: PistonWindow = WindowSettings::new("DMG-01", WINDOW_DIMENSIONS)
-                                   .exit_on_esc(true)
-                                   .build()
-                                   .unwrap();
 
-    let mut canvas = image::ImageBuffer::new(WINDOW_DIMENSIONS[0], WINDOW_DIMENSIONS[1]);
-    let mut texture: G2dTexture = Texture::from_image(
-        &mut window.factory,
-        &canvas,
-        &TextureSettings::new()).unwrap();
+    let mut window = Window::new("DMG-01", WINDOW_DIMENSIONS[0], WINDOW_DIMENSIONS[1], WindowOptions::default()).unwrap();
 
-    while let Some(e) = window.next() {
-        if let Some(_) = e.render_args() {
-            texture.update(&mut window.encoder, &canvas).unwrap();
-             window.draw_2d(&e, |c, g| {
-                clear([1.0; 4], g);
-                image(&texture, c.transform, g);
-            });
+    let mut buffer = [0; 23040];
+    let mut cycles_elapsed_in_frame = 0usize;
+    let mut now = Instant::now();
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+        let time_delta = now.elapsed().subsec_nanos();
+        now = Instant::now();
+        let delta = time_delta as f64 / 1000000000.0;
+        let cycles_to_run = (4190000.0 * delta) as usize;
+
+        let mut cycles_elapsed = 0;
+        while cycles_elapsed <= cycles_to_run {
+            cycles_elapsed += cpu.step() as usize;
         }
-        if let Some(u) = e.update_args() {
-            let mut cycles_elapsed = 0usize;
-            let number_of_cycles = (4190000.0 * u.dt) as usize;
-            loop {
-                cycles_elapsed += cpu.step() as usize;
-                if cycles_elapsed >= number_of_cycles {
-                    break
-                }
-            }
+        cycles_elapsed_in_frame += cycles_elapsed;
+
+        if cycles_elapsed_in_frame >= 70224 {
             for (i, pixel) in cpu.bus.gpu.canvas_buffer.chunks(4).enumerate() {
-                let x = i % 160;
-                let y = i / 160;
-                canvas.put_pixel(x as u32, y as u32, image::Rgba([pixel[0], pixel[1], pixel[2], pixel[3]]));
+                buffer[i] = (pixel[3] as u32) << 24 | (pixel[2] as u32) << 16 | (pixel[1] as u32) << 8 | (pixel[0] as u32)
             }
+            window.update_with_buffer(&buffer).unwrap();
+            cycles_elapsed_in_frame = 0;
+        } else {
+            sleep(Duration::from_nanos(2))
         }
     }
 }

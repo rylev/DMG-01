@@ -10,6 +10,7 @@
   - [Finishing Up the CPU](./cpu/conclusion.md)
 - [Graphics](./graphics/introduction.md)
   - [Tile RAM](./graphics/tile_ram.md)
+  - [Rendering Basics](./graphics/rendering_basics.md)
 - [Memory Map](./memory_map.md)
 - [Appendix](./appendix/index.md)
   - [Numbers](./appendix/numbers.md)
