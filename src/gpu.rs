@@ -71,11 +71,21 @@ pub enum ObjectSize {
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum Mode {
+pub enum Mode {
     HorizontalBlank,
     VerticalBlank,
     OAMAccess,
     VRAMAccess
+}
+impl std::convert::From<Mode> for u8 {
+    fn from(value: Mode) -> Self {
+        match value {
+            Mode::HorizontalBlank => 0,
+            Mode::VerticalBlank => 1,
+            Mode::OAMAccess => 2,
+            Mode::VRAMAccess => 3,
+        }
+    }
 }
 
 
@@ -106,13 +116,18 @@ pub struct GPU {
     pub window_display_enabled: bool,
     pub background_display_enabled: bool,
     pub object_display_enabled: bool,
+    pub line_equals_line_check_interrupt_enabled: bool,
+    pub oam_interrupt_enabled: bool,
+    pub vblank_interrupt_enabled: bool,
+    pub hblank_interrupt_enabled: bool,
+    pub line_equals_line_check: bool,
     pub window_tile_map: TileMap,
     pub background_tile_map: TileMap,
     pub background_and_window_data_select: BackgroundAndWindowDataSelect,
     pub object_size: ObjectSize,
     pub line: u8,
+    pub mode: Mode,
     cycles: u16,
-    mode: Mode
 }
 
 impl GPU {
@@ -128,6 +143,11 @@ impl GPU {
             window_display_enabled: false,
             background_display_enabled: false,
             object_display_enabled: false,
+            line_equals_line_check_interrupt_enabled: false,
+            oam_interrupt_enabled: false,
+            vblank_interrupt_enabled: false,
+            hblank_interrupt_enabled: false,
+            line_equals_line_check: false,
             window_tile_map: TileMap::X9800,
             background_tile_map: TileMap::X9800,
             background_and_window_data_select: BackgroundAndWindowDataSelect::X8800,

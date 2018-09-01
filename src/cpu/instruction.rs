@@ -137,8 +137,10 @@ pub enum Instruction {
     CALL(JumpTest),
     RET(JumpTest),
 
+    // Control Instructions
     HALT,
-    NOP
+    NOP,
+    DI
 }
 
 impl Instruction {
@@ -712,6 +714,7 @@ impl Instruction {
 
             0x00 => Some(Instruction::NOP),
             0x76 => Some(Instruction::HALT),
+            0xf3 => Some(Instruction::DI),
 
             _ => None
         }

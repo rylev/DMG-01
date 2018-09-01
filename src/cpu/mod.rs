@@ -1066,6 +1066,13 @@ impl CPU {
                 self.is_halted = true;
                 (self.pc.wrapping_add(1), 4)
             }
+            Instruction::DI => {
+                // PC:+1
+                // Cycles: 4
+                // Z:- N:- H:- C:-
+                // TODO: Disable interrupts
+                (self.pc.wrapping_add(1), 4)
+            }
         }
     }
 
