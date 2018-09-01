@@ -1,0 +1,13 @@
+{
+  "name": "dmg-01",
+  "version": "0.0.1",
+  "description": "Game Boy Emulator",
+  "main": "src/index.js",
+  "scripts": {},
+  "author": "Ryan Levick <ryan.levick@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react": "^16.4.13",
+    "@types/react-dom": "^16.0.7"
+  }
+}

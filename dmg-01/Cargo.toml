@@ -1,0 +1,9 @@
+[package]
+name = "dmg-01"
+version = "0.1.0"
+authors = ["Ryan Levick <ryan.levick@gmail.com>"]
+
+[dependencies]
+minifb = "0.10.7"
+clap = "2.32.0"
+lib-dmg-01 =  { path = "../lib-dmg-01" }

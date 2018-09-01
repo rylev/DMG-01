@@ -1,5 +1,5 @@
 [package]
-name = "dmg-01-js"
+name = "lib-dmg-01-js"
 version = "0.1.0"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 
@@ -10,11 +10,10 @@ crate-type = ["cdylib"]
 serde = "^1.0.59"
 serde_derive = "^1.0.59"
 
-[dependencies.dmg-01]
-path = ".."
+[dependencies.lib-dmg-01]
+path = "../lib-dmg-01"
 features = ["serialize"]
 
 [dependencies.wasm-bindgen]
 version = "0.2"
 features = ["serde-serialize"]
-
