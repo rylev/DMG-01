@@ -13,13 +13,12 @@ module.exports = {
 
     resolve: {
         modules: [path.resolve(__dirname, "src"), "node_modules"],
-        extensions: [".ts", ".tsx", ".js", ".json"]
+        extensions: [".ts", ".tsx", ".js", ".json", ".wasm"]
     },
 
     module: {
         rules: [
-            { test: /\.tsx?$/, use: "awesome-typescript-loader" },
-
+            { test: /\.tsx?$/, use: "ts-loader" },
             { enforce: "pre", test: /\.js$/, use: "source-map-loader" }
         ]
     }

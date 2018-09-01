@@ -11,10 +11,12 @@
     "@types/react-dom": "^16.0.7",
     "awesome-typescript-loader": "^5.2.0",
     "source-map-loader": "^0.2.4",
+    "ts-loader": "^4.5.0",
     "typescript": "^3.0.3"
   },
   "dependencies": {
     "react": "^16.4.2",
-    "react-dom": "^16.4.2"
+    "react-dom": "^16.4.2",
+    "lib-dmg-01-js": "file:../lib-dmg-01-js/pkg"
   }
 }

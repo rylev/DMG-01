@@ -39,6 +39,10 @@ impl CPU {
         }
     }
 
+    pub fn step(&mut self) -> u8 {
+        self.0.step()
+    }
+
     pub fn to_json(&self) -> JsValue {
         JsValue::from_serde(&self).unwrap()
     }
