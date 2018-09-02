@@ -45,6 +45,10 @@ impl CPU {
         self.0.step()
     }
 
+    pub fn canvas_buffer(&self, buffer: &mut [u8]) {
+        buffer.copy_from_slice(&self.0.bus.gpu.canvas_buffer);
+    }
+
     pub fn to_json(&self) -> JsValue {
         JsValue::from_serde(&self).unwrap()
     }

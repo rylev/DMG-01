@@ -36,8 +36,13 @@ class Main extends React.Component<Props, State> {
         const { bios, rom } = this.state
         const romLabel = rom === undefined ? "Upload ROM" : "Change ROM"
         const biosLabel = bios === undefined ? "Upload BIOS" : "Change BIOS"
+        const loadingStyles = {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+        }
         return (
-            <div className="loading">
+            <div style={loadingStyles} className="loading">
                 <RomInput id="rom-input" romUploaded={this.romUploaded} label={romLabel} />
                 <RomInput id="bios-input" romUploaded={this.biosUploaded} label={biosLabel} />
             </div>
