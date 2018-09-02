@@ -9,16 +9,19 @@ type State = { cpu?: any }
 class Gameboy extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props)
+    this.state = {}
     _import().then((lib: any)  => {
       const cpu = lib.CPU.new(this.props.bios!, this.props.rom)
       this.setState({cpu})
     })
   }
 
-  render(): JSX.Element {
+  render(): JSX.Element | null  {
+    if (this.state.cpu === undefined) { return null }
     return (
       <div className="gameboy">
         <Screen />
+        <div onClick={() => this.runFrame(this.state.cpu, 0, true)}> WOWOWOWO</div>
       </div>
     )
   }

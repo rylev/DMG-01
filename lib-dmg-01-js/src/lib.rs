@@ -4,6 +4,7 @@
 extern crate serde_derive;
 
 extern crate wasm_bindgen;
+extern crate console_error_panic_hook;
 extern crate lib_dmg_01;
 
 use wasm_bindgen::prelude::*;
@@ -18,6 +19,7 @@ pub struct CPU(lib_dmg_01::cpu::CPU);
 impl CPU {
     #[wasm_bindgen(constructor)]
     pub fn new(boot_rom: Option<Vec<u8>>, game_rom: Vec<u8>) -> CPU {
+        console_error_panic_hook::set_once();
         let cpu = lib_dmg_01::cpu::CPU::new(boot_rom, game_rom);
         CPU(cpu)
     }
