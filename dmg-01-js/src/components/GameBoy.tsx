@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import Screen from './Screen'
+import _import from './dmg-01-js'
 
 type Props = { bios: Uint8Array | undefined, rom: Uint8Array }
 type State = { cpu?: any }
@@ -8,8 +9,7 @@ type State = { cpu?: any }
 class Gameboy extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props)
-
-    require("lib-dmg-01-js").then((lib: any)  => {
+    _import().then((lib: any)  => {
       const cpu = lib.CPU.new(this.props.bios!, this.props.rom)
       this.setState({cpu})
     })

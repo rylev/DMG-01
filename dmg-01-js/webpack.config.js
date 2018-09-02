@@ -17,9 +17,19 @@ module.exports = {
     },
 
     module: {
-        rules: [
-            { test: /\.tsx?$/, use: "ts-loader" },
-            { enforce: "pre", test: /\.js$/, use: "source-map-loader" }
+      rules: [
+        { test: /\.tsx?$/, use: "ts-loader" },
+        { enforce: "pre", test: /\.js$/, use: "source-map-loader" },
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              plugins: [require("@babel/plugin-syntax-dynamic-import")]
+            }
+          },
+        }
         ]
     }
 };

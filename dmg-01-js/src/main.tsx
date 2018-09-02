@@ -24,6 +24,11 @@ onLoad(biosReader, bios => {
 })
 
 function onLoad(reader: FileReader, callback: (rom: Uint8Array | undefined) => void) {
+    if (reader.readyState === reader.EMPTY) {
+        callback(undefined)
+        return
+    }
+
     reader.onload = () => {
         let rom
         if (reader.result) {
