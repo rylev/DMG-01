@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import Screen from './Screen'
 import _import from './dmg-01-js'
+import { CPU } from 'lib-dmg-01-js'
 
 enum RunningState {
   Uninitialized,
@@ -14,20 +15,20 @@ type Props = { bios: Uint8Array | undefined, rom: Uint8Array }
 type State = { screenBuffer: Uint8Array, runningState: RunningState }
 
 class Gameboy extends React.Component<Props, State> {
-  cpu: any | undefined
+  cpu: CPU | undefined
   frameTimer: NodeJS.Timer | undefined 
 
   constructor(props: Props) {
     super(props)
     this.state = { screenBuffer: new Uint8Array(144 * 160 * 4), runningState: RunningState.Uninitialized }
-    _import().then((lib: any)  => {
+    _import().then(lib => {
       this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
       this.setState({runningState: RunningState.Ready})
     })
   }
 
   componentWillUnmount() {
-    this.cpu.free()
+    if (this.cpu) { this.cpu.free() }
   }
 
   render(): JSX.Element | null {
@@ -124,7 +125,7 @@ class Gameboy extends React.Component<Props, State> {
 
   reset() {
     _import().then((lib: any)  => {
-      this.cpu.free()
+      this.cpu!.free()
       this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
       this.calculateNextFrameBuffer()
       this.setState({runningState: RunningState.Ready})
@@ -136,7 +137,7 @@ class Gameboy extends React.Component<Props, State> {
     this.frameTimer = setTimeout(() => {
       let cyclesElapsed = 0
       while (cyclesElapsed < 70224) {
-        cyclesElapsed += this.cpu.step()
+        cyclesElapsed += this.cpu!.step()
       }
       if (runContinuously) {
         const t2 = window.performance.now()
@@ -151,7 +152,7 @@ class Gameboy extends React.Component<Props, State> {
   }
 
   calculateNextFrameBuffer() {
-    this.cpu.canvas_buffer(this.state.screenBuffer)
+    this.cpu!.canvas_buffer(this.state.screenBuffer)
     this.setState({ screenBuffer: this.state.screenBuffer })
   }
 }
