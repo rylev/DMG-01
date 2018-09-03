@@ -265,6 +265,14 @@ impl MemoryBus {
             _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
         }
     }
+
+    pub fn slice(&self, start: u16, end: u16) -> Vec<u8> {
+        let mut result = Vec::with_capacity((end - start) as usize);
+        for i in start..end {
+            result.push(self.read_byte(i));
+        }
+        result
+    }
 }
 
 #[inline(always)]

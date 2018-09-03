@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import CPU from 'components/CPU'
-// import Memory from 'components/Memory'
+import Memory from 'components/Memory'
 // import Background from 'components/Background'
 // import TileSet from 'components/TileSet'
 import { CPU as CPUModel } from 'lib-dmg-01-js'
@@ -77,7 +77,7 @@ class Internals extends React.Component<Props, State> {
       <div style={contentStyles} className="content">
         <div style={motherboardStyles} className="motherboard">
           <CPU cpu={cpu} pcClicked={this.pcClicked} spClicked={this.spClicked} />
-          {/* {this.memory()} */}
+          {this.memory()}
         </div>
         {this.props.children}
         {/* {this.controls()} */}
@@ -85,29 +85,31 @@ class Internals extends React.Component<Props, State> {
     )
     }
 
-    // memory() {
-    //     const { memoryOffset } = this.state
-    //     const { cpu, addBreakPoint } = this.props
-    //     return (
-    //         <div className="memory">
-    //             <Memory
-    //                 bus={cpu.bus}
-    //                 pc={cpu.pc}
-    //                 sp={cpu.sp}
-    //                 offset={memoryOffset}
-    //                 changeOffset={newOffset => this.setState({ memoryOffset: newOffset })}
-    //                 onByteClick={addBreakPoint} />
-    //             <div className="visualMemory">
-    //                 <TileSet
-    //                     gpu={cpu.bus.gpu}
-    //                     onClick={() => { }} />
-    //                 <Background
-    //                     gpu={cpu.bus.gpu}
-    //                     onClick={this.backgroundClicked} />
-    //             </div>
-    //         </div>
-    //     )
-    // }
+    memory() {
+        const { memoryOffset } = this.state
+        const { cpu, /* addBreakPoint */ } = this.props
+        const cpuJson = cpu.to_json()
+        return (
+            <div className="memory">
+                <Memory
+                    memorySlice={(start: number, end: number) => cpu.memory_slice(start, end)}
+                    isBiosMapped={true}
+                    pc={cpuJson.pc}
+                    sp={cpuJson.sp}
+                    offset={memoryOffset}
+                    changeOffset={newOffset => this.setState({ memoryOffset: newOffset })}
+                    /* onByteClick={addBreakPoint} */ />
+                {/* <div className="visualMemory">
+                    <TileSet
+                        gpu={cpu.bus.gpu}
+                        onClick={() => { }} />
+                    <Background
+                        gpu={cpu.bus.gpu}
+                        onClick={this.backgroundClicked} /> */}
+                {/* </div> */}
+            </div>
+        )
+    }
 
     toggleInternalsVisibility = () => {
         this.setState({showInternals: !this.state.showInternals})

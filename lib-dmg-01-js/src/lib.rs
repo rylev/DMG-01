@@ -52,6 +52,10 @@ impl CPU {
     pub fn to_json(&self) -> JsValue {
         JsValue::from_serde(&self).unwrap()
     }
+
+    pub fn memory_slice(&self, start: u16, end: u16) -> Vec<u8> {
+        self.0.bus.slice(start, end)
+    }
 }
 
 
