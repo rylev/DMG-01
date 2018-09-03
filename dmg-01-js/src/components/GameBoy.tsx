@@ -3,6 +3,7 @@ import * as React from 'react'
 import Screen from './Screen'
 import _import from './dmg-01-js'
 import { CPU } from 'lib-dmg-01-js'
+import Internals from './Internals'
 
 enum RunningState {
   Uninitialized,
@@ -43,6 +44,7 @@ class Gameboy extends React.Component<Props, State> {
       <div style={gameBoyStyles} className="gameboy">
         <Screen buffer={this.state.screenBuffer} />
         {this.controls()}
+        <Internals cpu={this.cpu!}/>
       </div>
     )
   }
