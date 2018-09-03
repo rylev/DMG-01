@@ -11,9 +11,9 @@ const BYTE_SIZE = 8
 
 type Props = {
     cpu: CPUModel,
-    // isRunning: boolean,
-    // step: () => void,
-    // stepFrame: () => void,
+    isRunning: boolean,
+    step: () => void,
+    stepFrame: () => void,
     // addBreakPoint: (addr: number) => void
 }
 type State = {
@@ -80,7 +80,7 @@ class Internals extends React.Component<Props, State> {
           {this.memory()}
         </div>
         {this.props.children}
-        {/* {this.controls()} */}
+        {this.controls()}
       </div>
     )
     }
@@ -129,37 +129,39 @@ class Internals extends React.Component<Props, State> {
     //     this.setState({memoryOffset: Math.trunc(this.props.cpu.bus.gpu.backgroundTileMap / BYTE_SIZE) })
     // }
 
-    // controls() {
-    //     const { isRunning } = this.props
-    //     if (isRunning) { return null }
+    controls() {
+        const { isRunning } = this.props
+        if (isRunning) { return null }
 
-    //     return (
-    //         <div className="controls">
-    //             {this.stepButton()}
-    //             {this.stepFrameButton()}
-    //         </div>
-    //     )
-    // }
+        return (
+            <div className="controls">
+                {this.stepButton()}
+                {this.stepFrameButton()}
+            </div>
+        )
+    }
 
-    // stepFrameButton(): JSX.Element | null {
-    //     return <button className="stepFrame" onClick={this.stepFrame}>Step Frame</button>
-    // }
+    stepFrameButton(): JSX.Element | null {
+        return <button className="stepFrame" onClick={this.stepFrame}>Step Frame</button>
+    }
 
-    // stepButton(): JSX.Element | null {
-    //     return <button className="step" onClick={this.step}>Step</button>
-    // }
+    stepButton(): JSX.Element | null {
+        return <button className="step" onClick={this.step}>Step</button>
+    }
 
-    // step = () => {
-    //     const { cpu, step } = this.props
-    //     step()
-    //     this.setState({ memoryOffset: calculateMemoryOffset(cpu)})
-    // }
+    step = () => {
+        const { cpu, step } = this.props
+        const cpuJson = cpu.to_json();
+        step()
+        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc)})
+    }
 
-    // stepFrame = () => {
-    //     const { cpu, stepFrame } = this.props
-    //     stepFrame()
-    //     this.setState({ memoryOffset: calculateMemoryOffset(cpu)})
-    // }
+    stepFrame = () => {
+        const { cpu, stepFrame } = this.props
+        const cpuJson = cpu.to_json();
+        stepFrame()
+        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc)})
+    }
 }
 
 function calculateMemoryOffset(pointer: number): number {

@@ -44,7 +44,12 @@ class Gameboy extends React.Component<Props, State> {
       <div style={gameBoyStyles} className="gameboy">
         <Screen buffer={this.state.screenBuffer} />
         {this.controls()}
-        <Internals cpu={this.cpu!}/>
+        <Internals 
+          cpu={this.cpu!} 
+          isRunning={this.state.runningState === RunningState.Running}
+          step={() => this.step()}
+          stepFrame={() => this.stepFrame()}
+          />
       </div>
     )
   }
@@ -132,6 +137,15 @@ class Gameboy extends React.Component<Props, State> {
       this.calculateNextFrameBuffer()
       this.setState({runningState: RunningState.Ready})
     })
+  }
+
+  step() {
+    this.cpu!.step()
+  }
+
+  stepFrame() {
+    this.runFrame(0, false)
+    this.calculateNextFrameBuffer()
   }
 
   runFrame(previousTimeDiff: number, runContinuously: boolean) {
