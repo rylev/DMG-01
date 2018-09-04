@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import CPU from 'components/CPU'
 import Memory from 'components/Memory'
-// import Background from 'components/Background'
+import Background from 'components/Background'
 import TileSet from 'components/TileSet'
 import { CPU as CPUModel } from 'lib-dmg-01-js'
 // import Debugger from 'Debugger'
@@ -101,10 +101,9 @@ class Internals extends React.Component<Props, State> {
                     /* onByteClick={addBreakPoint} */ />
                 <div className="visualMemory">
                     <TileSet
-                        getData={outlineTiles => cpu.get_tile_set(outlineTiles)} />
-                    {/* <Background
-                        gpu={cpu.bus.gpu}
-                        onClick={this.backgroundClicked} /> */} 
+                        getData={outlineTiles => cpu.get_tile_set_buffer(outlineTiles)} />
+                    <Background
+                        getData={(foo, bar) => cpu.get_background_buffer(foo, bar)} /> 
                 </div> 
             </div>
         )
@@ -123,10 +122,6 @@ class Internals extends React.Component<Props, State> {
         const { cpu } = this.props
         this.setState({memoryOffset: calculateMemoryOffset(cpu.to_json().sp) })
     }
-
-    // backgroundClicked = () => {
-    //     this.setState({memoryOffset: Math.trunc(this.props.cpu.bus.gpu.backgroundTileMap / BYTE_SIZE) })
-    // }
 
     controls() {
         const { isRunning } = this.props

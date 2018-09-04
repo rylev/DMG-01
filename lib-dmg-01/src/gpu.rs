@@ -262,6 +262,70 @@ impl GPU {
         }
     }
 
+    pub fn background_as_buffer(&self, outline_tiles: bool, show_viewport: bool) -> Vec<u8> {
+        if self.background_tile_map != TileMap::X9800 {
+            panic!("We only support tilemap at 0x9800 for now");
+        }
+
+        let width_in_tiles = 32;
+        let height_in_tiles = 32;
+
+        let tile_width_in_pixels = 8;
+        let tile_height_in_pixels = 8;
+
+        let values_per_pixel = 4;
+
+        let row_width_in_canvas_values = tile_width_in_pixels * width_in_tiles * values_per_pixel;
+
+        let data_length = width_in_tiles * height_in_tiles * tile_height_in_pixels * tile_width_in_pixels * values_per_pixel;
+        let mut data = vec![0; data_length];
+
+        let tiles = self.background_1().iter().map(|byte| { self.tile_set[*byte as usize] });
+
+        for (tile_index, tile) in tiles.enumerate() {
+            let tile_row = tile_index / height_in_tiles;
+            let tile_column = tile_index % width_in_tiles;
+
+            for (row_index, row) in tile.iter().enumerate() {
+                let pixel_row_index = (tile_row * tile_height_in_pixels) + row_index;
+                let beginning_of_canvas_row = pixel_row_index * row_width_in_canvas_values;
+                let beginning_of_column = tile_column * tile_width_in_pixels;
+                let mut index = beginning_of_canvas_row + (beginning_of_column * values_per_pixel);
+
+                for (pixel_index, pixel) in row.iter().enumerate() {
+                    let pixel_column_index = beginning_of_column + pixel_index;
+                    let viewport_x_offset = self.viewport_x_offset as usize;
+                    let viewport_y_offset = self.viewport_y_offset as usize;
+                    let on_screen_border_x = (viewport_y_offset == pixel_row_index || pixel_row_index == viewport_y_offset + 144) &&
+                        (pixel_column_index > viewport_x_offset && pixel_column_index < viewport_x_offset + 160);
+                    let on_screen_border_y = (viewport_x_offset == pixel_column_index || viewport_x_offset + 160 == pixel_column_index) &&
+                        (pixel_row_index > viewport_y_offset && pixel_row_index < viewport_y_offset + 144);
+                    let on_tile_border_x = pixel_row_index % 8 == 0;
+                    let on_tile_border_y = pixel_column_index % 8 == 0;
+                    if show_viewport && (on_screen_border_x || on_screen_border_y) {
+                        data[index] = 255;
+                        data[index + 1] = 0;
+                        data[index + 2] = 0;
+                    } else if outline_tiles && (on_tile_border_x || on_tile_border_y) {
+                        data[index] = 0;
+                        data[index + 1] = 0;
+                        data[index + 2] = 255;
+                    } else {
+                        let color = self.tile_value_to_background_color(pixel);
+                        data[index] = color as u8;
+                        data[index + 1] = color as u8;
+                        data[index + 2] = color as u8;
+                    }
+                    data[index + 3] = 255;
+
+                    index = index + values_per_pixel;
+                }
+            }
+        }
+
+        data
+    }
+
     pub fn tile_set_as_buffer(&self, outline_tiles: bool) -> Vec<u8> {
         let values_per_pixel = 4;
         let tile_width = 8;
@@ -303,6 +367,10 @@ impl GPU {
         }
 
         data
+    }
+
+    fn background_1(&self) -> &[u8] {
+        &self.vram[0x1800..0x1C00]
     }
 
     fn render_scan_line(&mut self) {

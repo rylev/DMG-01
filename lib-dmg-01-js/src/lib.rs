@@ -57,8 +57,12 @@ impl CPU {
         self.0.bus.slice(start, end)
     }
 
-    pub fn get_tile_set(&self, outline_tiles: bool) -> Vec<u8> {
+    pub fn get_tile_set_buffer(&self, outline_tiles: bool) -> Vec<u8> {
         self.0.bus.gpu.tile_set_as_buffer(outline_tiles)
+    }
+
+    pub fn get_background_buffer(&self, outline_tiles: bool, show_viewport: bool) -> Vec<u8> {
+        self.0.bus.gpu.background_as_buffer(outline_tiles, show_viewport)
     }
 }
 
