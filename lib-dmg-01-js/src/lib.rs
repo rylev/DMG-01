@@ -56,6 +56,10 @@ impl CPU {
     pub fn memory_slice(&self, start: u16, end: u16) -> Vec<u8> {
         self.0.bus.slice(start, end)
     }
+
+    pub fn get_tile_set(&self, outline_tiles: bool) -> Vec<u8> {
+        self.0.bus.gpu.tile_set_as_buffer(outline_tiles)
+    }
 }
 
 

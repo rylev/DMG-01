@@ -3,7 +3,7 @@ import * as React from 'react'
 import CPU from 'components/CPU'
 import Memory from 'components/Memory'
 // import Background from 'components/Background'
-// import TileSet from 'components/TileSet'
+import TileSet from 'components/TileSet'
 import { CPU as CPUModel } from 'lib-dmg-01-js'
 // import Debugger from 'Debugger'
 
@@ -99,14 +99,13 @@ class Internals extends React.Component<Props, State> {
                     offset={memoryOffset}
                     changeOffset={newOffset => this.setState({ memoryOffset: newOffset })}
                     /* onByteClick={addBreakPoint} */ />
-                {/* <div className="visualMemory">
+                <div className="visualMemory">
                     <TileSet
+                        getData={outlineTiles => cpu.get_tile_set(outlineTiles)} />
+                    {/* <Background
                         gpu={cpu.bus.gpu}
-                        onClick={() => { }} />
-                    <Background
-                        gpu={cpu.bus.gpu}
-                        onClick={this.backgroundClicked} /> */}
-                {/* </div> */}
+                        onClick={this.backgroundClicked} /> */} 
+                </div> 
             </div>
         )
     }
