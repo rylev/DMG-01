@@ -30,59 +30,59 @@ class Internals extends React.Component<Props, State> {
         }
     }
 
-  render(): JSX.Element {
-    const internalsStyles = {
-      width: '1000px',
+    render(): JSX.Element {
+        const internalsStyles = {
+            width: '1000px',
+        }
+        const headerStyles = {
+            borderColor: '#306230',
+            background: '#8bac0f',
+            color: 'white',
+            padding: '5px',
+            borderRadius: '3px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            border: '1px solid',
+            cursor: 'pointer',
+            width: '100%',
+            margin: '2px'
+        }
+        const arrowStyles = this.state.showInternals ? {} : { transform: 'rotate(90deg)', }
+        return (
+            <div style={internalsStyles} className="internals">
+                <div style={headerStyles} className="header" onClick={this.toggleInternalsVisibility}>
+                    <div>Internals</div>
+                    <div style={arrowStyles} className={`directionArrow ${this.state.showInternals ? "open" : "closed"}`}>▼</div>
+                </div>
+                {this.content()}
+            </div>
+        )
     }
-    const headerStyles = {
-      borderColor: '#306230',
-      background: '#8bac0f',
-      color: 'white',
-      padding: '5px',
-      borderRadius: '3px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      border: '1px solid',
-      cursor: 'pointer',
-      width: '100%',
-      margin: '2px'
-    }
-    const arrowStyles = this.state.showInternals ? {} : { transform: 'rotate(90deg)', } 
-    return (
-      <div style={internalsStyles} className="internals">
-        <div style={headerStyles} className="header" onClick={this.toggleInternalsVisibility}>
-          <div>Internals</div>
-          <div style={arrowStyles} className={`directionArrow ${this.state.showInternals ? "open" : "closed"}`}>▼</div>
-        </div>
-        {this.content()}
-      </div>
-    )
-  }
 
-  content() {
-    const contentStyles: React.CSSProperties = {
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center'
-    }
-    const motherboardStyles = {
-      display: 'flex',
-      justifyContent: 'space-around'
-    }
-    const { showInternals } = this.state
-    if (!showInternals) { return null }
+    content() {
+        const contentStyles: React.CSSProperties = {
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+        }
+        const motherboardStyles = {
+            display: 'flex',
+            justifyContent: 'space-around'
+        }
+        const { showInternals } = this.state
+        if (!showInternals) { return null }
 
-    const { cpu } = this.props
-    return (
-      <div style={contentStyles} className="content">
-        <div style={motherboardStyles} className="motherboard">
-          <CPU cpu={cpu} pcClicked={this.pcClicked} spClicked={this.spClicked} />
-          {this.memory()}
-        </div>
-        {this.props.children}
-        {this.controls()}
-      </div>
-    )
+        const { cpu } = this.props
+        return (
+            <div style={contentStyles} className="content">
+                <div style={motherboardStyles} className="motherboard">
+                    <CPU cpu={cpu} pcClicked={this.pcClicked} spClicked={this.spClicked} />
+                    {this.memory()}
+                </div>
+                {this.graphics()}
+                {this.controls()}
+            </div>
+        )
     }
 
     memory() {
@@ -99,28 +99,36 @@ class Internals extends React.Component<Props, State> {
                     offset={memoryOffset}
                     changeOffset={newOffset => this.setState({ memoryOffset: newOffset })}
                     /* onByteClick={addBreakPoint} */ />
+            </div>
+        )
+    }
+
+    graphics() {
+        const { cpu } = this.props
+        return (
+            <div>
                 <div className="visualMemory">
                     <TileSet
                         getData={outlineTiles => cpu.get_tile_set_buffer(outlineTiles)} />
                     <Background
-                        getData={(foo, bar) => cpu.get_background_buffer(foo, bar)} /> 
-                </div> 
+                        getData={(outlineTiles, showViewport) => cpu.get_background_buffer(outlineTiles, showViewport)} />
+                </div>
             </div>
         )
     }
 
     toggleInternalsVisibility = () => {
-        this.setState({showInternals: !this.state.showInternals})
+        this.setState({ showInternals: !this.state.showInternals })
     }
 
     pcClicked = () => {
         const { cpu } = this.props
-        this.setState({memoryOffset: calculateMemoryOffset(cpu.to_json().pc) })
+        this.setState({ memoryOffset: calculateMemoryOffset(cpu.to_json().pc) })
     }
 
     spClicked = () => {
         const { cpu } = this.props
-        this.setState({memoryOffset: calculateMemoryOffset(cpu.to_json().sp) })
+        this.setState({ memoryOffset: calculateMemoryOffset(cpu.to_json().sp) })
     }
 
     controls() {
@@ -147,14 +155,14 @@ class Internals extends React.Component<Props, State> {
         const { cpu, step } = this.props
         const cpuJson = cpu.to_json();
         step()
-        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc)})
+        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc) })
     }
 
     stepFrame = () => {
         const { cpu, stepFrame } = this.props
         const cpuJson = cpu.to_json();
         stepFrame()
-        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc)})
+        this.setState({ memoryOffset: calculateMemoryOffset(cpuJson.pc) })
     }
 }
 

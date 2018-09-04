@@ -17,14 +17,14 @@ type State = { screenBuffer: Uint8Array, runningState: RunningState }
 
 class Gameboy extends React.Component<Props, State> {
   cpu: CPU | undefined
-  frameTimer: NodeJS.Timer | undefined 
+  frameTimer: NodeJS.Timer | undefined
 
   constructor(props: Props) {
     super(props)
     this.state = { screenBuffer: new Uint8Array(144 * 160 * 4), runningState: RunningState.Uninitialized }
     _import().then(lib => {
       this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
-      this.setState({runningState: RunningState.Ready})
+      this.setState({ runningState: RunningState.Ready })
     })
   }
 
@@ -44,12 +44,12 @@ class Gameboy extends React.Component<Props, State> {
       <div style={gameBoyStyles} className="gameboy">
         <Screen buffer={this.state.screenBuffer} />
         {this.controls()}
-        <Internals 
-          cpu={this.cpu!} 
+        <Internals
+          cpu={this.cpu!}
           isRunning={this.state.runningState === RunningState.Running}
           step={() => this.step()}
           stepFrame={() => this.stepFrame()}
-          />
+        />
       </div>
     )
   }
@@ -59,7 +59,6 @@ class Gameboy extends React.Component<Props, State> {
       display: 'flex',
       justifyContent: 'center',
       margin: '10px'
-
     }
 
     const { runningState } = this.state
@@ -97,7 +96,7 @@ class Gameboy extends React.Component<Props, State> {
       margin: '10px',
       width: '40px',
       height: '10px',
-      borderRadius: '10px', 
+      borderRadius: '10px',
       cursor: 'pointer',
       boxShadow: '1px 1px 3px black'
     }
@@ -120,22 +119,22 @@ class Gameboy extends React.Component<Props, State> {
 
   run() {
     this.runFrame(0, true)
-    this.setState({runningState: RunningState.Running})
+    this.setState({ runningState: RunningState.Running })
   }
 
   pause() {
     if (this.frameTimer) {
       clearTimeout(this.frameTimer)
     }
-    this.setState({runningState: RunningState.Paused})
+    this.setState({ runningState: RunningState.Paused })
   }
 
   reset() {
-    _import().then((lib: any)  => {
+    _import().then(lib => {
       this.cpu!.free()
       this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
       this.calculateNextFrameBuffer()
-      this.setState({runningState: RunningState.Ready})
+      this.setState({ runningState: RunningState.Ready })
     })
   }
 

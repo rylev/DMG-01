@@ -30,10 +30,10 @@ class VisualMemoryViewer extends React.Component<Props, State> {
     if (!ctx) { return }
     const imageData = ctx.createImageData(this.props.width, this.props.height)
     for (let i = 0; i < data.length; i += 4) {
-      imageData.data[i] = data[i];   //red
-      imageData.data[i + 1] = data[i + 1]; //green
-      imageData.data[i + 2] = data[i + 2]; //blue
-      imageData.data[i + 3] = data[i + 3]; //alpha
+      imageData.data[i] = data[i]   //red
+      imageData.data[i + 1] = data[i + 1] //green
+      imageData.data[i + 2] = data[i + 2] //blue
+      imageData.data[i + 3] = data[i + 3] //alpha
     }
     ctx.putImageData(imageData, 0, 0)
   }
@@ -48,7 +48,12 @@ class VisualMemoryViewer extends React.Component<Props, State> {
   }
 
   canvas() {
+    const canvasStyles = {
+      border: '1px solid black'
+
+    }
     return <canvas
+      style={canvasStyles}
       height={this.props.height}
       width={this.props.width}
       id={this.props.label}
@@ -67,11 +72,32 @@ class VisualMemoryViewer extends React.Component<Props, State> {
   }
 
   render() {
+    const visualMemoryViewer: React.CSSProperties = {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }
+    const headerStyles = {
+      borderColor: '#306230',
+      background: '#8bac0f',
+      color: 'white',
+      padding: '5px',
+      borderCadius: '3px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      border: '1px solid',
+      cursor: 'pointer',
+      width: '100%',
+      margin: '2px',
+    }
+    const arrowStyles ={
+      transform: !this.state.isShowing ? 'rotate(90deg)' : ''
+    }
     return (
-      <div className="visualMemoryViewer">
-        <div className="header" onClick={this.toggleVisibility}>
+      <div style={visualMemoryViewer} className="visualMemoryViewer">
+        <div style={headerStyles} className="header" onClick={this.toggleVisibility}>
           <div>{this.props.header}</div>
-          <div className={`directionArrow ${this.state.isShowing ? "open" : "closed"}`}>▼</div>
+          <div style={arrowStyles}>▼</div>
         </div>
         {this.content()}
       </div>

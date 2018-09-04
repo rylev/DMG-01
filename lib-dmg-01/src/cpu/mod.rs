@@ -1455,7 +1455,7 @@ mod tests {
     macro_rules! test_instruction {
         ( $instruction:expr, $( $($register:ident).* => $value:expr ),* ) => {
             {
-                let mut cpu = CPU::new(None);
+                let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
                 $(
                     cpu.registers$(.$register)* = $value;
                  )*
@@ -1505,7 +1505,7 @@ mod tests {
     #[test]
     fn execute_inc_16bit_byte_overflow() {
         let instruction = Instruction::INC(IncDecTarget::BC);
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.set_bc(0xFF);
         cpu.execute(instruction);
 
@@ -1518,7 +1518,7 @@ mod tests {
     #[test]
     fn execute_inc_16bit_overflow() {
         let instruction = Instruction::INC(IncDecTarget::BC);
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.set_bc(0xFFFF);
         cpu.execute(instruction);
 
@@ -1556,7 +1556,7 @@ mod tests {
     #[test]
     fn execute_dec_16bit_underflow() {
         let instruction = Instruction::DEC(IncDecTarget::BC);
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.set_bc(0x0000);
         cpu.execute(instruction);
 
@@ -1934,15 +1934,15 @@ mod tests {
     // JP
     #[test]
     fn execute_jp() {
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.pc = 0xF8;
-        cpu.bus.rom_bank_0[0xF9] = 0xFC;
-        cpu.bus.rom_bank_0[0xFA] = 0x02;
-        let next_pc = cpu.execute(Instruction::JP(JumpTest::Always));
+        cpu.bus.write_byte(0xF9, 0xFC);
+        cpu.bus.write_byte(0xFA, 0x02);
+        let (next_pc, _) = cpu.execute(Instruction::JP(JumpTest::Always));
 
         assert_eq!(next_pc, 0x02FC);
 
-        let next_pc = cpu.execute(Instruction::JP(JumpTest::Carry));
+        let (next_pc, _) = cpu.execute(Instruction::JP(JumpTest::Carry));
 
         assert_eq!(next_pc, 0xFB);
     }
@@ -1950,30 +1950,30 @@ mod tests {
     // JR
     #[test]
     fn execute_jr() {
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.pc = 0xF8;
-        cpu.bus.rom_bank_0[0xF9] = 0x4;
-        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+        cpu.bus.write_byte(0xF9, 0x4);
+        let (next_pc, _) = cpu.execute(Instruction::JR(JumpTest::Always));
 
         assert_eq!(next_pc, 0xFE);
 
-        cpu.bus.rom_bank_0[0xF9] = 0xFC; // == -4
-        let next_pc = cpu.execute(Instruction::JR(JumpTest::Always));
+        cpu.bus.write_byte(0xF9, 0xFC); // == -4
+        let (next_pc, _) = cpu.execute(Instruction::JR(JumpTest::Always));
         assert_eq!(next_pc, 0xF6);
     }
 
     // LD a, (??)
     #[test]
     fn execute_ld_a_indirect() {
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.set_bc(0xF9);
-        cpu.bus.rom_bank_0[0xF9] = 0x4;
+        cpu.bus.write_byte(0xF9, 0x4);
         cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::BCIndirect)));
 
         assert_eq!(cpu.registers.a, 0x04);
 
         cpu.registers.set_hl(0xA1);
-        cpu.bus.rom_bank_0[0xA1] = 0x9;
+        cpu.bus.write_byte(0xA1, 0x9);
         cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::HLIndirectPlus)));
 
         assert_eq!(cpu.registers.a, 0x09);
@@ -1983,7 +1983,7 @@ mod tests {
     // LD ?, ?
     #[test]
     fn execute_ld_byte() {
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.b = 0x4;
         cpu.execute(Instruction::LD(LoadType::Byte(LoadByteTarget::D, LoadByteSource::B)));
 
@@ -1994,7 +1994,7 @@ mod tests {
     // PUSH/POP
     #[test]
     fn execute_push_pop() {
-        let mut cpu = CPU::new(None);
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.b = 0x4;
         cpu.registers.c = 0x89;
         cpu.sp = 0x10;
@@ -2015,11 +2015,11 @@ mod tests {
     // Step
     #[test]
     fn test_step() {
-        let mut cpu = CPU::new(None);
-        cpu.bus.rom_bank_0[0] = 0x23; //INC(HL)
-        cpu.bus.rom_bank_0[1] = 0xB5; //OR(L)
-        cpu.bus.rom_bank_0[2] = 0xCB; //PREFIX
-        cpu.bus.rom_bank_0[3] = 0xe8; //SET(B, 5)
+        let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
+        cpu.bus.write_byte(0, 0x23); //INC(HL)
+        cpu.bus.write_byte(1, 0xB5); //OR(L)
+        cpu.bus.write_byte(2, 0xCB); //PREFIX
+        cpu.bus.write_byte(3, 0xe8); //SET(B, 5)
         for _ in 0..3 {
             cpu.step();
         }
