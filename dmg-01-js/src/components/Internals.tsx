@@ -111,10 +111,19 @@ class Internals extends React.Component<Props, State> {
                     <TileSet
                         getData={outlineTiles => cpu.get_tile_set_buffer(outlineTiles)} />
                     <Background
-                        getData={(outlineTiles, showViewport) => cpu.get_background_buffer(outlineTiles, showViewport)} />
+                        getData={(outlineTiles, showViewport) => cpu.get_background_buffer(outlineTiles, showViewport)} 
+                        getTileAt={(x, y) => this.getTileAt(x, y)}/>
                 </div>
             </div>
         )
+    }
+
+    getTileAt(x: number, y: number) {
+        const data = this.props.cpu!.get_tile_at(x, y)
+        return {
+            data,
+            indices: { x: Math.trunc(x / 8), y: Math.trunc(y / 8)}
+        }
     }
 
     toggleInternalsVisibility = () => {

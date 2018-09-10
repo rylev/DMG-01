@@ -398,6 +398,24 @@ impl GPU {
         data
     }
 
+    // Get a specific tile at the specified coordinates within the entire background space
+    pub fn get_tile_buffer_at(&self, pixel_x: usize, pixel_y: usize) -> [[u8; 8]; 8] {
+        let tile_x = pixel_x / 8;
+        let tile_y = pixel_y / 8;
+
+        let index = (tile_y * 32) + tile_x;
+        let mut result = [[0u8; 8]; 8];
+        let byte = self.background_1().iter().nth(index).unwrap();
+        let tile = self.tile_set[*byte as usize];
+        for (row_index, row) in tile.iter().enumerate() {
+            for (pixel_index, pixel) in row.iter().enumerate() {
+                result[row_index][pixel_index] = self.tile_value_to_background_color(pixel) as u8;
+            }
+        }
+
+        result
+    }
+
     fn background_1(&self) -> &[u8] {
         &self.vram[0x1800..0x1C00]
     }

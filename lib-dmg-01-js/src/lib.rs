@@ -64,8 +64,21 @@ impl CPU {
     pub fn get_background_buffer(&self, outline_tiles: bool, show_viewport: bool) -> Vec<u8> {
         self.0.bus.gpu.background_as_buffer(outline_tiles, show_viewport)
     }
-}
 
+    pub fn get_tile_at(&self, x: usize, y: usize) -> Vec<u8> {
+        let tile = self.0.bus.gpu.get_tile_buffer_at(x, y);
+        let mut data = Vec::with_capacity(8 * 8);
+        for row in tile.iter() {
+            for pixel in row.iter() {
+                data.push(*pixel as u8);
+                data.push(*pixel as u8);
+                data.push(*pixel as u8);
+                data.push(255);
+            }
+        }
+        data
+    }
+}
 
 #[wasm_bindgen]
 pub enum Target {
