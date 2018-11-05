@@ -1,5 +1,5 @@
 import * as React from 'react'
-import * as ReactDOM from 'react-dom'
+import BufferedCanvas from './BufferedCanvas'
 
 type Props = {
   data: Uint8Array
@@ -7,9 +7,11 @@ type Props = {
   width: number,
   label: string,
   header: string,
-  onClick?: () => void
+  onClick?: () => void,
+  onMouseMove?: (x: number, y: number) => void,
+  onMouseOut?: () => void
 }
-type State = { ctx?: CanvasRenderingContext2D, isShowing: boolean }
+type State = { isShowing: boolean }
 
 class VisualMemoryViewer extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -17,47 +19,18 @@ class VisualMemoryViewer extends React.Component<Props, State> {
     this.state = { isShowing: false }
   }
 
-  componentDidMount() {
-    this.drawCanvas(this.props.data)
-  }
-
-  componentWillReceiveProps(newProps: Props) {
-    this.drawCanvas(newProps.data)
-  }
-
-  drawCanvas(data: Uint8Array) {
-    const ctx = this.getCtx()
-    if (!ctx) { return }
-    const imageData = ctx.createImageData(this.props.width, this.props.height)
-    for (let i = 0; i < data.length; i += 4) {
-      imageData.data[i] = data[i]   //red
-      imageData.data[i + 1] = data[i + 1] //green
-      imageData.data[i + 2] = data[i + 2] //blue
-      imageData.data[i + 3] = data[i + 3] //alpha
-    }
-    ctx.putImageData(imageData, 0, 0)
-  }
-
-  getCtx() {
-    const canvas = ReactDOM.findDOMNode(this.refs[this.props.label]) as HTMLCanvasElement | null
-    if (canvas === null) { return }
-    const ctx = canvas.getContext('2d') || undefined
-    this.setState({ ctx })
-
-    return ctx
-  }
-
   canvas() {
     const canvasStyles = {
       border: '1px solid black'
-
     }
-    return <canvas
+    return <BufferedCanvas
+      data={this.props.data}
       style={canvasStyles}
       height={this.props.height}
       width={this.props.width}
-      id={this.props.label}
-      ref={this.props.label}
+      label={this.props.label}
+      onMouseMove={this.props.onMouseMove}
+      onMouseOut={this.props.onMouseOut}
       onClick={this.props.onClick} />
   }
 
@@ -105,11 +78,7 @@ class VisualMemoryViewer extends React.Component<Props, State> {
   }
 
   toggleVisibility = () => {
-    this.setState({ isShowing: !this.state.isShowing }, () => {
-      if (this.state.isShowing) {
-        this.drawCanvas(this.props.data)
-      }
-    })
+    this.setState({ isShowing: !this.state.isShowing })
   }
 }
 
