@@ -1,0 +1,7 @@
+[package]
+name = "opcodes"
+version = "0.1.0"
+authors = ["Ryan Levick <ryan.levick@gmail.com>"]
+
+[dependencies]
+maud = "0.18.1"
