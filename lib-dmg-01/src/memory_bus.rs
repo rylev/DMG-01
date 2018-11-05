@@ -40,6 +40,8 @@ pub const ZERO_PAGE_BEGIN: usize = 0xFF80;
 pub const ZERO_PAGE_END: usize = 0xFFFE;
 pub const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 
+pub const INTERRUPT_ENABLE_REGISTER: usize = 0xFFFF;
+
 pub struct MemoryBus {
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
@@ -152,6 +154,9 @@ impl MemoryBus {
             ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
                 self.zero_page[address - ZERO_PAGE_BEGIN] = value;
             }
+            INTERRUPT_ENABLE_REGISTER => {
+                //TODO: update memory bus
+            }
             _ => {
                 panic!("Writing to an unkown part of memory at address 0x{:x}", address);
             }
@@ -172,6 +177,19 @@ impl MemoryBus {
                 bit(self.gpu.object_display_enabled)                << 1 |
                 bit(self.gpu.background_display_enabled)
             }
+            0xFF41 => {
+                // LCD Controller Status
+                let mode: u8 = self.gpu.mode.into();
+
+                0b10000000 |
+                bit(self.gpu.line_equals_line_check_interrupt_enabled) << 6 |
+                bit(self.gpu.oam_interrupt_enabled)                    << 5 |
+                bit(self.gpu.vblank_interrupt_enabled)                 << 4 |
+                bit(self.gpu.hblank_interrupt_enabled)                 << 3 |
+                bit(self.gpu.line_equals_line_check)                   << 2 |
+                mode
+            }
+
             0xFF42 => {
                 // Scroll Y Position
                 self.gpu.viewport_y_offset
@@ -186,6 +204,10 @@ impl MemoryBus {
 
     fn write_io_register(&mut self, address: usize, value: u8) {
         match address {
+            0xFF01 => { /* Serial Transfer */ }
+            0xFF02 => { /* Serial Transfer Control */ }
+            0xFF07 => { /* Timer Controller */ }
+            0xFF0F => { /* Interrupt Flag */ }
             0xFF11 => { /* Channel 1 Sound Length and Wave */ }
             0xFF12 => { /* Channel 1 Sound Control */ }
             0xFF13 => { /* Channel 1 Frequency lo */ }
@@ -220,9 +242,17 @@ impl MemoryBus {
                 self.gpu.object_display_enabled = ((value >> 1) & 0b1) == 1;
                 self.gpu.background_display_enabled = (value & 0b1) == 1;
             }
+            0xFF41 => {
+                // LCD Controller Status
+                // TODO: update interrupt enables
+            }
             0xFF42 => {
                 // Viewport Y Offset
                 self.gpu.viewport_y_offset = value;
+            }
+            0xFF43 => {
+                // Viewport X Offset
+                self.gpu.viewport_x_offset = value;
             }
             0xFF47 => {
                 // Background Colors Setting
@@ -234,6 +264,14 @@ impl MemoryBus {
             }
             _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
         }
+    }
+
+    pub fn slice(&self, start: u16, end: u16) -> Vec<u8> {
+        let mut result = Vec::with_capacity((end - start) as usize);
+        for i in start..end {
+            result.push(self.read_byte(i));
+        }
+        result
     }
 }
 
