@@ -45,7 +45,7 @@ So each pixel of our 8x8 pixel (i.e., 64 pixels in total) tile will take 2 bits 
 
 So this shouldn't be too hard to encode right? Just start from the top left most pixel and every two bits we encode that pixels value right? Unfortunately not. The actual encoding scheme is a little bit more complicated.
 
-Each row of a tile is 2 bytes worth of data (8 pixels with 2 bits per pixel equals 16 bits or 2 bytes). Instead of each pixels value coming one after the other, each pixel is split between the two bytes. So the first pixel is encoded with the left most (i.e., most signficant bit a.k.a bit 7) of each byte.
+Each row of a tile is 2 bytes worth of data (8 pixels with 2 bits per pixel equals 16 bits or 2 bytes). Instead of each pixels value coming one after the other, each pixel is split between the two bytes. So the first pixel is encoded with the left most (i.e., most significant bit a.k.a bit 7) of each byte.
 
 For example, let's imagine that the first two bytes of our tile set memory were 0xB5 (0b10110101) and 0x65 (0b01100101). These two bytes together will encode the data for the first tile. Byte 1 contains the value of the upper (a.k.a most significant) bit and byte 2 contains the value of the lower (least significant) bit.
 

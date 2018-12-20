@@ -63,7 +63,7 @@ Let's take a look at a bitwise example:
 
 The same advice around hexadecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.
 
-Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least signficant bit set to 1, you can OR it with 0b1.
+Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least significant bit set to 1, you can OR it with 0b1.
 
 ## Shift (<< >>)
 

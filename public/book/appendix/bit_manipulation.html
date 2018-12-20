@@ -176,7 +176,7 @@ false || false == false
   1101
 </code></pre>
 <p>The same advice around hexadecimal applies for bitwise OR as it did for AND. When in doubt, convert to binary and go bit by bit.</p>
-<p>Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least signficant bit set to 1, you can OR it with 0b1.</p>
+<p>Bitwise OR can be used to combine two binary values together. For example, if you want to be sure that a value has it's least significant bit set to 1, you can OR it with 0b1.</p>
 <a class="header" href="#shift--" id="shift--"><h2>Shift (&lt;&lt; &gt;&gt;)</h2></a>
 <p>Bit shifting is the practice of moving bits in order to different digit positions.</p>
 <p>To accomplish this first we look at the operator to see what direction we're going: <code>&lt;&lt;</code> for left and <code>&gt;&gt;</code> for right. We then take each bit and shift it over as many places as the number to the right of the operator tells us to. Any numbers that no longer fit (i.e. they've been shift off the edge of the number) disappear. All digit places that are left empty by the shifting get replaced by 0s.</p>
