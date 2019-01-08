@@ -46,7 +46,7 @@ impl Registers {
 
 Here we see our first instance of "bit manipulation" through the use of four bitwise operators: ">>", "<<", "&", and "|". If you're unfamiliar with or feel a bit rusty using these types of operators, check out the [guide on bit manipulation](./appendix/bit_manipulation.md).
 
-For reading the "bc" register we first treat the "b" register as a `u16` (this effectively just adds a byte of all 0s to the most significant position of the number). We then shift the "b" register 8 positions so that it's occupying the most signficant byte position. Finally, we bitwise OR the "c" register. The result is a two byte number with the contents of "b" in the most signficant byte position and the contents of "c" in the least signficant byte position.
+For reading the "bc" register we first treat the "b" register as a `u16` (this effectively just adds a byte of all 0s to the most significant position of the number). We then shift the "b" register 8 positions so that it's occupying the most significant byte position. Finally, we bitwise OR the "c" register. The result is a two byte number with the contents of "b" in the most significant byte position and the contents of "c" in the least significant byte position.
 
 ## Flags Register
 
