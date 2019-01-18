@@ -25,7 +25,7 @@ struct Registers {
 }
 ```
 
-We use the type `u8` for our registers. `u8` are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the [guide on numbers](./appendix/numbers.md).
+We use the type `u8` for our registers. `u8` are 8-bit unsigned integers. For a refresher on how numbers are stored in computers, checkout the [guide on numbers](../appendix/numbers.md).
 
 While the CPU only has 8 bit registers, there are instructions that allow the game to read and write 16 bits (i.e. 2 bytes) at the same time (denoted as `u16` in Rust - a 16 bit unsigned integer). Therefore, we'll need the ability to read an write these "virtual" 16 bit registers. These registers are refered to as "af" ("a" and "f" combined), "bc" ("b" and "c" combined), "de" ("d" and "e" combinded), and finally "hl" ("h" and "l" combined). Let's implement "bc":
 
@@ -44,7 +44,7 @@ impl Registers {
 }
 ```
 
-Here we see our first instance of "bit manipulation" through the use of four bitwise operators: ">>", "<<", "&", and "|". If you're unfamiliar with or feel a bit rusty using these types of operators, check out the [guide on bit manipulation](./appendix/bit_manipulation.md).
+Here we see our first instance of "bit manipulation" through the use of four bitwise operators: ">>", "<<", "&", and "|". If you're unfamiliar with or feel a bit rusty using these types of operators, check out the [guide on bit manipulation](../appendix/bit_manipulation.md).
 
 For reading the "bc" register we first treat the "b" register as a `u16` (this effectively just adds a byte of all 0s to the most significant position of the number). We then shift the "b" register 8 positions so that it's occupying the most significant byte position. Finally, we bitwise OR the "c" register. The result is a two byte number with the contents of "b" in the most significant byte position and the contents of "c" in the least significant byte position.
 
