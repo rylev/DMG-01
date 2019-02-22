@@ -1,6 +1,6 @@
 # Program Counter
 
-So far we've seen instructions that can operate on register data. But how does the CPU which instruction to execute? To understand this, we'll first need to understand where our instructions are stored.
+So far we've seen instructions that can operate on register data. But how does the CPU know which instruction to execute? To understand this, we'll first need to understand where our instructions are stored.
 
 ## Game ROM
 
