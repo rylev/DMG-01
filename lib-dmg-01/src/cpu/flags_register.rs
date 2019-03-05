@@ -1,6 +1,6 @@
-use std;
 #[cfg(feature = "serialize")]
-use serde::{Serialize,Serializer};
+use serde::{Serialize, Serializer};
+use std;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FlagsRegister {
@@ -11,7 +11,7 @@ pub struct FlagsRegister {
     // set if lower half of the result overflowed
     pub half_carry: bool,
     // set if the result overflowed
-    pub carry: bool
+    pub carry: bool,
 }
 #[cfg(feature = "serialize")]
 impl Serialize for FlagsRegister {
@@ -33,17 +33,17 @@ impl FlagsRegister {
             zero: false,
             subtract: false,
             half_carry: false,
-            carry: false
+            carry: false,
         }
     }
 }
 
-impl std::convert::From<FlagsRegister> for u8  {
+impl std::convert::From<FlagsRegister> for u8 {
     fn from(flag: FlagsRegister) -> u8 {
-        (if flag.zero       { 1 } else { 0 }) << ZERO_FLAG_BYTE_POSITION |
-        (if flag.subtract   { 1 } else { 0 }) << SUBTRACT_FLAG_BYTE_POSITION |
-        (if flag.half_carry { 1 } else { 0 }) << HALF_CARRY_FLAG_BYTE_POSITION |
-        (if flag.carry      { 1 } else { 0 }) << CARRY_FLAG_BYTE_POSITION
+        (if flag.zero { 1 } else { 0 }) << ZERO_FLAG_BYTE_POSITION
+            | (if flag.subtract { 1 } else { 0 }) << SUBTRACT_FLAG_BYTE_POSITION
+            | (if flag.half_carry { 1 } else { 0 }) << HALF_CARRY_FLAG_BYTE_POSITION
+            | (if flag.carry { 1 } else { 0 }) << CARRY_FLAG_BYTE_POSITION
     }
 }
 
@@ -58,7 +58,7 @@ impl std::convert::From<u8> for FlagsRegister {
             zero,
             subtract,
             half_carry,
-            carry
+            carry,
         }
     }
 }

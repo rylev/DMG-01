@@ -1,25 +1,14 @@
 pub mod flags_register;
-pub mod registers;
 pub mod instruction;
+pub mod registers;
 
-use self::registers::Registers;
 use self::instruction::{
-    Instruction,
-    IncDecTarget,
-    ArithmeticTarget,
-    PrefixTarget,
-    BitPosition,
-    JumpTest,
-    ADDHLTarget,
-    LoadType,
-    LoadByteSource,
-    LoadByteTarget,
-    LoadWordTarget,
-    Indirect,
-    StackTarget
+    ADDHLTarget, ArithmeticTarget, BitPosition, IncDecTarget, Indirect, Instruction, JumpTest,
+    LoadByteSource, LoadByteTarget, LoadType, LoadWordTarget, PrefixTarget, StackTarget,
 };
+use self::registers::Registers;
 
-use memory_bus::MemoryBus;
+use crate::memory_bus::MemoryBus;
 
 /// # Macros
 ///
@@ -104,13 +93,11 @@ macro_rules! manipulate_8bit_register {
 // The macro gets the value from the register, performs work on that value and then sets the value back in the
 // register
 macro_rules! manipulate_16bit_register {
-    ( $self:ident : $getter:ident => $work:ident => $setter:ident ) => {
-        {
-            let amount = $self.registers.$getter();
-            let result = $self.$work(amount);
-            $self.registers.$setter(result);
-        }
-    };
+    ( $self:ident : $getter:ident => $work:ident => $setter:ident ) => {{
+        let amount = $self.registers.$getter();
+        let result = $self.$work(amount);
+        $self.registers.$setter(result);
+    }};
 }
 
 macro_rules! arithmetic_instruction {
@@ -312,7 +299,9 @@ impl CPU {
     }
 
     pub fn step(&mut self) -> u8 {
-        if self.is_halted { return 4 }
+        if self.is_halted {
+            return 4;
+        }
 
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
@@ -321,13 +310,20 @@ impl CPU {
             instruction_byte = self.read_next_byte();
         }
 
-        let (next_pc, cycles) = if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
-            self.execute(instruction)
-
-        } else {
-            let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
-            panic!("0x{:x}: Unknown instruction found - {}", self.pc, description)
-        };
+        let (next_pc, cycles) =
+            if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+                self.execute(instruction)
+            } else {
+                let description = format!(
+                    "0x{}{:x}",
+                    if prefixed { "cb" } else { "" },
+                    instruction_byte
+                );
+                panic!(
+                    "0x{:x}: Unknown instruction found - {}",
+                    self.pc, description
+                )
+            };
 
         self.bus.step(cycles);
 
@@ -366,8 +362,12 @@ impl CPU {
                         let result = self.inc_8bit(amount);
                         self.bus.write_byte(hl, result);
                     }
-                    IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc),
-                    IncDecTarget::DE => manipulate_16bit_register!(self: get_de => inc_16bit => set_de),
+                    IncDecTarget::BC => {
+                        manipulate_16bit_register!(self: get_bc => inc_16bit => set_bc)
+                    }
+                    IncDecTarget::DE => {
+                        manipulate_16bit_register!(self: get_de => inc_16bit => set_de)
+                    }
                     IncDecTarget::HL => {
                         manipulate_16bit_register!(self: get_hl => inc_16bit => set_hl)
                     }
@@ -380,10 +380,10 @@ impl CPU {
                 let cycles = match target {
                     IncDecTarget::BC | IncDecTarget::DE | IncDecTarget::HL | IncDecTarget::SP => 8,
                     IncDecTarget::HLI => 12,
-                    _ => 4
+                    _ => 4,
                 };
                 (self.pc.wrapping_add(1), cycles)
-            },
+            }
             Instruction::DEC(target) => {
                 // DESCRIPTION: (decrement) - decrement the value in a specific register by 1
                 // WHEN: target is 16 bit register
@@ -411,9 +411,15 @@ impl CPU {
                         let result = self.dec_8bit(amount);
                         self.bus.write_byte(hl, result);
                     }
-                    IncDecTarget::BC => manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc),
-                    IncDecTarget::DE => manipulate_16bit_register!(self: get_de => dec_16bit => set_de),
-                    IncDecTarget::HL => manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl),
+                    IncDecTarget::BC => {
+                        manipulate_16bit_register!(self: get_bc => dec_16bit => set_bc)
+                    }
+                    IncDecTarget::DE => {
+                        manipulate_16bit_register!(self: get_de => dec_16bit => set_de)
+                    }
+                    IncDecTarget::HL => {
+                        manipulate_16bit_register!(self: get_hl => dec_16bit => set_hl)
+                    }
                     IncDecTarget::SP => {
                         let amount = self.sp;
                         let result = self.dec_16bit(amount);
@@ -423,10 +429,10 @@ impl CPU {
                 let cycles = match target {
                     IncDecTarget::BC | IncDecTarget::DE | IncDecTarget::HL | IncDecTarget::SP => 8,
                     IncDecTarget::HLI => 12,
-                    _ => 4
+                    _ => 4,
                 };
                 (self.pc.wrapping_add(1), cycles)
-            },
+            }
             Instruction::ADD(register) => {
                 // DESCRIPTION: (add) - add the value stored in a specific register
                 // with the value in the A register
@@ -441,7 +447,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_without_carry => a)
-            },
+            }
             Instruction::ADDHL(register) => {
                 // DESCRIPTION: (add) - add the value stored in a specific register
                 // with the value in the HL register
@@ -457,7 +463,7 @@ impl CPU {
                 let result = self.add_hl(value);
                 self.registers.set_hl(result);
                 (self.pc.wrapping_add(1), 8)
-            },
+            }
             Instruction::ADDSP => {
                 // DESCRIPTION: (add stack pointer) - add a one byte signed number to
                 // the value stored in the stack pointer register
@@ -474,14 +480,15 @@ impl CPU {
                 // Half and whole carry are computed at the nibble and byte level instead
                 // of the byte and word level like you might expect for 16 bit values
                 let half_carry_mask = 0xF;
-                self.registers.f.half_carry = (self.sp & half_carry_mask) + (value & half_carry_mask) > half_carry_mask;
+                self.registers.f.half_carry =
+                    (self.sp & half_carry_mask) + (value & half_carry_mask) > half_carry_mask;
                 let carry_mask = 0xff;
                 self.registers.f.carry = (self.sp & carry_mask) + (value & carry_mask) > carry_mask;
 
                 self.sp = result;
 
                 (self.pc.wrapping_add(2), 16)
-            },
+            }
             Instruction::ADC(register) => {
                 // DESCRIPTION: (add with carry) - add the value stored in a specific
                 // register with the value in the A register and the value in the carry flag
@@ -496,7 +503,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:0 H:? C:?
                 arithmetic_instruction!(register, self.add_with_carry => a)
-            },
+            }
             Instruction::SUB(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register
@@ -511,7 +518,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_without_carry => a)
-            },
+            }
             Instruction::SBC(register) => {
                 // DESCRIPTION: (subtract) - subtract the value stored in a specific register
                 // with the value in the A register and the value in the carry flag
@@ -526,7 +533,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.sub_with_carry => a)
-            },
+            }
             Instruction::AND(register) => {
                 // DESCRIPTION: (AND) - do a bitwise and on the value in a specific
                 // register and the value in the A register
@@ -541,7 +548,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:0 H:1 C:0
                 arithmetic_instruction!(register, self.and => a)
-            },
+            }
             Instruction::OR(register) => {
                 // DESCRIPTION: (OR) - do a bitwise or on the value in a specific
                 // register and the value in the A register
@@ -556,7 +563,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.or => a)
-            },
+            }
             Instruction::XOR(register) => {
                 // DESCRIPTION: (XOR) - do a bitwise xor on the value in a specific
                 // register and the value in the A register
@@ -571,7 +578,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:0 H:0 C:0
                 arithmetic_instruction!(register, self.xor => a)
-            },
+            }
             Instruction::CP(register) => {
                 // DESCRIPTION: (compare) - just like SUB except the result of the
                 // subtraction is not stored back into A
@@ -586,7 +593,7 @@ impl CPU {
                 // Cycles: 4
                 // Z:? S:1 H:? C:?
                 arithmetic_instruction!(register, self.compare)
-            },
+            }
             Instruction::CCF => {
                 // DESCRIPTION: (complement carry flag) - toggle the value of the carry flag
                 // PC:+1
@@ -756,7 +763,7 @@ impl CPU {
                 // Cycles: 8
                 // Z:? S:0 H:0 C:0
                 prefix_instruction!(register, self.swap_nibbles => reg)
-            },
+            }
             Instruction::JP(test) => {
                 // DESCRIPTION: conditionally jump to the address stored in the next word in memory
                 // PC:?/+3
@@ -767,7 +774,7 @@ impl CPU {
                     JumpTest::NotCarry => !self.registers.f.carry,
                     JumpTest::Zero => self.registers.f.zero,
                     JumpTest::Carry => self.registers.f.carry,
-                    JumpTest::Always => true
+                    JumpTest::Always => true,
                 };
                 self.jump(jump_condition)
             }
@@ -782,7 +789,7 @@ impl CPU {
                     JumpTest::NotCarry => !self.registers.f.carry,
                     JumpTest::Zero => self.registers.f.zero,
                     JumpTest::Carry => self.registers.f.carry,
-                    JumpTest::Always => true
+                    JumpTest::Always => true,
                 };
                 self.jump_relative(jump_condition)
             }
@@ -818,7 +825,7 @@ impl CPU {
                             LoadByteSource::H => self.registers.h,
                             LoadByteSource::L => self.registers.l,
                             LoadByteSource::D8 => self.read_next_byte(),
-                            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl())
+                            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl()),
                         };
                         match target {
                             LoadByteTarget::A => self.registers.a = source_value,
@@ -828,14 +835,16 @@ impl CPU {
                             LoadByteTarget::E => self.registers.e = source_value,
                             LoadByteTarget::H => self.registers.h = source_value,
                             LoadByteTarget::L => self.registers.l = source_value,
-                            LoadByteTarget::HLI => self.bus.write_byte(self.registers.get_hl(), source_value)
+                            LoadByteTarget::HLI => {
+                                self.bus.write_byte(self.registers.get_hl(), source_value)
+                            }
                         };
                         match source {
-                            LoadByteSource::D8  => (self.pc.wrapping_add(2), 8),
+                            LoadByteSource::D8 => (self.pc.wrapping_add(2), 8),
                             LoadByteSource::HLI => (self.pc.wrapping_add(1), 8),
-                            _                   => (self.pc.wrapping_add(1), 4),
+                            _ => (self.pc.wrapping_add(1), 4),
                         }
-                    },
+                    }
                     // DESCRIPTION: load next word in memory into a particular register
                     // PC:+3
                     // Cycles: 12
@@ -849,7 +858,7 @@ impl CPU {
                             LoadWordTarget::SP => self.sp = word,
                         };
                         (self.pc.wrapping_add(3), 12)
-                    },
+                    }
                     // DESCRIPTION: load a particular value stored at the source address into A
                     // WHEN: source is word indirect
                     // PC:+3
@@ -873,14 +882,16 @@ impl CPU {
                                 self.bus.read_byte(hl)
                             }
                             Indirect::WordIndirect => self.bus.read_byte(self.read_next_word()),
-                            Indirect::LastByteIndirect => self.bus.read_byte(0xFF00 + self.registers.c as u16),
+                            Indirect::LastByteIndirect => {
+                                self.bus.read_byte(0xFF00 + self.registers.c as u16)
+                            }
                         };
 
                         match source {
-                            Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
-                            _                          => (self.pc.wrapping_add(1), 8)
+                            Indirect::WordIndirect => (self.pc.wrapping_add(3), 16),
+                            _ => (self.pc.wrapping_add(1), 8),
                         }
-                    },
+                    }
                     // DESCRIPTION: load the A register into memory at the source address
                     // WHEN: instruction.source is word indirect
                     // PC:+3
@@ -913,7 +924,7 @@ impl CPU {
                             Indirect::WordIndirect => {
                                 let word = self.read_next_word();
                                 self.bus.write_byte(word, a);
-                            },
+                            }
                             Indirect::LastByteIndirect => {
                                 let c = self.registers.c as u16;
                                 self.bus.write_byte(0xFF00 + c, a);
@@ -921,10 +932,10 @@ impl CPU {
                         };
 
                         match target {
-                            Indirect::WordIndirect     => (self.pc.wrapping_add(3), 16),
-                            _                          => (self.pc.wrapping_add(1), 8)
+                            Indirect::WordIndirect => (self.pc.wrapping_add(3), 16),
+                            _ => (self.pc.wrapping_add(1), 8),
                         }
-                    },
+                    }
                     // DESCRIPTION: Load the value in A into memory location located at 0xFF plus
                     // an offset stored as the next byte in memory
                     // PC:+2
@@ -934,7 +945,7 @@ impl CPU {
                         let offset = self.bus.read_byte(self.pc + 1) as u16;
                         self.bus.write_byte(0xFF00 + offset, self.registers.a);
                         (self.pc.wrapping_add(2), 12)
-                    },
+                    }
                     // DESCRIPTION: Load the value located at 0xFF plus an offset stored as the next byte in memory into A
                     // PC:+2
                     // Cycles: 12
@@ -943,7 +954,7 @@ impl CPU {
                         let offset = self.read_next_byte() as u16;
                         self.registers.a = self.bus.read_byte(0xFF00 + offset);
                         (self.pc.wrapping_add(2), 12)
-                    },
+                    }
                     // DESCRIPTION: Load the value in HL into SP
                     // PC:+1
                     // Cycles: 8
@@ -951,7 +962,7 @@ impl CPU {
                     LoadType::SPFromHL => {
                         self.sp = self.registers.get_hl();
                         (self.pc.wrapping_add(1), 8)
-                    },
+                    }
                     // DESCRIPTION: Load memory address with the contents of SP
                     // PC:+3
                     // Cycles: 20
@@ -960,9 +971,10 @@ impl CPU {
                         let address = self.read_next_word();
                         let sp = self.sp;
                         self.bus.write_byte(address, (sp & 0xFF) as u8);
-                        self.bus.write_byte(address.wrapping_add(1), ((sp & 0xFF00) >> 8) as u8);
+                        self.bus
+                            .write_byte(address.wrapping_add(1), ((sp & 0xFF00) >> 8) as u8);
                         (self.pc.wrapping_add(3), 20)
-                    },
+                    }
                     // DESCRIPTION: load HL with SP plus some specified byte
                     // PC:+2
                     // Cycles: 12
@@ -978,7 +990,7 @@ impl CPU {
                         self.registers.f.half_carry = (self.sp & 0xF) + (value & 0xF) > 0xF;
                         self.registers.f.carry = (self.sp & 0xFF) + (value & 0xFF) > 0xFF;
                         (self.pc.wrapping_add(2), 12)
-                    },
+                    }
                 }
             }
             Instruction::PUSH(target) => {
@@ -1023,7 +1035,7 @@ impl CPU {
                     JumpTest::NotCarry => !self.registers.f.carry,
                     JumpTest::Zero => self.registers.f.zero,
                     JumpTest::Carry => self.registers.f.carry,
-                    JumpTest::Always => true
+                    JumpTest::Always => true,
                 };
                 self.call(jump_condition)
             }
@@ -1040,7 +1052,7 @@ impl CPU {
                     JumpTest::NotCarry => !self.registers.f.carry,
                     JumpTest::Zero => self.registers.f.zero,
                     JumpTest::Carry => self.registers.f.carry,
-                    JumpTest::Always => true
+                    JumpTest::Always => true,
                 };
                 let next_pc = self.return_(jump_condition);
 
@@ -1100,7 +1112,7 @@ impl CPU {
     fn read_next_word(&self) -> u16 {
         // Gameboy is little endian so read pc + 2 as most significant bit
         // and pc + 1 as least significant bit
-        ((self.bus.read_byte(self.pc + 2) as u16) << 8)  | (self.bus.read_byte(self.pc + 1) as u16)
+        ((self.bus.read_byte(self.pc + 2) as u16) << 8) | (self.bus.read_byte(self.pc + 1) as u16)
     }
 
     #[inline(always)]
@@ -1154,7 +1166,11 @@ impl CPU {
 
     #[inline(always)]
     fn add(&mut self, value: u8, add_carry: bool) -> u8 {
-        let additional_carry = if add_carry && self.registers.f.carry { 1 } else { 0 };
+        let additional_carry = if add_carry && self.registers.f.carry {
+            1
+        } else {
+            0
+        };
         let (add, carry) = self.registers.a.overflowing_add(value);
         let (add2, carry2) = add.overflowing_add(additional_carry);
         self.registers.f.zero = add2 == 0;
@@ -1164,7 +1180,8 @@ impl CPU {
         // together (plus the optional carry bit) result in a value bigger the 0xF.
         // If the result is larger than 0xF than the addition caused a carry from
         // the lower nibble to the upper nibble.
-        self.registers.f.half_carry = ((self.registers.a & 0xF) + (value & 0xF) + additional_carry) > 0xF;
+        self.registers.f.half_carry =
+            ((self.registers.a & 0xF) + (value & 0xF) + additional_carry) > 0xF;
         add2
     }
 
@@ -1194,7 +1211,11 @@ impl CPU {
 
     #[inline(always)]
     fn sub(&mut self, value: u8, sub_carry: bool) -> u8 {
-        let additional_carry = if sub_carry && self.registers.f.carry { 1 } else { 0 };
+        let additional_carry = if sub_carry && self.registers.f.carry {
+            1
+        } else {
+            0
+        };
         let (sub, carry) = self.registers.a.overflowing_sub(value);
         let (sub2, carry2) = sub.overflowing_sub(additional_carry);
         self.registers.f.zero = sub2 == 0;
@@ -1346,7 +1367,6 @@ impl CPU {
         self.registers.f.zero = result == 0;
         self.registers.f.subtract = false;
         self.registers.f.half_carry = true;
-
     }
 
     #[inline(always)]
@@ -1414,7 +1434,7 @@ impl CPU {
     #[inline(always)]
     fn jump_relative(&self, should_jump: bool) -> (u16, u8) {
         let next_step = self.pc.wrapping_add(2);
-         if should_jump {
+        if should_jump {
             let offset = self.read_next_byte() as i8;
             let pc = if offset >= 0 {
                 next_step.wrapping_add(offset as u16)
@@ -1465,16 +1485,14 @@ mod tests {
         };
     }
     macro_rules! check_flags {
-        ( $cpu:ident,  zero => $zero:ident, subtract => $subtract:ident, half_carry => $half_carry:ident, carry => $carry:ident ) => {
-            {
-                let flags = $cpu.registers.f;
-                println!("Flags: {:?}", flags);
-                assert_eq!(flags.zero, $zero);
-                assert_eq!(flags.subtract, $subtract);
-                assert_eq!(flags.half_carry, $half_carry);
-                assert_eq!(flags.carry, $carry);
-            }
-        };
+        ( $cpu:ident,  zero => $zero:ident, subtract => $subtract:ident, half_carry => $half_carry:ident, carry => $carry:ident ) => {{
+            let flags = $cpu.registers.f;
+            println!("Flags: {:?}", flags);
+            assert_eq!(flags.zero, $zero);
+            assert_eq!(flags.subtract, $subtract);
+            assert_eq!(flags.half_carry, $half_carry);
+            assert_eq!(flags.carry, $carry);
+        }};
     }
 
     // INC
@@ -1619,7 +1637,8 @@ mod tests {
 
     #[test]
     fn execute_addc_8bit_non_overflow_target_a_with_carry() {
-        let cpu = test_instruction!(Instruction::ADC(ArithmeticTarget::A), a => 0x7, f.carry => true);
+        let cpu =
+            test_instruction!(Instruction::ADC(ArithmeticTarget::A), a => 0x7, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0xf);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
@@ -1685,7 +1704,8 @@ mod tests {
 
     #[test]
     fn execute_subc_8bit_non_overflow_target_a_with_carry() {
-        let cpu = test_instruction!(Instruction::SBC(ArithmeticTarget::A), a => 0x7, f.carry => true);
+        let cpu =
+            test_instruction!(Instruction::SBC(ArithmeticTarget::A), a => 0x7, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0xFF);
         check_flags!(cpu, zero => false, subtract => true, half_carry => true, carry => true);
@@ -1831,12 +1851,14 @@ mod tests {
     // BIT
     #[test]
     fn execute_bit_8bit() {
-        let cpu = test_instruction!(Instruction::BIT(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::BIT(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
 
         assert_eq!(cpu.registers.a, 0b1011_0100);
         check_flags!(cpu, zero => false, subtract => false, half_carry => true, carry => false);
 
-        let cpu = test_instruction!(Instruction::BIT(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::BIT(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
         assert_eq!(cpu.registers.a, 0b1011_0100);
         check_flags!(cpu, zero => true, subtract => false, half_carry => true, carry => false);
     }
@@ -1844,12 +1866,14 @@ mod tests {
     // RES
     #[test]
     fn execute_res_8bit() {
-        let cpu = test_instruction!(Instruction::RES(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::RES(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
 
         assert_eq!(cpu.registers.a, 0b1011_0000);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
 
-        let cpu = test_instruction!(Instruction::RES(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::RES(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
         assert_eq!(cpu.registers.a, 0b1011_0100);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
@@ -1857,12 +1881,14 @@ mod tests {
     // SET
     #[test]
     fn execute_set_8bit() {
-        let cpu = test_instruction!(Instruction::SET(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::SET(PrefixTarget::A, BitPosition::B2), a => 0b1011_0100);
 
         assert_eq!(cpu.registers.a, 0b1011_0100);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
 
-        let cpu = test_instruction!(Instruction::SET(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
+        let cpu =
+            test_instruction!(Instruction::SET(PrefixTarget::A, BitPosition::B1), a => 0b1011_0100);
         assert_eq!(cpu.registers.a, 0b1011_0110);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => false);
     }
@@ -1884,7 +1910,8 @@ mod tests {
         assert_eq!(cpu.registers.a, 0b0101_1010);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
 
-        let cpu = test_instruction!(Instruction::RR(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
+        let cpu =
+            test_instruction!(Instruction::RR(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0b1101_1010);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
@@ -1898,7 +1925,8 @@ mod tests {
         assert_eq!(cpu.registers.a, 0b0110_1010);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
 
-        let cpu = test_instruction!(Instruction::RL(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
+        let cpu =
+            test_instruction!(Instruction::RL(PrefixTarget::A), a => 0b1011_0101, f.carry => true);
 
         assert_eq!(cpu.registers.a, 0b0110_1011);
         check_flags!(cpu, zero => false, subtract => false, half_carry => false, carry => true);
@@ -1968,13 +1996,17 @@ mod tests {
         let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.set_bc(0xF9);
         cpu.bus.write_byte(0xF9, 0x4);
-        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::BCIndirect)));
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(
+            Indirect::BCIndirect,
+        )));
 
         assert_eq!(cpu.registers.a, 0x04);
 
         cpu.registers.set_hl(0xA1);
         cpu.bus.write_byte(0xA1, 0x9);
-        cpu.execute(Instruction::LD(LoadType::AFromIndirect(Indirect::HLIndirectPlus)));
+        cpu.execute(Instruction::LD(LoadType::AFromIndirect(
+            Indirect::HLIndirectPlus,
+        )));
 
         assert_eq!(cpu.registers.a, 0x09);
         assert_eq!(cpu.registers.get_hl(), 0xA2);
@@ -1985,7 +2017,10 @@ mod tests {
     fn execute_ld_byte() {
         let mut cpu = CPU::new(None, vec![0; 0xFFFF]);
         cpu.registers.b = 0x4;
-        cpu.execute(Instruction::LD(LoadType::Byte(LoadByteTarget::D, LoadByteSource::B)));
+        cpu.execute(Instruction::LD(LoadType::Byte(
+            LoadByteTarget::D,
+            LoadByteSource::B,
+        )));
 
         assert_eq!(cpu.registers.b, 0x4);
         assert_eq!(cpu.registers.d, 0x4);

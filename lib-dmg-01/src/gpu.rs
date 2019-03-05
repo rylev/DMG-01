@@ -1,13 +1,13 @@
 use std;
 
-use memory_bus::{VRAM_BEGIN, VRAM_SIZE};
+use crate::memory_bus::{VRAM_BEGIN, VRAM_SIZE};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Color {
     White = 255,
     LightGray = 192,
     DarkGray = 96,
-    Black = 0
+    Black = 0,
 }
 
 impl std::convert::From<u8> for Color {
@@ -17,23 +17,22 @@ impl std::convert::From<u8> for Color {
             1 => Color::LightGray,
             2 => Color::DarkGray,
             3 => Color::Black,
-            _ => panic!("Cannot covert {} to color", n)
+            _ => panic!("Cannot covert {} to color", n),
         }
     }
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct BackgroundColors(
-    Color,
-    Color,
-    Color,
-    Color
-);
+pub struct BackgroundColors(Color, Color, Color, Color);
 
 impl BackgroundColors {
     fn new() -> BackgroundColors {
-        BackgroundColors(Color::White, Color::LightGray, Color::DarkGray, Color::Black)
+        BackgroundColors(
+            Color::White,
+            Color::LightGray,
+            Color::DarkGray,
+            Color::Black,
+        )
     }
 }
 
@@ -44,10 +43,9 @@ impl std::convert::From<u8> for BackgroundColors {
             ((value >> 2) & 0b11).into(),
             ((value >> 4) & 0b11).into(),
             (value >> 6).into(),
-            )
+        )
     }
 }
-
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TileMap {
@@ -55,13 +53,11 @@ pub enum TileMap {
     X9C00,
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BackgroundAndWindowDataSelect {
     X8000,
     X8800,
 }
-
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ObjectSize {
@@ -69,13 +65,12 @@ pub enum ObjectSize {
     OS8X16,
 }
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Mode {
     HorizontalBlank,
     VerticalBlank,
     OAMAccess,
-    VRAMAccess
+    VRAMAccess,
 }
 impl std::convert::From<Mode> for u8 {
     fn from(value: Mode) -> Self {
@@ -87,7 +82,6 @@ impl std::convert::From<Mode> for u8 {
         }
     }
 }
-
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TilePixelValue {
@@ -160,7 +154,9 @@ impl GPU {
 
     pub fn write_vram(&mut self, index: usize, value: u8) {
         self.vram[index] = value;
-        if index >= 0x1800 { return }
+        if index >= 0x1800 {
+            return;
+        }
 
         // Tiles rows are encoded in two bytes with the first byte always
         // on an even address. Bitwise ANDing the address with 0xffe
@@ -215,11 +211,12 @@ impl GPU {
 
             self.tile_set[tile_index][row_index][pixel_index] = value;
         }
-
     }
 
     pub fn step(&mut self, cycles: u8) {
-        if !self.lcd_display_enabled { return }
+        if !self.lcd_display_enabled {
+            return;
+        }
         self.cycles += cycles as u16;
 
         let mode = self.mode;
@@ -277,10 +274,17 @@ impl GPU {
 
         let row_width_in_canvas_values = tile_width_in_pixels * width_in_tiles * values_per_pixel;
 
-        let data_length = width_in_tiles * height_in_tiles * tile_height_in_pixels * tile_width_in_pixels * values_per_pixel;
+        let data_length = width_in_tiles
+            * height_in_tiles
+            * tile_height_in_pixels
+            * tile_width_in_pixels
+            * values_per_pixel;
         let mut data = vec![0; data_length];
 
-        let tiles = self.background_1().iter().map(|byte| { self.tile_set[*byte as usize] });
+        let tiles = self
+            .background_1()
+            .iter()
+            .map(|byte| self.tile_set[*byte as usize]);
 
         for (tile_index, tile) in tiles.enumerate() {
             let tile_row = tile_index / height_in_tiles;
@@ -299,8 +303,10 @@ impl GPU {
                     let pixel_column_index = beginning_of_column + pixel_index;
                     let viewport_x_offset = self.viewport_x_offset as usize;
                     let viewport_y_offset = self.viewport_y_offset as usize;
-                    let (screen_border_right, did_overflow_x) = self.viewport_x_offset.overflowing_add(SCREEN_WIDTH as u8);
-                    let (screen_border_bottom, did_overflow_y) = self.viewport_y_offset.overflowing_add(SCREEN_HEIGHT as u8);
+                    let (screen_border_right, did_overflow_x) =
+                        self.viewport_x_offset.overflowing_add(SCREEN_WIDTH as u8);
+                    let (screen_border_bottom, did_overflow_y) =
+                        self.viewport_y_offset.overflowing_add(SCREEN_HEIGHT as u8);
                     let is_inside_screen_horizontally = if did_overflow_x {
                         pixel_column_index < (screen_border_right as usize)
                             || pixel_column_index > viewport_x_offset
@@ -310,7 +316,8 @@ impl GPU {
                     };
                     let is_on_screen_horizontal_edge = viewport_y_offset == pixel_row_index
                         || pixel_row_index == (screen_border_bottom as usize);
-                    let on_screen_border_x = is_inside_screen_horizontally && is_on_screen_horizontal_edge;
+                    let on_screen_border_x =
+                        is_inside_screen_horizontally && is_on_screen_horizontal_edge;
 
                     let is_inside_screen_vertically = if did_overflow_y {
                         pixel_row_index < (screen_border_bottom as usize)
@@ -321,7 +328,8 @@ impl GPU {
                     };
                     let is_on_screen_vertical_edge = viewport_x_offset == pixel_column_index
                         || pixel_column_index == (screen_border_right as usize);
-                    let on_screen_border_y =  is_inside_screen_vertically && is_on_screen_vertical_edge;
+                    let on_screen_border_y =
+                        is_inside_screen_vertically && is_on_screen_vertical_edge;
 
                     let on_tile_border_x = pixel_row_index % 8 == 0;
                     let on_tile_border_y = pixel_column_index % 8 == 0;
@@ -331,7 +339,12 @@ impl GPU {
                         data[index] = 255;
                         data[index + 1] = 0;
                         data[index + 2] = 0;
-                    } else if outline_tiles && (on_tile_border_x || on_tile_border_y || final_pixel_row || final_pixel_column) {
+                    } else if outline_tiles
+                        && (on_tile_border_x
+                            || on_tile_border_y
+                            || final_pixel_row
+                            || final_pixel_column)
+                    {
                         data[index] = 0;
                         data[index + 1] = 0;
                         data[index + 2] = 255;
@@ -360,7 +373,8 @@ impl GPU {
         let height_in_tiles = self.tile_set.len() / width_in_tiles;
 
         let row_width = tile_width * width_in_tiles * values_per_pixel;
-        let mut data = vec![0; width_in_tiles * height_in_tiles * tile_height * tile_width * values_per_pixel];
+        let mut data =
+            vec![0; width_in_tiles * height_in_tiles * tile_height * tile_width * values_per_pixel];
 
         for (tile_index, tile) in self.tile_set.iter().enumerate() {
             let tile_row = tile_index / width_in_tiles;
@@ -379,7 +393,12 @@ impl GPU {
                 for (pixel_index, pixel) in row.iter().enumerate() {
                     let on_tile_column_border = pixel_index == 0;
                     let final_pixel_column = final_tile_column && pixel_index == 7;
-                    if outline_tiles && (on_tile_row_border || on_tile_column_border || final_pixel_row || final_pixel_column) {
+                    if outline_tiles
+                        && (on_tile_row_border
+                            || on_tile_column_border
+                            || final_pixel_row
+                            || final_pixel_column)
+                    {
                         data[index] = 0;
                         data[index + 1] = 0;
                         data[index + 2] = 255;
@@ -432,9 +451,13 @@ impl GPU {
             let tile_offset = (tile_y_index as u16 / 8) * 32u16;
 
             // Where is our tile map defined?
-            let background_tile_map = if self.background_tile_map == TileMap::X9800 { 0x9800 } else { 0x9C00 };
+            let background_tile_map = if self.background_tile_map == TileMap::X9800 {
+                0x9800
+            } else {
+                0x9C00
+            };
             // Munge this so that the beginning of VRAM is index 0
-            let tile_map_begin =  background_tile_map - VRAM_BEGIN;
+            let tile_map_begin = background_tile_map - VRAM_BEGIN;
             // Where we are in the tile map is the beginning of the tile map
             // plus the current tile's offset
             let tile_map_offset = tile_map_begin + tile_offset as usize;
@@ -454,7 +477,8 @@ impl GPU {
                 // Grab the tile index specified in the tile map
                 let mut tile_index = self.vram[tile_map_offset + tile_x_index as usize];
 
-                let tile_value = self.tile_set[tile_index as usize][row_y_offset as usize][pixel_x_index as usize];
+                let tile_value = self.tile_set[tile_index as usize][row_y_offset as usize]
+                    [pixel_x_index as usize];
                 let color = self.tile_value_to_background_color(&tile_value);
 
                 self.canvas_buffer[canvas_buffer_offset] = color as u8;

@@ -1,9 +1,4 @@
-use gpu::{
-    GPU,
-    TileMap,
-    BackgroundAndWindowDataSelect,
-    ObjectSize,
-};
+use crate::gpu::{BackgroundAndWindowDataSelect, ObjectSize, TileMap, GPU};
 
 pub const BOOT_ROM_BEGIN: usize = 0x00;
 pub const BOOT_ROM_END: usize = 0xFF;
@@ -50,14 +45,18 @@ pub struct MemoryBus {
     working_ram: [u8; WORKING_RAM_SIZE],
     oam: [u8; OAM_SIZE],
     zero_page: [u8; ZERO_PAGE_SIZE],
-    pub gpu: GPU
+    pub gpu: GPU,
 }
 
 impl MemoryBus {
     pub fn new(boot_rom_buffer: Option<Vec<u8>>, game_rom: Vec<u8>) -> MemoryBus {
         let boot_rom = boot_rom_buffer.map(|boot_rom_buffer| {
             if boot_rom_buffer.len() != BOOT_ROM_SIZE {
-                panic!("Supplied boot ROM is the wrong size. Is {} bytes but should be {} bytes", boot_rom_buffer.len(), BOOT_ROM_SIZE);
+                panic!(
+                    "Supplied boot ROM is the wrong size. Is {} bytes but should be {} bytes",
+                    boot_rom_buffer.len(),
+                    BOOT_ROM_SIZE
+                );
             }
             let mut boot_rom = [0; BOOT_ROM_SIZE];
             boot_rom.copy_from_slice(&boot_rom_buffer);
@@ -82,7 +81,7 @@ impl MemoryBus {
             working_ram: [0; WORKING_RAM_SIZE],
             oam: [0; OAM_SIZE],
             zero_page: [0; ZERO_PAGE_SIZE],
-            gpu: GPU::new()
+            gpu: GPU::new(),
         }
     }
 
@@ -93,39 +92,28 @@ impl MemoryBus {
     pub fn read_byte(&self, address: u16) -> u8 {
         let address = address as usize;
         match address {
-            BOOT_ROM_BEGIN ... BOOT_ROM_END => {
+            BOOT_ROM_BEGIN...BOOT_ROM_END => {
                 if let Some(boot_rom) = self.boot_rom {
                     boot_rom[address]
                 } else {
                     self.rom_bank_0[address]
                 }
             }
-            ROM_BANK_0_BEGIN ... ROM_BANK_0_END => {
-                self.rom_bank_0[address]
-            }
-            ROM_BANK_N_BEGIN ... ROM_BANK_N_END => {
-                self.rom_bank_n[address - ROM_BANK_N_BEGIN]
-            }
-            VRAM_BEGIN ... VRAM_END => {
-                self.gpu.vram[address - VRAM_BEGIN]
-            }
-            EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
+            ROM_BANK_0_BEGIN...ROM_BANK_0_END => self.rom_bank_0[address],
+            ROM_BANK_N_BEGIN...ROM_BANK_N_END => self.rom_bank_n[address - ROM_BANK_N_BEGIN],
+            VRAM_BEGIN...VRAM_END => self.gpu.vram[address - VRAM_BEGIN],
+            EXTERNAL_RAM_BEGIN...EXTERNAL_RAM_END => {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN]
             }
-            WORKING_RAM_BEGIN ... WORKING_RAM_END => {
-                self.working_ram[address - WORKING_RAM_BEGIN]
-            }
-            OAM_BEGIN ... OAM_END => {
-                self.oam[address - OAM_BEGIN]
-            }
-            IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
-                self.read_io_register(address)
-            }
-            ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
-                self.zero_page[address - ZERO_PAGE_BEGIN]
-            }
+            WORKING_RAM_BEGIN...WORKING_RAM_END => self.working_ram[address - WORKING_RAM_BEGIN],
+            OAM_BEGIN...OAM_END => self.oam[address - OAM_BEGIN],
+            IO_REGISTERS_BEGIN...IO_REGISTERS_END => self.read_io_register(address),
+            ZERO_PAGE_BEGIN...ZERO_PAGE_END => self.zero_page[address - ZERO_PAGE_BEGIN],
             _ => {
-                panic!("Reading from an unkown part of memory at address 0x{:x}", address);
+                panic!(
+                    "Reading from an unkown part of memory at address 0x{:x}",
+                    address
+                );
             }
         }
     }
@@ -133,32 +121,35 @@ impl MemoryBus {
     pub fn write_byte(&mut self, address: u16, value: u8) {
         let address = address as usize;
         match address {
-            ROM_BANK_0_BEGIN ... ROM_BANK_0_END => {
+            ROM_BANK_0_BEGIN...ROM_BANK_0_END => {
                 self.rom_bank_0[address] = value;
             }
-            VRAM_BEGIN ... VRAM_END => {
+            VRAM_BEGIN...VRAM_END => {
                 self.gpu.write_vram(address - VRAM_BEGIN, value);
             }
-            EXTERNAL_RAM_BEGIN ... EXTERNAL_RAM_END => {
+            EXTERNAL_RAM_BEGIN...EXTERNAL_RAM_END => {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN] = value;
             }
-            WORKING_RAM_BEGIN ... WORKING_RAM_END => {
+            WORKING_RAM_BEGIN...WORKING_RAM_END => {
                 self.working_ram[address - WORKING_RAM_BEGIN] = value;
             }
-            OAM_BEGIN ... OAM_END => {
+            OAM_BEGIN...OAM_END => {
                 self.oam[address - OAM_BEGIN] = value;
             }
-            IO_REGISTERS_BEGIN ... IO_REGISTERS_END => {
+            IO_REGISTERS_BEGIN...IO_REGISTERS_END => {
                 self.write_io_register(address, value);
             }
-            ZERO_PAGE_BEGIN ... ZERO_PAGE_END => {
+            ZERO_PAGE_BEGIN...ZERO_PAGE_END => {
                 self.zero_page[address - ZERO_PAGE_BEGIN] = value;
             }
             INTERRUPT_ENABLE_REGISTER => {
                 //TODO: update memory bus
             }
             _ => {
-                panic!("Writing to an unkown part of memory at address 0x{:x}", address);
+                panic!(
+                    "Writing to an unkown part of memory at address 0x{:x}",
+                    address
+                );
             }
         }
     }
@@ -167,27 +158,28 @@ impl MemoryBus {
         match address {
             0xFF40 => {
                 // LCD Control
-                bit(self.gpu.lcd_display_enabled)                   << 7 |
-                bit(self.gpu.window_tile_map == TileMap::X9C00)     << 6 |
-                bit(self.gpu.window_display_enabled)                << 5 |
-                bit(self.gpu.background_and_window_data_select ==
-                     BackgroundAndWindowDataSelect::X8000)          << 4 |
-                bit(self.gpu.background_tile_map == TileMap::X9C00) << 3 |
-                bit(self.gpu.object_size == ObjectSize::OS8X16)     << 2 |
-                bit(self.gpu.object_display_enabled)                << 1 |
-                bit(self.gpu.background_display_enabled)
+                bit(self.gpu.lcd_display_enabled) << 7
+                    | bit(self.gpu.window_tile_map == TileMap::X9C00) << 6
+                    | bit(self.gpu.window_display_enabled) << 5
+                    | bit(self.gpu.background_and_window_data_select
+                        == BackgroundAndWindowDataSelect::X8000)
+                        << 4
+                    | bit(self.gpu.background_tile_map == TileMap::X9C00) << 3
+                    | bit(self.gpu.object_size == ObjectSize::OS8X16) << 2
+                    | bit(self.gpu.object_display_enabled) << 1
+                    | bit(self.gpu.background_display_enabled)
             }
             0xFF41 => {
                 // LCD Controller Status
                 let mode: u8 = self.gpu.mode.into();
 
-                0b10000000 |
-                bit(self.gpu.line_equals_line_check_interrupt_enabled) << 6 |
-                bit(self.gpu.oam_interrupt_enabled)                    << 5 |
-                bit(self.gpu.vblank_interrupt_enabled)                 << 4 |
-                bit(self.gpu.hblank_interrupt_enabled)                 << 3 |
-                bit(self.gpu.line_equals_line_check)                   << 2 |
-                mode
+                0b10000000
+                    | bit(self.gpu.line_equals_line_check_interrupt_enabled) << 6
+                    | bit(self.gpu.oam_interrupt_enabled) << 5
+                    | bit(self.gpu.vblank_interrupt_enabled) << 4
+                    | bit(self.gpu.hblank_interrupt_enabled) << 3
+                    | bit(self.gpu.line_equals_line_check) << 2
+                    | mode
             }
 
             0xFF42 => {
@@ -198,7 +190,7 @@ impl MemoryBus {
                 // Current Line
                 self.gpu.line
             }
-            _ => panic!("Reading from an unknown I/O register {:x}", address)
+            _ => panic!("Reading from an unknown I/O register {:x}", address),
         }
     }
 
@@ -262,7 +254,10 @@ impl MemoryBus {
                 // Unmap boot ROM
                 self.boot_rom = None;
             }
-            _ => panic!("Writting '0b{:b}' to an unknown I/O register {:x}", value, address)
+            _ => panic!(
+                "Writting '0b{:b}' to an unknown I/O register {:x}",
+                value, address
+            ),
         }
     }
 
@@ -277,5 +272,9 @@ impl MemoryBus {
 
 #[inline(always)]
 fn bit(condition: bool) -> u8 {
-    if condition { 1 } else { 0 }
+    if condition {
+        1
+    } else {
+        0
+    }
 }
