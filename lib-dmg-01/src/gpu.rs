@@ -475,7 +475,7 @@ impl GPU {
             // Start at the beginning of the line and go pixel by pixel
             for _ in 0..SCREEN_WIDTH {
                 // Grab the tile index specified in the tile map
-                let mut tile_index = self.vram[tile_map_offset + tile_x_index as usize];
+                let tile_index = self.vram[tile_map_offset + tile_x_index as usize];
 
                 let tile_value = self.tile_set[tile_index as usize][row_y_offset as usize]
                     [pixel_x_index as usize];
