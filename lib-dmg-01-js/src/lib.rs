@@ -3,9 +3,9 @@
 #[macro_use]
 extern crate serde_derive;
 
-extern crate wasm_bindgen;
 extern crate console_error_panic_hook;
 extern crate lib_dmg_01;
+extern crate wasm_bindgen;
 
 use wasm_bindgen::prelude::*;
 
@@ -37,7 +37,7 @@ impl CPU {
             Register::AF => self.0.registers.set_af(value),
             Register::BC => self.0.registers.set_bc(value),
             Register::DE => self.0.registers.set_de(value),
-            Register::HL => self.0.registers.set_hl(value)
+            Register::HL => self.0.registers.set_hl(value),
         }
     }
 
@@ -62,7 +62,10 @@ impl CPU {
     }
 
     pub fn get_background_buffer(&self, outline_tiles: bool, show_viewport: bool) -> Vec<u8> {
-        self.0.bus.gpu.background_as_buffer(outline_tiles, show_viewport)
+        self.0
+            .bus
+            .gpu
+            .background_as_buffer(outline_tiles, show_viewport)
     }
 
     pub fn get_tile_at(&self, x: usize, y: usize) -> Vec<u8> {
@@ -82,12 +85,34 @@ impl CPU {
 
 #[wasm_bindgen]
 pub enum Target {
-    A, B, C, D, E, F, H, L, AF, BC, DE, HL
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    H,
+    L,
+    AF,
+    BC,
+    DE,
+    HL,
 }
 
 #[wasm_bindgen]
 pub enum Register {
-    A, B, C, D, E, F, H, L, AF, BC, DE, HL
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    H,
+    L,
+    AF,
+    BC,
+    DE,
+    HL,
 }
 
 #[wasm_bindgen]
@@ -102,7 +127,7 @@ pub fn add(cpu: CPU, target: Target) -> CPU {
         Target::H => Some(instruction::ArithmeticTarget::H),
         Target::L => Some(instruction::ArithmeticTarget::L),
         // TODO: think about returning error for invalid targets
-        _ => None
+        _ => None,
     };
 
     if let Some(target) = target {
