@@ -9,12 +9,12 @@ crate-type = ["cdylib"]
 [dependencies]
 serde = "^1.0.59"
 serde_derive = "^1.0.59"
-console_error_panic_hook = "0.1.4"
+console_error_panic_hook = "0.1.6"
 
 [dependencies.lib-dmg-01]
 path = "../lib-dmg-01"
 features = ["serialize"]
 
 [dependencies.wasm-bindgen]
-version = "=0.2.16"
+version = "=0.2.38"
 features = ["serde-serialize"]

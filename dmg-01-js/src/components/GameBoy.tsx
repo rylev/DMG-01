@@ -23,7 +23,7 @@ class Gameboy extends React.Component<Props, State> {
     super(props)
     this.state = { screenBuffer: new Uint8Array(144 * 160 * 4), runningState: RunningState.Uninitialized }
     _import().then(lib => {
-      this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
+      this.cpu = new lib.CPU(this.props.bios!, this.props.rom)
       this.setState({ runningState: RunningState.Ready })
     })
   }
@@ -132,7 +132,7 @@ class Gameboy extends React.Component<Props, State> {
   reset() {
     _import().then(lib => {
       this.cpu!.free()
-      this.cpu = lib.CPU.new(this.props.bios!, this.props.rom)
+      this.cpu = new lib.CPU(this.props.bios!, this.props.rom)
       this.calculateNextFrameBuffer()
       this.setState({ runningState: RunningState.Ready })
     })
