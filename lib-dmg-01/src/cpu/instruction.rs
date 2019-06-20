@@ -169,6 +169,7 @@ pub enum Instruction {
     RRCA,
     RLCA,
     CPL,
+    DAA,
 
     // Prefix Instructions
     BIT(PrefixTarget, BitPosition),
@@ -501,8 +502,6 @@ impl Instruction {
             0xfd => Some(Instruction::SET(PrefixTarget::L, BitPosition::B7)),
             0xfe => Some(Instruction::SET(PrefixTarget::HLI, BitPosition::B7)),
             0xff => Some(Instruction::SET(PrefixTarget::A, BitPosition::B7)),
-
-            _ => None,
         }
     }
 
@@ -628,6 +627,8 @@ impl Instruction {
             0x0f => Some(Instruction::RRCA),
             0x07 => Some(Instruction::RLCA),
             0x2f => Some(Instruction::CPL),
+
+            0x27 => Some(Instruction::DAA),
 
             0xc3 => Some(Instruction::JP(JumpTest::Always)),
             0xc2 => Some(Instruction::JP(JumpTest::NotZero)),

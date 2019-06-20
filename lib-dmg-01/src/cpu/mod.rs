@@ -198,9 +198,10 @@ macro_rules! prefix_instruction {
                 PrefixTarget::H => manipulate_8bit_register!($self: h => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: l => $work => l),
                 PrefixTarget::HLI => {
-                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let hl = $self.registers.get_hl();
+                    let value = $self.bus.read_byte(hl);
                     let result = $self.$work(value);
-                    $self.registers.set_hl(result as u16);
+                    $self.bus.write_byte(hl, result);
                 }
             }
             let cycles = match $register {
@@ -231,9 +232,10 @@ macro_rules! prefix_instruction {
                 PrefixTarget::H => manipulate_8bit_register!($self: (h @ $bit_position) => $work => h),
                 PrefixTarget::L => manipulate_8bit_register!($self: (l @ $bit_position) => $work => l),
                 PrefixTarget::HLI => {
-                    let value = $self.bus.read_byte($self.registers.get_hl());
+                    let hl = $self.registers.get_hl();
+                    let value = $self.bus.read_byte(hl);
                     let result = $self.$work(value, $bit_position);
-                    $self.registers.set_hl(result as u16);
+                    $self.bus.write_byte(hl, result);
                 }
             }
             let cycles = match $register {
@@ -484,6 +486,8 @@ impl CPU {
                     (self.sp & half_carry_mask) + (value & half_carry_mask) > half_carry_mask;
                 let carry_mask = 0xff;
                 self.registers.f.carry = (self.sp & carry_mask) + (value & carry_mask) > carry_mask;
+                self.registers.f.zero = false;
+                self.registers.f.subtract = false;
 
                 self.sp = result;
 
@@ -652,6 +656,13 @@ impl CPU {
                 // Cycles: 4
                 // Z:- S:1 H:1 C:-
                 manipulate_8bit_register!(self: a => complement => a);
+                (self.pc.wrapping_add(1), 4)
+            }
+            Instruction::DAA => {
+                // PC:+1
+                // Cycles: 4
+                // Z:? S:- H:0 C:?
+                manipulate_8bit_register!(self: a => decimal_adjust => a);
                 (self.pc.wrapping_add(1), 4)
             }
             Instruction::BIT(register, bit_position) => {
@@ -1271,6 +1282,40 @@ impl CPU {
     }
 
     #[inline(always)]
+    fn decimal_adjust(&mut self, value: u8) -> u8 {
+        // huge help from: https://github.com/Gekkio/mooneye-gb/blob/754403792d60821e12835ba454d7e8b66553ed22/core/src/cpu/mod.rs#L812-L846
+
+        let flags = self.registers.f;
+        let mut carry = false;
+
+        let result = if !flags.subtract {
+            let mut result = value;
+            if flags.carry || value > 0x99 {
+                carry = true;
+                result = result.wrapping_add(0x60);
+            }
+            if flags.half_carry || value & 0x0F > 0x09 {
+                result = result.wrapping_add(0x06);
+            }
+            result
+        } else if flags.carry {
+            carry = true;
+            let add = if flags.half_carry { 0x9A } else { 0xA0 };
+            value.wrapping_add(add)
+        } else if flags.half_carry {
+            value.wrapping_add(0xFA)
+        } else {
+            value
+        };
+
+        self.registers.f.zero = result == 0;
+        self.registers.f.half_carry = false;
+        self.registers.f.carry = carry;
+
+        result
+    }
+
+    #[inline(always)]
     fn rotate_right_through_carry_retain_zero(&mut self, value: u8) -> u8 {
         self.rotate_right_through_carry(value, false)
     }
@@ -1334,11 +1379,12 @@ impl CPU {
 
     #[inline(always)]
     fn rotate_left(&mut self, value: u8, set_zero: bool) -> u8 {
-        let new_value = value.rotate_left(1);
+        let carry = (value & 0x80) >> 7;
+        let new_value = value.rotate_left(1) | carry;
         self.registers.f.zero = set_zero && new_value == 0;
         self.registers.f.subtract = false;
         self.registers.f.half_carry = false;
-        self.registers.f.carry = value & 0x80 == 0x80;
+        self.registers.f.carry = carry == 0x01;
         new_value
     }
 
