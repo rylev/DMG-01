@@ -97,6 +97,29 @@ fn empty_tile() -> Tile {
     [[TilePixelValue::Zero; 8]; 8]
 }
 
+#[derive(Eq, PartialEq)]
+pub enum InterruptRequest {
+    None,
+    VBlank,
+    LCDStat,
+    Both,
+}
+
+impl InterruptRequest {
+    fn add(&mut self, other: InterruptRequest) {
+        match self {
+            InterruptRequest::None => *self = other,
+            InterruptRequest::VBlank if other == InterruptRequest::LCDStat => {
+                *self = InterruptRequest::Both
+            }
+            InterruptRequest::LCDStat if other == InterruptRequest::VBlank => {
+                *self = InterruptRequest::Both
+            }
+            _ => {}
+        };
+    }
+}
+
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
 pub struct GPU {
@@ -114,6 +137,7 @@ pub struct GPU {
     pub oam_interrupt_enabled: bool,
     pub vblank_interrupt_enabled: bool,
     pub hblank_interrupt_enabled: bool,
+    pub line_check: u8,
     pub line_equals_line_check: bool,
     pub window_tile_map: TileMap,
     pub background_tile_map: TileMap,
@@ -141,6 +165,7 @@ impl GPU {
             oam_interrupt_enabled: false,
             vblank_interrupt_enabled: false,
             hblank_interrupt_enabled: false,
+            line_check: 0,
             line_equals_line_check: false,
             window_tile_map: TileMap::X9800,
             background_tile_map: TileMap::X9800,
@@ -213,9 +238,10 @@ impl GPU {
         }
     }
 
-    pub fn step(&mut self, cycles: u8) {
+    pub fn step(&mut self, cycles: u8) -> InterruptRequest {
+        let mut request = InterruptRequest::None;
         if !self.lcd_display_enabled {
-            return;
+            return request;
         }
         self.cycles += cycles as u16;
 
@@ -228,9 +254,17 @@ impl GPU {
 
                     if self.line >= 144 {
                         self.mode = Mode::VerticalBlank;
+                        request.add(InterruptRequest::VBlank);
+                        if self.vblank_interrupt_enabled {
+                            request.add(InterruptRequest::LCDStat)
+                        }
                     } else {
                         self.mode = Mode::OAMAccess;
+                        if self.oam_interrupt_enabled {
+                            request.add(InterruptRequest::LCDStat)
+                        }
                     }
+                    self.set_equal_lines_check(&mut request);
                 }
             }
             Mode::VerticalBlank => {
@@ -240,7 +274,11 @@ impl GPU {
                     if self.line == 154 {
                         self.mode = Mode::OAMAccess;
                         self.line = 0;
+                        if self.oam_interrupt_enabled {
+                            request.add(InterruptRequest::LCDStat)
+                        }
                     }
+                    self.set_equal_lines_check(&mut request);
                 }
             }
             Mode::OAMAccess => {
@@ -252,11 +290,24 @@ impl GPU {
             Mode::VRAMAccess => {
                 if self.cycles >= 172 {
                     self.cycles = self.cycles % 172;
+                    if self.hblank_interrupt_enabled {
+                        request.add(InterruptRequest::LCDStat)
+                    }
                     self.mode = Mode::HorizontalBlank;
                     self.render_scan_line()
                 }
             }
         }
+        request
+    }
+
+
+    fn set_equal_lines_check(&mut self, request: &mut InterruptRequest) {
+        let line_equals_line_check = self.line == self.line_check;
+        if line_equals_line_check && self.line_equals_line_check_interrupt_enabled {
+            request.add(InterruptRequest::LCDStat);
+        }
+        self.line_equals_line_check = line_equals_line_check;
     }
 
     pub fn background_as_buffer(&self, outline_tiles: bool, show_viewport: bool) -> Vec<u8> {

@@ -1016,7 +1016,7 @@ impl Instruction {
             0x76 => Some(Instruction::HALT),
             0xf3 => Some(Instruction::DI),
             0xfb => Some(Instruction::EI),
-        
+
 
             _ => None,
         }

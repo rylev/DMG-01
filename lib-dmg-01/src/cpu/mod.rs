@@ -8,7 +8,7 @@ use self::instruction::{
 };
 use self::registers::Registers;
 
-use crate::memory_bus::MemoryBus;
+use crate::memory_bus::{MemoryBus, LCDSTAT_VECTOR, TIMER_VECTOR, VBLANK_VECTOR};
 
 /// # Macros
 ///
@@ -303,10 +303,6 @@ impl CPU {
     }
 
     pub fn step(&mut self) -> u8 {
-        if self.is_halted {
-            return 4;
-        }
-
         let mut instruction_byte = self.bus.read_byte(self.pc);
 
         let prefixed = instruction_byte == 0xCB;
@@ -331,12 +327,36 @@ impl CPU {
 
         self.bus.step(cycles);
 
+        if self.bus.has_interrupt() {
+            self.is_halted = false;
+        }
         if !self.is_halted {
             self.pc = next_pc;
         }
 
-        if self.interrupts_enabled {}
+        if self.interrupts_enabled {
+            if self.bus.interrupt_enable.vblank && self.bus.interrupt_flag.vblank {
+                self.bus.interrupt_flag.vblank = false;
+                self.interrupt(VBLANK_VECTOR)
+            }
+            if self.bus.interrupt_enable.lcdstat && self.bus.interrupt_flag.lcdstat {
+                self.bus.interrupt_flag.lcdstat = false;
+                self.interrupt(LCDSTAT_VECTOR)
+            }
+            if self.bus.interrupt_enable.timer && self.bus.interrupt_flag.timer {
+                self.bus.interrupt_flag.timer = false;
+                self.interrupt(TIMER_VECTOR)
+            }
+        }
         cycles
+    }
+
+    fn interrupt(&mut self, location: u16) {
+        self.interrupts_enabled = false;
+        self.push(self.pc);
+        self.pc = location;
+        // TODO: clock ticks in frame increase
+        self.bus.step(12);
     }
 
     pub fn execute(&mut self, instruction: Instruction) -> (u16, u8) {

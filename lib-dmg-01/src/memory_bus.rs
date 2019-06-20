@@ -1,4 +1,8 @@
-use crate::{gpu::{BackgroundAndWindowDataSelect, ObjectSize, TileMap, GPU}, interrupt_flags::InterruptFlags};
+use crate::{
+    gpu::{BackgroundAndWindowDataSelect, InterruptRequest, ObjectSize, TileMap, GPU},
+    interrupt_flags::InterruptFlags,
+    timer::{Frequency, Timer},
+};
 
 pub const BOOT_ROM_BEGIN: usize = 0x00;
 pub const BOOT_ROM_END: usize = 0xFF;
@@ -37,6 +41,10 @@ pub const ZERO_PAGE_SIZE: usize = ZERO_PAGE_END - ZERO_PAGE_BEGIN + 1;
 
 pub const INTERRUPT_ENABLE_REGISTER: usize = 0xFFFF;
 
+pub const VBLANK_VECTOR: u16 = 0x40;
+pub const LCDSTAT_VECTOR: u16 = 0x48;
+pub const TIMER_VECTOR: u16 = 0x50;
+
 pub struct MemoryBus {
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
@@ -47,8 +55,9 @@ pub struct MemoryBus {
     zero_page: [u8; ZERO_PAGE_SIZE],
     pub gpu: GPU,
     pub interrupt_enable: InterruptFlags,
+    pub interrupt_flag: InterruptFlags,
+    timer: Timer,
 }
-
 
 
 impl MemoryBus {
@@ -86,11 +95,38 @@ impl MemoryBus {
             zero_page: [0; ZERO_PAGE_SIZE],
             gpu: GPU::new(),
             interrupt_enable: InterruptFlags::new(),
+            interrupt_flag: InterruptFlags::new(),
+            timer: Timer::new(Frequency::F4096),
         }
     }
 
     pub fn step(&mut self, cycles: u8) {
-        self.gpu.step(cycles);
+        if self.timer.step(cycles) {
+            self.interrupt_flag.timer = true;
+        }
+        let (vblank, lcd) = match self.gpu.step(cycles) {
+            InterruptRequest::Both => (true, true),
+            InterruptRequest::VBlank => (true, false),
+            InterruptRequest::LCDStat => (false, true),
+            InterruptRequest::None => (false, false),
+        };
+
+        if vblank {
+            self.interrupt_flag.vblank = true;
+        }
+        if lcd {
+            self.interrupt_flag.lcdstat = true;
+        }
+
+    }
+    
+    pub fn has_interrupt(&self) -> bool {
+        (self.interrupt_enable.vblank && self.interrupt_flag.vblank) ||
+               (self.interrupt_enable.lcdstat && self.interrupt_flag.lcdstat) ||
+               (self.interrupt_enable.timer && self.interrupt_flag.timer) ||
+               (self.interrupt_enable.serial && self.interrupt_flag.serial) ||
+               (self.interrupt_enable.joypad && self.interrupt_flag.joypad) 
+
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
@@ -113,6 +149,7 @@ impl MemoryBus {
             OAM_BEGIN...OAM_END => self.oam[address - OAM_BEGIN],
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => self.read_io_register(address),
             ZERO_PAGE_BEGIN...ZERO_PAGE_END => self.zero_page[address - ZERO_PAGE_BEGIN],
+            INTERRUPT_ENABLE_REGISTER => self.interrupt_enable.to_byte(),
             _ => {
                 panic!(
                     "Reading from an unkown part of memory at address 0x{:x}",
@@ -147,7 +184,7 @@ impl MemoryBus {
                 self.zero_page[address - ZERO_PAGE_BEGIN] = value;
             }
             INTERRUPT_ENABLE_REGISTER => {
-                //TODO: update memory bus
+                self.interrupt_enable.from_byte(value);
             }
             _ => {
                 panic!(
@@ -160,6 +197,7 @@ impl MemoryBus {
 
     fn read_io_register(&self, address: usize) -> u8 {
         match address {
+            0xFF0F => self.interrupt_flag.to_byte(),
             0xFF40 => {
                 // LCD Control
                 bit(self.gpu.lcd_display_enabled) << 7
@@ -202,8 +240,22 @@ impl MemoryBus {
         match address {
             0xFF01 => { /* Serial Transfer */ }
             0xFF02 => { /* Serial Transfer Control */ }
-            0xFF07 => { /* Timer Controller */ }
-            0xFF0F => { /* Interrupt Flag */ }
+            0xFF05 => {
+                self.timer.value = value;
+            }
+            0xFF06 => {
+                self.timer.modulo = value;
+            }
+            0xFF07 => {
+                self.timer.frequency = match value & 0b11 {
+                    0b00 => Frequency::F4096,
+                    0b11 => Frequency::F16384,
+                    0b10 => Frequency::F65536,
+                    _ => Frequency::F262144,
+                };
+                self.timer.on = (value & 0b100) == 0b100
+            }
+            0xFF0F => self.interrupt_flag.from_byte(value),
             0xFF11 => { /* Channel 1 Sound Length and Wave */ }
             0xFF12 => { /* Channel 1 Sound Control */ }
             0xFF13 => { /* Channel 1 Frequency lo */ }
@@ -240,7 +292,11 @@ impl MemoryBus {
             }
             0xFF41 => {
                 // LCD Controller Status
-                // TODO: update interrupt enables
+                self.gpu.line_equals_line_check_interrupt_enabled =
+                    (value & 0b1000000) == 0b1000000;
+                self.gpu.oam_interrupt_enabled = (value & 0b100000) == 0b100000;
+                self.gpu.vblank_interrupt_enabled = (value & 0b10000) == 0b10000;
+                self.gpu.hblank_interrupt_enabled = (value & 0b1000) == 0b1000;
             }
             0xFF42 => {
                 // Viewport Y Offset
@@ -249,6 +305,9 @@ impl MemoryBus {
             0xFF43 => {
                 // Viewport X Offset
                 self.gpu.viewport_x_offset = value;
+            }
+            0xFF45 => {
+                self.gpu.line_check = value;
             }
             0xFF47 => {
                 // Background Colors Setting
