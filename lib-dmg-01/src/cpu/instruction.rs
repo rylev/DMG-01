@@ -197,11 +197,13 @@ pub enum Instruction {
     POP(StackTarget),
     CALL(JumpTest),
     RET(JumpTest),
+    RETI,
 
     // Control Instructions
     HALT,
     NOP,
     DI,
+    EI,
 }
 
 impl Instruction {
@@ -1008,10 +1010,13 @@ impl Instruction {
             0xc8 => Some(Instruction::RET(JumpTest::Zero)),
             0xd8 => Some(Instruction::RET(JumpTest::Carry)),
             0xc9 => Some(Instruction::RET(JumpTest::Always)),
+            0xd9 => Some(Instruction::RETI),
 
             0x00 => Some(Instruction::NOP),
             0x76 => Some(Instruction::HALT),
             0xf3 => Some(Instruction::DI),
+            0xfb => Some(Instruction::EI),
+        
 
             _ => None,
         }

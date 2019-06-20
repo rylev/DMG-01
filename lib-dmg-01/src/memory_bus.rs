@@ -1,4 +1,4 @@
-use crate::gpu::{BackgroundAndWindowDataSelect, ObjectSize, TileMap, GPU};
+use crate::{gpu::{BackgroundAndWindowDataSelect, ObjectSize, TileMap, GPU}, interrupt_flags::InterruptFlags};
 
 pub const BOOT_ROM_BEGIN: usize = 0x00;
 pub const BOOT_ROM_END: usize = 0xFF;
@@ -46,7 +46,10 @@ pub struct MemoryBus {
     oam: [u8; OAM_SIZE],
     zero_page: [u8; ZERO_PAGE_SIZE],
     pub gpu: GPU,
+    pub interrupt_enable: InterruptFlags,
 }
+
+
 
 impl MemoryBus {
     pub fn new(boot_rom_buffer: Option<Vec<u8>>, game_rom: Vec<u8>) -> MemoryBus {
@@ -82,6 +85,7 @@ impl MemoryBus {
             oam: [0; OAM_SIZE],
             zero_page: [0; ZERO_PAGE_SIZE],
             gpu: GPU::new(),
+            interrupt_enable: InterruptFlags::new(),
         }
     }
 

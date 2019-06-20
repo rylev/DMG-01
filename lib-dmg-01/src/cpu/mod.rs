@@ -287,6 +287,7 @@ pub struct CPU {
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub bus: MemoryBus,
     is_halted: bool,
+    interrupts_enabled: bool,
 }
 
 impl CPU {
@@ -297,6 +298,7 @@ impl CPU {
             sp: 0x00,
             bus: MemoryBus::new(boot_rom, game_rom),
             is_halted: false,
+            interrupts_enabled: true,
         }
     }
 
@@ -332,6 +334,8 @@ impl CPU {
         if !self.is_halted {
             self.pc = next_pc;
         }
+
+        if self.interrupts_enabled {}
         cycles
     }
 
@@ -1076,6 +1080,13 @@ impl CPU {
                 };
                 (next_pc, cycles)
             }
+            Instruction::RETI => {
+                // PC:?
+                // Cycles: 16
+                // Z:- N:- H:- C:-
+                self.interrupts_enabled = true;
+                (self.pop(), 16)
+            }
             Instruction::NOP => {
                 // PC:+1
                 // Cycles: 4
@@ -1093,7 +1104,14 @@ impl CPU {
                 // PC:+1
                 // Cycles: 4
                 // Z:- N:- H:- C:-
-                // TODO: Disable interrupts
+                self.interrupts_enabled = false;
+                (self.pc.wrapping_add(1), 4)
+            }
+            Instruction::EI => {
+                // PC:+1
+                // Cycles: 4
+                // Z:- N:- H:- C:-
+                self.interrupts_enabled = true;
                 (self.pc.wrapping_add(1), 4)
             }
         }
