@@ -1,3 +1,4 @@
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct InterruptFlags {
     pub vblank: bool,
     pub lcdstat: bool,

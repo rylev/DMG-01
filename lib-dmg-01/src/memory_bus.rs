@@ -28,6 +28,9 @@ pub const WORKING_RAM_BEGIN: usize = 0xC000;
 pub const WORKING_RAM_END: usize = 0xDFFF;
 pub const WORKING_RAM_SIZE: usize = WORKING_RAM_END - WORKING_RAM_BEGIN + 1;
 
+pub const ECHO_RAM_BEGIN: usize = 0xE000;
+pub const ECHO_RAM_END: usize = 0xFDFF;
+
 pub const OAM_BEGIN: usize = 0xFE00;
 pub const OAM_END: usize = 0xFE9F;
 pub const OAM_SIZE: usize = OAM_END - OAM_BEGIN + 1;
@@ -48,13 +51,21 @@ pub const VBLANK_VECTOR: u16 = 0x40;
 pub const LCDSTAT_VECTOR: u16 = 0x48;
 pub const TIMER_VECTOR: u16 = 0x50;
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct MemoryBus {
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     boot_rom: Option<[u8; BOOT_ROM_SIZE]>,
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     rom_bank_n: [u8; ROM_BANK_N_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     external_ram: [u8; EXTERNAL_RAM_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     working_ram: [u8; WORKING_RAM_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     oam: [u8; OAM_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     zero_page: [u8; ZERO_PAGE_SIZE],
     pub gpu: GPU,
     pub interrupt_enable: InterruptFlags,
@@ -120,7 +131,6 @@ impl MemoryBus {
         if lcd {
             self.interrupt_flag.lcdstat = true;
         }
-
     }
 
 
@@ -149,6 +159,7 @@ impl MemoryBus {
                 self.external_ram[address - EXTERNAL_RAM_BEGIN]
             }
             WORKING_RAM_BEGIN...WORKING_RAM_END => self.working_ram[address - WORKING_RAM_BEGIN],
+            ECHO_RAM_BEGIN...ECHO_RAM_END => self.working_ram[address - ECHO_RAM_BEGIN],
             OAM_BEGIN...OAM_END => self.oam[address - OAM_BEGIN],
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => self.read_io_register(address),
             UNUSED_BEGIN...UNUSED_END => {
@@ -206,6 +217,8 @@ impl MemoryBus {
     fn read_io_register(&self, address: usize) -> u8 {
         match address {
             0xFF00 => 0, // TODO: joypad
+            0xFF01 => 0, // TODO: serial
+            0xFF02 => 0, // TODO: serial
             0xFF0F => self.interrupt_flag.to_byte(),
             0xFF40 => {
                 // LCD Control

@@ -2,6 +2,7 @@ use std;
 
 use crate::memory_bus::{VRAM_BEGIN, VRAM_SIZE};
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Color {
     White = 255,
@@ -22,6 +23,7 @@ impl std::convert::From<u8> for Color {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BackgroundColors(Color, Color, Color, Color);
 
@@ -47,24 +49,28 @@ impl std::convert::From<u8> for BackgroundColors {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TileMap {
     X9800,
     X9C00,
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BackgroundAndWindowDataSelect {
     X8000,
     X8800,
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ObjectSize {
     OS8X8,
     OS8X16,
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Mode {
     HorizontalBlank,
@@ -120,6 +126,7 @@ impl InterruptRequest {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct Window {
     pub x: u8,
     pub y: u8,
@@ -127,9 +134,13 @@ pub struct Window {
 
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct GPU {
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub canvas_buffer: [u8; SCREEN_WIDTH * SCREEN_HEIGHT * 4],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub tile_set: [Tile; 384],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub vram: [u8; VRAM_SIZE],
     pub background_colors: BackgroundColors,
     pub viewport_x_offset: u8,
@@ -568,6 +579,15 @@ impl GPU {
                     panic!("TODO: support 0x8800 background and window data select");
                 }
             }
+        }
+
+        if self.object_display_enabled {
+            panic!("Object display enabled");
+        }
+
+        if self.window_display_enabled {
+            panic!("Window display enabled");
+
         }
     }
 

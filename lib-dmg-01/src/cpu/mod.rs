@@ -284,7 +284,6 @@ pub struct CPU {
     pub registers: Registers,
     pc: u16,
     sp: u16,
-    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub bus: MemoryBus,
     is_halted: bool,
     interrupts_enabled: bool,
@@ -360,6 +359,8 @@ impl CPU {
     }
 
     pub fn execute(&mut self, instruction: Instruction) -> (u16, u8) {
+        // OPCodes Map: http://pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+        // OPCodes Explanation: https://web.archive.org/web/20181009131634/http://www.chrisantonellis.com/files/gameboy/gb-instructions.txt
         match instruction {
             Instruction::INC(target) => {
                 // DESCRIPTION: (increment) - increment the value in a specific register by 1

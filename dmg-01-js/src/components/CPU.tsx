@@ -68,7 +68,7 @@ class CPU extends React.Component<Props, State> {
   }
 
   sp(sp: number) {
-    const spStyles : React.CSSProperties = {
+    const spStyles: React.CSSProperties = {
       padding: '2px',
       textAlign: 'center',
       border: 'solid black 1px',

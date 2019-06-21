@@ -1,3 +1,4 @@
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub enum Frequency {
     F4096,
     F16384,
@@ -19,6 +20,7 @@ impl Frequency {
     }
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
 pub struct Timer {
     pub frequency: Frequency,
     cycles: usize,

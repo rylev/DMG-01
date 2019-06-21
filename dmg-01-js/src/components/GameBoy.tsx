@@ -23,7 +23,8 @@ class Gameboy extends React.Component<Props, State> {
     super(props)
     this.state = { screenBuffer: new Uint8Array(144 * 160 * 4), runningState: RunningState.Uninitialized }
     _import().then(lib => {
-      this.cpu = new lib.CPU(this.props.bios!, this.props.rom)
+      this.cpu = new lib.CPU(this.props.bios!, this.props.rom);
+      (window as any).cpu = this.cpu
       this.setState({ runningState: RunningState.Ready })
     })
   }
