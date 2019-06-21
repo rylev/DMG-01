@@ -71,8 +71,76 @@ pub struct MemoryBus {
     pub interrupt_enable: InterruptFlags,
     pub interrupt_flag: InterruptFlags,
     timer: Timer,
+    joypad: Joypad,
 }
 
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[derive(PartialEq, Eq, Debug)]
+pub enum Column {
+    Zero,
+    One,
+}
+
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[derive(Debug)]
+pub struct Joypad {
+    column: Column,
+    start: bool,
+    select: bool,
+    b: bool,
+    a: bool,
+    down: bool,
+    up: bool,
+    left: bool,
+    right: bool,
+}
+
+impl Joypad {
+    pub fn new() -> Joypad {
+        Joypad {
+            column: Column::Zero,
+            start: false,
+            select: false,
+            b: false,
+            a: false,
+            down: false,
+            up: false,
+            left: false,
+            right: false,
+        }
+    }
+
+    pub fn to_byte(&self) -> u8 {
+        let column_bit = if self.column == Column::Zero {
+            1 << 5
+        } else {
+            1 << 4
+        };
+        let bit_4 =
+            bit(!((self.down && self.reading_column_0())
+                || (self.start && self.reading_column_1())))
+                << 3;
+        let bit_3 = bit(
+            !((self.up && self.reading_column_0()) || (self.select && self.reading_column_1()))
+        ) << 2;
+        let bit_2 =
+            bit(!((self.left && self.reading_column_0()) || (self.b && self.reading_column_1())))
+                << 1;
+        let bit_1 =
+            bit(!((self.right && self.reading_column_0()) || (self.a && self.reading_column_1())));
+
+        let row_bits = bit_4 | bit_3 | bit_2 | bit_1;
+        column_bit | row_bits
+    }
+
+    fn reading_column_0(&self) -> bool {
+        self.column == Column::Zero
+    }
+
+    fn reading_column_1(&self) -> bool {
+        self.column == Column::One
+    }
+}
 
 impl MemoryBus {
     pub fn new(boot_rom_buffer: Option<Vec<u8>>, game_rom: Vec<u8>) -> MemoryBus {
@@ -111,6 +179,7 @@ impl MemoryBus {
             interrupt_enable: InterruptFlags::new(),
             interrupt_flag: InterruptFlags::new(),
             timer: Timer::new(Frequency::F4096),
+            joypad: Joypad::new(),
         }
     }
 
@@ -216,7 +285,7 @@ impl MemoryBus {
 
     fn read_io_register(&self, address: usize) -> u8 {
         match address {
-            0xFF00 => 0, // TODO: joypad
+            0xFF00 => self.joypad.to_byte(),
             0xFF01 => 0, // TODO: serial
             0xFF02 => 0, // TODO: serial
             0xFF0F => self.interrupt_flag.to_byte(),
@@ -254,17 +323,19 @@ impl MemoryBus {
                 // Current Line
                 self.gpu.line
             }
-            0xFF4D => {
-                // TODO: CGB KEY1
-                0
-            }
             _ => panic!("Reading from an unknown I/O register {:x}", address),
         }
     }
 
     fn write_io_register(&mut self, address: usize, value: u8) {
         match address {
-            0xFF00 => { /* Joypad */ }
+            0xFF00 => {
+                self.joypad.column = if (value & 0x20) == 0 {
+                    Column::One
+                } else {
+                    Column::Zero
+                };
+            }
             0xFF01 => { /* Serial Transfer */ }
             0xFF02 => { /* Serial Transfer Control */ }
             0xFF05 => {
@@ -372,9 +443,6 @@ impl MemoryBus {
             }
             0xFF4B => {
                 self.gpu.window.x = value;
-            }
-            0xFF4D => {
-                // TODO: CGB Key 1
             }
             0xFF50 => {
                 // Unmap boot ROM

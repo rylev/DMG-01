@@ -581,14 +581,9 @@ impl GPU {
             }
         }
 
-        if self.object_display_enabled {
-            panic!("Object display enabled");
-        }
+        if self.object_display_enabled {}
 
-        if self.window_display_enabled {
-            panic!("Window display enabled");
-
-        }
+        if self.window_display_enabled {}
     }
 
     fn tile_value_to_background_color(&self, tile_value: &TilePixelValue) -> Color {

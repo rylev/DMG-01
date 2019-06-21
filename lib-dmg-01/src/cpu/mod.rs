@@ -978,7 +978,7 @@ impl CPU {
                     // Cycles: 12
                     // Z:- N:- H:- C:-
                     LoadType::ByteAddressFromA => {
-                        let offset = self.bus.read_byte(self.pc + 1) as u16;
+                        let offset = self.read_next_byte() as u16;
                         self.bus.write_byte(0xFF00 + offset, self.registers.a);
                         (self.pc.wrapping_add(2), 12)
                     }
