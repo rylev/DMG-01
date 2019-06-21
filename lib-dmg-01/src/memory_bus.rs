@@ -359,14 +359,27 @@ impl MemoryBus {
             0xFF12 => { /* Channel 1 Sound Control */ }
             0xFF13 => { /* Channel 1 Frequency lo */ }
             0xFF14 => { /* Channel 1 Control */ }
+            0xFF16 => { /* Channel 2 Sound Control */ }
             0xFF17 => { /* Channel 2 Sound Control */ }
+            0xFF18 => { /* Channel 2 Sound Control */ }
             0xFF19 => { /* Channel 2 Frequency hi data*/ }
             0xFF1A => { /* Channel 3 Sound on/off */ }
+            0xFF1B => { /* Channel 3 Sound on/off */ }
+            0xFF1C => { /* Channel 3 Sound on/off */ }
+            0xFF1D => { /* Channel 3 Sound on/off */ }
+            0xFF1E => { /* Channel 3 Sound on/off */ }
+            0xFF20 => { /* Channel 4 Volumn */ }
             0xFF21 => { /* Channel 4 Volumn */ }
+            0xFF22 => { /* Channel 4 Volumn */ }
             0xFF23 => { /* Channel 4 Counter/consecutive */ }
             0xFF24 => { /* Sound  Volume */ }
             0xFF25 => { /* Sound output terminal selection */ }
             0xFF26 => { /* Sound on/off */ }
+            0xff30 | 0xff31 | 0xff32 | 0xff33 | 0xff34 | 0xff35 | 0xff36 | 0xff37 | 0xff38
+            | 0xff39 | 0xff3a | 0xff3b | 0xff3c | 0xff3d | 0xff3e | 0xff3f => {
+                //Wave Pattern RAM
+
+            }
             0xFF40 => {
                 // LCD Control
                 self.gpu.lcd_display_enabled = (value >> 7) == 1;
