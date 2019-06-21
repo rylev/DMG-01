@@ -145,6 +145,26 @@ impl std::convert::From<BitPosition> for u8 {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RSTLocation {
+    X00, X08, X10, X18, X20, X28, X30, X38
+}
+
+impl  RSTLocation {
+    pub fn to_hex(&self) -> u16 {
+        match self {
+            RSTLocation::X00 => 0x00, 
+            RSTLocation::X08 => 0x08, 
+            RSTLocation::X10 => 0x10, 
+            RSTLocation::X18 => 0x18, 
+            RSTLocation::X20 => 0x20, 
+            RSTLocation::X28 => 0x28, 
+            RSTLocation::X30 => 0x30, 
+            RSTLocation::X38 => 0x38
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Instruction {
     // Arithmetic Instructions
     INC(IncDecTarget),
@@ -198,6 +218,7 @@ pub enum Instruction {
     CALL(JumpTest),
     RET(JumpTest),
     RETI,
+    RST(RSTLocation),
 
     // Control Instructions
     HALT,
@@ -1011,6 +1032,15 @@ impl Instruction {
             0xd8 => Some(Instruction::RET(JumpTest::Carry)),
             0xc9 => Some(Instruction::RET(JumpTest::Always)),
             0xd9 => Some(Instruction::RETI),
+
+            0xc7 => Some(Instruction::RST(RSTLocation::X00)),
+            0xd7 => Some(Instruction::RST(RSTLocation::X10)),
+            0xe7 => Some(Instruction::RST(RSTLocation::X20)),
+            0xf7 => Some(Instruction::RST(RSTLocation::X30)),
+            0xcf => Some(Instruction::RST(RSTLocation::X08)),
+            0xdf => Some(Instruction::RST(RSTLocation::X18)),
+            0xef => Some(Instruction::RST(RSTLocation::X28)),
+            0xff => Some(Instruction::RST(RSTLocation::X38)),
 
             0x00 => Some(Instruction::NOP),
             0x76 => Some(Instruction::HALT),

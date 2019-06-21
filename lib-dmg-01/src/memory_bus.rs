@@ -32,6 +32,9 @@ pub const OAM_BEGIN: usize = 0xFE00;
 pub const OAM_END: usize = 0xFE9F;
 pub const OAM_SIZE: usize = OAM_END - OAM_BEGIN + 1;
 
+pub const UNUSED_BEGIN: usize = 0xFEA0;
+pub const UNUSED_END: usize = 0xFEFF;
+
 pub const IO_REGISTERS_BEGIN: usize = 0xFF00;
 pub const IO_REGISTERS_END: usize = 0xFF7F;
 
@@ -119,14 +122,14 @@ impl MemoryBus {
         }
 
     }
-    
-    pub fn has_interrupt(&self) -> bool {
-        (self.interrupt_enable.vblank && self.interrupt_flag.vblank) ||
-               (self.interrupt_enable.lcdstat && self.interrupt_flag.lcdstat) ||
-               (self.interrupt_enable.timer && self.interrupt_flag.timer) ||
-               (self.interrupt_enable.serial && self.interrupt_flag.serial) ||
-               (self.interrupt_enable.joypad && self.interrupt_flag.joypad) 
 
+
+    pub fn has_interrupt(&self) -> bool {
+        (self.interrupt_enable.vblank && self.interrupt_flag.vblank)
+            || (self.interrupt_enable.lcdstat && self.interrupt_flag.lcdstat)
+            || (self.interrupt_enable.timer && self.interrupt_flag.timer)
+            || (self.interrupt_enable.serial && self.interrupt_flag.serial)
+            || (self.interrupt_enable.joypad && self.interrupt_flag.joypad)
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
@@ -148,6 +151,10 @@ impl MemoryBus {
             WORKING_RAM_BEGIN...WORKING_RAM_END => self.working_ram[address - WORKING_RAM_BEGIN],
             OAM_BEGIN...OAM_END => self.oam[address - OAM_BEGIN],
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => self.read_io_register(address),
+            UNUSED_BEGIN...UNUSED_END => {
+                /* Reading this always returns 0*/
+                0
+            }
             ZERO_PAGE_BEGIN...ZERO_PAGE_END => self.zero_page[address - ZERO_PAGE_BEGIN],
             INTERRUPT_ENABLE_REGISTER => self.interrupt_enable.to_byte(),
             _ => {
@@ -180,6 +187,7 @@ impl MemoryBus {
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => {
                 self.write_io_register(address, value);
             }
+            UNUSED_BEGIN...UNUSED_END => { /* Writing to here does nothing */ }
             ZERO_PAGE_BEGIN...ZERO_PAGE_END => {
                 self.zero_page[address - ZERO_PAGE_BEGIN] = value;
             }
@@ -197,6 +205,7 @@ impl MemoryBus {
 
     fn read_io_register(&self, address: usize) -> u8 {
         match address {
+            0xFF00 => 0, // TODO: joypad
             0xFF0F => self.interrupt_flag.to_byte(),
             0xFF40 => {
                 // LCD Control
@@ -232,12 +241,17 @@ impl MemoryBus {
                 // Current Line
                 self.gpu.line
             }
+            0xFF4D => {
+                // TODO: CGB KEY1
+                0
+            }
             _ => panic!("Reading from an unknown I/O register {:x}", address),
         }
     }
 
     fn write_io_register(&mut self, address: usize, value: u8) {
         match address {
+            0xFF00 => { /* Joypad */ }
             0xFF01 => { /* Serial Transfer */ }
             0xFF02 => { /* Serial Transfer Control */ }
             0xFF05 => {
@@ -256,10 +270,16 @@ impl MemoryBus {
                 self.timer.on = (value & 0b100) == 0b100
             }
             0xFF0F => self.interrupt_flag.from_byte(value),
+            0xFF10 => { /* Channel 1 Sweep register */ }
             0xFF11 => { /* Channel 1 Sound Length and Wave */ }
             0xFF12 => { /* Channel 1 Sound Control */ }
             0xFF13 => { /* Channel 1 Frequency lo */ }
             0xFF14 => { /* Channel 1 Control */ }
+            0xFF17 => { /* Channel 2 Sound Control */ }
+            0xFF19 => { /* Channel 2 Frequency hi data*/ }
+            0xFF1A => { /* Channel 3 Sound on/off */ }
+            0xFF21 => { /* Channel 4 Volumn */ }
+            0xFF23 => { /* Channel 4 Counter/consecutive */ }
             0xFF24 => { /* Sound  Volume */ }
             0xFF25 => { /* Sound output terminal selection */ }
             0xFF26 => { /* Sound on/off */ }
@@ -309,13 +329,46 @@ impl MemoryBus {
             0xFF45 => {
                 self.gpu.line_check = value;
             }
+            0xFF46 => {
+                // TODO: account for the fact this takes 160 microseconds
+                let dma_source = (value as u16) << 8;
+                let dma_destination = 0xFE00;
+                for offset in 0..150 {
+                    self.write_byte(
+                        dma_destination + offset,
+                        self.read_byte(dma_source + offset),
+                    )
+                }
+            }
             0xFF47 => {
                 // Background Colors Setting
                 self.gpu.background_colors = value.into();
             }
+            0xFF48 => {
+                self.gpu.obj_0_color_3 = (value >> 6).into();
+                self.gpu.obj_0_color_2 = ((value >> 4) & 0b11).into();
+                self.gpu.obj_0_color_1 = ((value >> 2) & 0b11).into();
+            }
+            0xFF49 => {
+                self.gpu.obj_1_color_3 = (value >> 6).into();
+                self.gpu.obj_1_color_2 = ((value >> 4) & 0b11).into();
+                self.gpu.obj_1_color_1 = ((value >> 2) & 0b11).into();
+            }
+            0xFF4A => {
+                self.gpu.window.y = value;
+            }
+            0xFF4B => {
+                self.gpu.window.x = value;
+            }
+            0xFF4D => {
+                // TODO: CGB Key 1
+            }
             0xFF50 => {
                 // Unmap boot ROM
                 self.boot_rom = None;
+            }
+            0xFF7f => {
+                // Writing to here does nothing
             }
             _ => panic!(
                 "Writting '0b{:b}' to an unknown I/O register {:x}",

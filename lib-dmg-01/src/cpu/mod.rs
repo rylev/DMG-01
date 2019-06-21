@@ -1107,6 +1107,13 @@ impl CPU {
                 self.interrupts_enabled = true;
                 (self.pop(), 16)
             }
+            Instruction::RST(loc) => {
+                // PC:?
+                // Cycles: 24
+                // Z:- N:- H:- C:-
+                self.rst();
+                (loc.to_hex(), 24)
+            }
             Instruction::NOP => {
                 // PC:+1
                 // Cycles: 4
@@ -1549,6 +1556,11 @@ impl CPU {
         } else {
             self.pc.wrapping_add(1)
         }
+    }
+
+    #[inline(always)]
+    fn rst(&mut self) {
+        self.push(self.pc.wrapping_add(1));
     }
 }
 

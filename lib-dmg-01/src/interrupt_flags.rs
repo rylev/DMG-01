@@ -23,12 +23,6 @@ impl InterruptFlags {
         self.timer = (byte & 0b100) == 0b100;
         self.serial = (byte & 0b1000) == 0b1000;
         self.joypad = (byte & 0b10000) == 0b10000;
-        if self.serial {
-            panic!("Serial interrupt not supported")
-        }
-        if self.joypad {
-            panic!("Joypad interrupt not supported")
-        }
     }
 
     pub fn to_byte(&self) -> u8 {

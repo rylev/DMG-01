@@ -120,6 +120,11 @@ impl InterruptRequest {
     }
 }
 
+pub struct Window {
+    pub x: u8,
+    pub y: u8,
+}
+
 const SCREEN_WIDTH: usize = 160;
 const SCREEN_HEIGHT: usize = 144;
 pub struct GPU {
@@ -143,6 +148,13 @@ pub struct GPU {
     pub background_tile_map: TileMap,
     pub background_and_window_data_select: BackgroundAndWindowDataSelect,
     pub object_size: ObjectSize,
+    pub obj_0_color_1: Color,
+    pub obj_0_color_2: Color,
+    pub obj_0_color_3: Color,
+    pub obj_1_color_1: Color,
+    pub obj_1_color_2: Color,
+    pub obj_1_color_3: Color,
+    pub window: Window,
     pub line: u8,
     pub mode: Mode,
     cycles: u16,
@@ -171,6 +183,13 @@ impl GPU {
             background_tile_map: TileMap::X9800,
             background_and_window_data_select: BackgroundAndWindowDataSelect::X8800,
             object_size: ObjectSize::OS8X8,
+            obj_0_color_1: Color::LightGray,
+            obj_0_color_2: Color::DarkGray,
+            obj_0_color_3: Color::Black,
+            obj_1_color_1: Color::LightGray,
+            obj_1_color_2: Color::DarkGray,
+            obj_1_color_3: Color::Black,
+            window: Window { x: 0, y: 0 },
             line: 0,
             cycles: 0,
             mode: Mode::HorizontalBlank,
