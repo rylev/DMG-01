@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import Screen from './Screen'
 import _import from './dmg-01-js'
-import { CPU } from 'lib-dmg-01-js'
+import { CPU, Joypad } from 'lib-dmg-01-js'
 import Internals from './Internals'
 
 enum RunningState {
@@ -152,6 +152,7 @@ class Gameboy extends React.Component<Props, State> {
 
   runFrame(previousTimeDiff: number, runContinuously: boolean) {
     this.frameTimer = setTimeout(() => {
+      this.joypad()
       const t1 = window.performance.now()
       let cyclesElapsed = 0
       while (cyclesElapsed < CYCLES_PER_FRAME) {
@@ -172,6 +173,35 @@ class Gameboy extends React.Component<Props, State> {
   calculateNextFrameBuffer() {
     this.cpu!.canvas_buffer(this.state.screenBuffer)
     this.setState({ screenBuffer: this.state.screenBuffer })
+  }
+
+  joypad() {
+    _import().then(lib => {
+      function setButton(joypad: Joypad, keyCode: number, to: boolean) {
+        switch (keyCode) {
+          case 39: joypad.set_button(lib.Button.Right, to); break;
+          case 37: joypad.set_button(lib.Button.Left, to); break;
+          case 38: joypad.set_button(lib.Button.Up, to); break;
+          case 40: joypad.set_button(lib.Button.Down, to); break;
+          case 90: joypad.set_button(lib.Button.A, to); break;
+          case 88: joypad.set_button(lib.Button.B, to); break;
+          case 32: joypad.set_button(lib.Button.Select, to); break;
+          case 13: joypad.set_button(lib.Button.Start, to); break;
+        }
+      }
+
+      window.onkeydown = (e) => {
+        const joypad = new lib.Joypad()
+        setButton(joypad, e.keyCode, true)
+        this.cpu!.set_joypad(joypad)
+      }
+
+      window.onkeyup = (e) => {
+        const joypad = new lib.Joypad()
+        setButton(joypad, e.keyCode, false)
+        this.cpu!.set_joypad(joypad)
+      }
+    })
   }
 }
 

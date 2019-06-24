@@ -1,7 +1,9 @@
 use crate::{
     gpu::{BackgroundAndWindowDataSelect, InterruptRequest, ObjectSize, TileMap, GPU},
     interrupt_flags::InterruptFlags,
+    joypad::{self,Joypad},
     timer::{Frequency, Timer},
+    utils::bit,
 };
 
 pub const BOOT_ROM_BEGIN: usize = 0x00;
@@ -69,75 +71,7 @@ pub struct MemoryBus {
     pub interrupt_enable: InterruptFlags,
     pub interrupt_flag: InterruptFlags,
     timer: Timer,
-    joypad: Joypad,
-}
-
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[derive(PartialEq, Eq, Debug)]
-pub enum Column {
-    Zero,
-    One,
-}
-
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[derive(Debug)]
-pub struct Joypad {
-    column: Column,
-    start: bool,
-    select: bool,
-    b: bool,
-    a: bool,
-    down: bool,
-    up: bool,
-    left: bool,
-    right: bool,
-}
-
-impl Joypad {
-    pub fn new() -> Joypad {
-        Joypad {
-            column: Column::Zero,
-            start: false,
-            select: false,
-            b: false,
-            a: false,
-            down: false,
-            up: false,
-            left: false,
-            right: false,
-        }
-    }
-
-    pub fn to_byte(&self) -> u8 {
-        let column_bit = if self.column == Column::Zero {
-            1 << 5
-        } else {
-            1 << 4
-        };
-        let bit_4 =
-            bit(!((self.down && self.reading_column_0())
-                || (self.start && self.reading_column_1())))
-                << 3;
-        let bit_3 = bit(
-            !((self.up && self.reading_column_0()) || (self.select && self.reading_column_1()))
-        ) << 2;
-        let bit_2 =
-            bit(!((self.left && self.reading_column_0()) || (self.b && self.reading_column_1())))
-                << 1;
-        let bit_1 =
-            bit(!((self.right && self.reading_column_0()) || (self.a && self.reading_column_1())));
-
-        let row_bits = bit_4 | bit_3 | bit_2 | bit_1;
-        column_bit | row_bits
-    }
-
-    fn reading_column_0(&self) -> bool {
-        self.column == Column::Zero
-    }
-
-    fn reading_column_1(&self) -> bool {
-        self.column == Column::One
-    }
+    pub joypad: Joypad,
 }
 
 impl MemoryBus {
@@ -328,9 +262,9 @@ impl MemoryBus {
         match address {
             0xFF00 => {
                 self.joypad.column = if (value & 0x20) == 0 {
-                    Column::One
+                    joypad::Column::One
                 } else {
-                    Column::Zero
+                    joypad::Column::Zero
                 };
             }
             0xFF01 => { /* Serial Transfer */ }
@@ -474,14 +408,5 @@ impl MemoryBus {
             result.push(self.read_byte(i));
         }
         result
-    }
-}
-
-#[inline(always)]
-fn bit(condition: bool) -> u8 {
-    if condition {
-        1
-    } else {
-        0
     }
 }
