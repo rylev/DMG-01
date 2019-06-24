@@ -1,7 +1,7 @@
 use crate::{
     gpu::{BackgroundAndWindowDataSelect, InterruptRequest, ObjectSize, TileMap, GPU},
     interrupt_flags::InterruptFlags,
-    joypad::{self,Joypad},
+    joypad::{self, Joypad},
     timer::{Frequency, Timer},
     utils::bit,
 };
@@ -71,6 +71,7 @@ pub struct MemoryBus {
     pub interrupt_enable: InterruptFlags,
     pub interrupt_flag: InterruptFlags,
     timer: Timer,
+    divider: Timer,
     pub joypad: Joypad,
 }
 
@@ -97,6 +98,8 @@ impl MemoryBus {
         for i in 0..ROM_BANK_N_SIZE {
             rom_bank_n[i] = game_rom[ROM_BANK_0_SIZE + i];
         }
+        let mut divider = Timer::new(Frequency::F16384);
+        divider.on = true;
         MemoryBus {
             // Note: instead of modeling memory as one array of length 0xFFFF, we'll
             // break memory up into it's logical parts.
@@ -110,6 +113,7 @@ impl MemoryBus {
             interrupt_enable: InterruptFlags::new(),
             interrupt_flag: InterruptFlags::new(),
             timer: Timer::new(Frequency::F4096),
+            divider,
             joypad: Joypad::new(),
         }
     }
@@ -118,6 +122,7 @@ impl MemoryBus {
         if self.timer.step(cycles) {
             self.interrupt_flag.timer = true;
         }
+        self.divider.step(cycles);
         let (vblank, lcd) = match self.gpu.step(cycles) {
             InterruptRequest::Both => (true, true),
             InterruptRequest::VBlank => (true, false),
@@ -219,6 +224,7 @@ impl MemoryBus {
             0xFF00 => self.joypad.to_byte(),
             0xFF01 => 0, // TODO: serial
             0xFF02 => 0, // TODO: serial
+            0xFF04 => self.divider.value,
             0xFF0F => self.interrupt_flag.to_byte(),
             0xFF40 => {
                 // LCD Control
@@ -269,6 +275,7 @@ impl MemoryBus {
             }
             0xFF01 => { /* Serial Transfer */ }
             0xFF02 => { /* Serial Transfer Control */ }
+            0xFF04 => self.divider.value = 0,
             0xFF05 => {
                 self.timer.value = value;
             }
