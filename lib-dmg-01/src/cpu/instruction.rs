@@ -146,20 +146,27 @@ impl std::convert::From<BitPosition> for u8 {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RSTLocation {
-    X00, X08, X10, X18, X20, X28, X30, X38
+    X00,
+    X08,
+    X10,
+    X18,
+    X20,
+    X28,
+    X30,
+    X38,
 }
 
-impl  RSTLocation {
+impl RSTLocation {
     pub fn to_hex(&self) -> u16 {
         match self {
-            RSTLocation::X00 => 0x00, 
-            RSTLocation::X08 => 0x08, 
-            RSTLocation::X10 => 0x10, 
-            RSTLocation::X18 => 0x18, 
-            RSTLocation::X20 => 0x20, 
-            RSTLocation::X28 => 0x28, 
-            RSTLocation::X30 => 0x30, 
-            RSTLocation::X38 => 0x38
+            RSTLocation::X00 => 0x00,
+            RSTLocation::X08 => 0x08,
+            RSTLocation::X10 => 0x10,
+            RSTLocation::X18 => 0x18,
+            RSTLocation::X20 => 0x20,
+            RSTLocation::X28 => 0x28,
+            RSTLocation::X30 => 0x30,
+            RSTLocation::X38 => 0x38,
         }
     }
 }
@@ -1046,7 +1053,6 @@ impl Instruction {
             0x76 => Some(Instruction::HALT),
             0xf3 => Some(Instruction::DI),
             0xfb => Some(Instruction::EI),
-
 
             _ => None,
         }

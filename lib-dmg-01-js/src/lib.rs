@@ -173,7 +173,6 @@ impl Joypad {
             Button::Left => self.0.left = to,
         }
     }
-
 }
 
 #[cfg(test)]

@@ -33,6 +33,5 @@ impl InterruptFlags {
                ((if self.timer { 1 } else { 0 }) << 2) |
                ((if self.lcdstat { 1 } else { 0 }) << 1) |
                (if self.vblank { 1 } else { 0 })
-
     }
 }

@@ -408,7 +408,6 @@ impl GPU {
         request
     }
 
-
     fn set_equal_lines_check(&mut self, request: &mut InterruptRequest) {
         let line_equals_line_check = self.line == self.line_check;
         if line_equals_line_check && self.line_equals_line_check_interrupt_enabled {
@@ -706,7 +705,6 @@ impl GPU {
                         }
                         canvas_offset += 4;
                     }
-
                 }
             }
         }

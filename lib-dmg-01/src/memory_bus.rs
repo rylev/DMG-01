@@ -138,7 +138,6 @@ impl MemoryBus {
         }
     }
 
-
     pub fn has_interrupt(&self) -> bool {
         (self.interrupt_enable.vblank && self.interrupt_flag.vblank)
             || (self.interrupt_enable.lcdstat && self.interrupt_flag.lcdstat)

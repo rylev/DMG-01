@@ -1,37 +1,47 @@
-extern crate minifb;
 extern crate clap;
 extern crate lib_dmg_01;
+extern crate minifb;
 
-use clap::{Arg, App};
-use minifb::{WindowOptions, Window, Key};
+use clap::{App, Arg};
+use minifb::{Key, Window, WindowOptions};
 
 use std::io::Read;
-use std::time::{Instant, Duration};
 use std::thread::sleep;
+use std::time::{Duration, Instant};
 
-use lib_dmg_01::cpu::{ CPU };
+use lib_dmg_01::cpu::CPU;
 
 const ENLARGEMENT_FACTOR: usize = 1;
-const WINDOW_DIMENSIONS: [usize; 2] = [(160 * ENLARGEMENT_FACTOR),
-                                     (144 * ENLARGEMENT_FACTOR)];
+const WINDOW_DIMENSIONS: [usize; 2] = [(160 * ENLARGEMENT_FACTOR), (144 * ENLARGEMENT_FACTOR)];
 
 fn main() {
     let matches = App::new("DMG-01")
         .author("Ryan Levick <ryan.levick@gmail.com>")
-        .arg(Arg::with_name("boot rom")
-            .short("b")
-            .value_name("FILE"))
-        .arg(Arg::with_name("rom")
-             .short("r")
-             .required(true)
-             .value_name("FILE"))
+        .arg(Arg::with_name("boot rom").short("b").value_name("FILE"))
+        .arg(
+            Arg::with_name("rom")
+                .short("r")
+                .required(true)
+                .value_name("FILE"),
+        )
         .get_matches();
 
-    let boot_buffer = matches.value_of("boot rom").map(|path| buffer_from_file(path));
-    let game_buffer = matches.value_of("rom").map(|path| buffer_from_file(path)).unwrap();
+    let boot_buffer = matches
+        .value_of("boot rom")
+        .map(|path| buffer_from_file(path));
+    let game_buffer = matches
+        .value_of("rom")
+        .map(|path| buffer_from_file(path))
+        .unwrap();
 
     let cpu = CPU::new(boot_buffer, game_buffer);
-    let window = Window::new("DMG-01", WINDOW_DIMENSIONS[0], WINDOW_DIMENSIONS[1], WindowOptions::default()).unwrap();
+    let window = Window::new(
+        "DMG-01",
+        WINDOW_DIMENSIONS[0],
+        WINDOW_DIMENSIONS[1],
+        WindowOptions::default(),
+    )
+    .unwrap();
 
     run(cpu, window)
 }
@@ -52,7 +62,7 @@ fn run(mut cpu: CPU, mut window: Window) {
         let cycles_to_run = delta * ONE_SECOND_IN_CYCLES as f64;
 
         let mut cycles_elapsed = 0;
-        while cycles_elapsed <= cycles_to_run as usize{
+        while cycles_elapsed <= cycles_to_run as usize {
             cycles_elapsed += cpu.step() as usize;
         }
         cycles_elapsed_in_frame += cycles_elapsed;
@@ -60,7 +70,10 @@ fn run(mut cpu: CPU, mut window: Window) {
         // TODO: Consider updating buffer after every line is rendered.
         if cycles_elapsed_in_frame >= ONE_FRAME_IN_CYCLES {
             for (i, pixel) in cpu.bus.gpu.canvas_buffer.chunks(4).enumerate() {
-                buffer[i] = (pixel[3] as u32) << 24 | (pixel[2] as u32) << 16 | (pixel[1] as u32) << 8 | (pixel[0] as u32)
+                buffer[i] = (pixel[3] as u32) << 24
+                    | (pixel[2] as u32) << 16
+                    | (pixel[1] as u32) << 8
+                    | (pixel[0] as u32)
             }
             window.update_with_buffer(&buffer).unwrap();
             cycles_elapsed_in_frame = 0;
