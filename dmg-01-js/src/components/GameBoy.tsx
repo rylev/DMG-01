@@ -15,6 +15,8 @@ enum RunningState {
 type Props = { bios: Uint8Array | undefined, rom: Uint8Array }
 type State = { screenBuffer: Uint8Array, runningState: RunningState }
 
+const CYCLES_PER_FRAME = 69905;
+
 class Gameboy extends React.Component<Props, State> {
   cpu: CPU | undefined
   frameTimer: NodeJS.Timer | undefined
@@ -149,10 +151,10 @@ class Gameboy extends React.Component<Props, State> {
   }
 
   runFrame(previousTimeDiff: number, runContinuously: boolean) {
-    const t1 = window.performance.now()
     this.frameTimer = setTimeout(() => {
+      const t1 = window.performance.now()
       let cyclesElapsed = 0
-      while (cyclesElapsed < 70224) {
+      while (cyclesElapsed < CYCLES_PER_FRAME) {
         cyclesElapsed += this.cpu!.step()
       }
       if (runContinuously) {

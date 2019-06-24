@@ -309,7 +309,7 @@ impl CPU {
             instruction_byte = self.read_next_byte();
         }
 
-        let (next_pc, cycles) =
+        let (next_pc, mut cycles) =
             if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
                 self.execute(instruction)
             } else {
@@ -333,19 +333,26 @@ impl CPU {
             self.pc = next_pc;
         }
 
+        let mut interrupted = false;
         if self.interrupts_enabled {
             if self.bus.interrupt_enable.vblank && self.bus.interrupt_flag.vblank {
+                interrupted = true;
                 self.bus.interrupt_flag.vblank = false;
                 self.interrupt(VBLANK_VECTOR)
             }
             if self.bus.interrupt_enable.lcdstat && self.bus.interrupt_flag.lcdstat {
+                interrupted = true;
                 self.bus.interrupt_flag.lcdstat = false;
                 self.interrupt(LCDSTAT_VECTOR)
             }
             if self.bus.interrupt_enable.timer && self.bus.interrupt_flag.timer {
+                interrupted = true;
                 self.bus.interrupt_flag.timer = false;
                 self.interrupt(TIMER_VECTOR)
             }
+        }
+        if interrupted {
+            cycles += 12;
         }
         cycles
     }
@@ -354,7 +361,6 @@ impl CPU {
         self.interrupts_enabled = false;
         self.push(self.pc);
         self.pc = location;
-        // TODO: clock ticks in frame increase
         self.bus.step(12);
     }
 
