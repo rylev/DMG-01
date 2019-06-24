@@ -1,7 +1,8 @@
 use std;
 
-use crate::memory_bus::{VRAM_BEGIN, VRAM_SIZE};
+use crate::memory_bus::{OAM_SIZE, VRAM_BEGIN, VRAM_SIZE};
 
+const NUMBER_OF_OBJECTS: usize = 40;
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Color {
@@ -96,11 +97,54 @@ pub enum TilePixelValue {
     Two,
     Three,
 }
+impl Default for TilePixelValue {
+    fn default() -> Self {
+        TilePixelValue::Zero
+    }
+}
 
-type Tile = [[TilePixelValue; 8]; 8];
+type TileRow = [TilePixelValue; 8];
+type Tile = [TileRow; 8];
 #[inline(always)]
 fn empty_tile() -> Tile {
-    [[TilePixelValue::Zero; 8]; 8]
+    [[Default::default(); 8]; 8]
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct ObjectData {
+    x: i16,
+    y: i16,
+    tile: u8,
+    palette: ObjectPalette,
+    xflip: bool,
+    yflip: bool,
+    priority: bool,
+}
+
+impl Default for ObjectData {
+    fn default() -> Self {
+        ObjectData {
+            x: -16,
+            y: -8,
+            tile: Default::default(),
+            palette: Default::default(),
+            xflip: Default::default(),
+            yflip: Default::default(),
+            priority: Default::default(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum ObjectPalette {
+    Zero,
+    One,
+}
+
+impl Default for ObjectPalette {
+    fn default() -> Self {
+        ObjectPalette::Zero
+    }
 }
 
 #[derive(Eq, PartialEq)]
@@ -141,7 +185,11 @@ pub struct GPU {
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub tile_set: [Tile; 384],
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
+    pub object_data: [ObjectData; NUMBER_OF_OBJECTS],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     pub vram: [u8; VRAM_SIZE],
+    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
+    pub oam: [u8; OAM_SIZE],
     pub background_colors: BackgroundColors,
     pub viewport_x_offset: u8,
     pub viewport_y_offset: u8,
@@ -176,7 +224,9 @@ impl GPU {
         GPU {
             canvas_buffer: [0; SCREEN_WIDTH * SCREEN_HEIGHT * 4],
             tile_set: [empty_tile(); 384],
+            object_data: [Default::default(); NUMBER_OF_OBJECTS],
             vram: [0; VRAM_SIZE],
+            oam: [0; OAM_SIZE],
             background_colors: BackgroundColors::new(),
             viewport_x_offset: 0,
             viewport_y_offset: 0,
@@ -265,6 +315,33 @@ impl GPU {
             };
 
             self.tile_set[tile_index][row_index][pixel_index] = value;
+        }
+    }
+
+    pub fn write_oam(&mut self, index: usize, value: u8) {
+        self.oam[index] = value;
+        let object_index = index / 4;
+        if object_index > NUMBER_OF_OBJECTS {
+            return;
+        }
+
+        let byte = index % 4;
+
+        let mut data = self.object_data.get_mut(object_index).unwrap();
+        match byte {
+            0 => data.y = (value as i16) - 0x10,
+            1 => data.x = (value as i16) - 0x8,
+            2 => data.tile = value,
+            _ => {
+                data.palette = if (value & 0x10) != 0 {
+                    ObjectPalette::One
+                } else {
+                    ObjectPalette::Zero
+                };
+                data.xflip = (value & 0x20) != 0;
+                data.yflip = (value & 0x40) != 0;
+                data.priority = (value & 0x80) == 0;
+            }
         }
     }
 
@@ -521,6 +598,7 @@ impl GPU {
     }
 
     fn render_scan_line(&mut self) {
+        let mut scan_line: [TilePixelValue; SCREEN_WIDTH] = [Default::default(); SCREEN_WIDTH];
         if self.background_display_enabled {
             // The x index of the current tile
             let mut tile_x_index = self.viewport_x_offset / 8;
@@ -554,7 +632,7 @@ impl GPU {
 
             let mut canvas_buffer_offset = self.line as usize * SCREEN_WIDTH * 4;
             // Start at the beginning of the line and go pixel by pixel
-            for _ in 0..SCREEN_WIDTH {
+            for line_x in 0..SCREEN_WIDTH {
                 // Grab the tile index specified in the tile map
                 let tile_index = self.vram[tile_map_offset + tile_x_index as usize];
 
@@ -567,6 +645,7 @@ impl GPU {
                 self.canvas_buffer[canvas_buffer_offset + 2] = color as u8;
                 self.canvas_buffer[canvas_buffer_offset + 3] = 255;
                 canvas_buffer_offset += 4;
+                scan_line[line_x] = tile_value;
                 // Loop through the 8 pixels within the tile
                 pixel_x_index = (pixel_x_index + 1) % 8;
 
@@ -581,7 +660,56 @@ impl GPU {
             }
         }
 
-        if self.object_display_enabled {}
+        if self.object_display_enabled {
+            let object_height = if self.object_size == ObjectSize::OS8X16 {
+                16
+            } else {
+                8
+            };
+            for object in self.object_data.iter() {
+                let line = self.line as i16;
+                if object.y <= line && object.y + object_height > line {
+                    let pixel_y_offset = line - object.y;
+                    let tile_index = if object_height == 16 && (!object.yflip && pixel_y_offset > 7)
+                        || (object.yflip && pixel_y_offset <= 7)
+                    {
+                        object.tile + 1
+                    } else {
+                        object.tile
+                    };
+
+                    let tile = self.tile_set[tile_index as usize];
+                    let tile_row = if object.yflip {
+                        tile[(7 - (pixel_y_offset % 8)) as usize]
+                    } else {
+                        tile[(pixel_y_offset % 8) as usize]
+                    };
+
+                    let canvas_y_offset = line as i32 * SCREEN_WIDTH as i32;
+                    let mut canvas_offset = ((canvas_y_offset + object.x as i32) * 4) as usize;
+                    for x in 0..8i16 {
+                        let pixel_x_offset = if object.xflip { (7 - x) } else { x } as usize;
+                        let x_offset = object.x + x;
+                        let pixel = tile_row[pixel_x_offset];
+                        if x_offset >= 0
+                            && x_offset < SCREEN_WIDTH as i16
+                            && pixel != TilePixelValue::Zero
+                            && (object.priority
+                                || scan_line[x_offset as usize] == TilePixelValue::Zero)
+                        {
+                            let color = self.tile_value_to_background_color(&pixel);
+
+                            self.canvas_buffer[canvas_offset + 0] = color as u8;
+                            self.canvas_buffer[canvas_offset + 1] = color as u8;
+                            self.canvas_buffer[canvas_offset + 2] = color as u8;
+                            self.canvas_buffer[canvas_offset + 3] = 255;
+                        }
+                        canvas_offset += 4;
+                    }
+
+                }
+            }
+        }
 
         if self.window_display_enabled {}
     }

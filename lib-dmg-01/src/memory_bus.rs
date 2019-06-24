@@ -64,8 +64,6 @@ pub struct MemoryBus {
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     working_ram: [u8; WORKING_RAM_SIZE],
     #[cfg_attr(feature = "serialize", serde(skip_serializing))]
-    oam: [u8; OAM_SIZE],
-    #[cfg_attr(feature = "serialize", serde(skip_serializing))]
     zero_page: [u8; ZERO_PAGE_SIZE],
     pub gpu: GPU,
     pub interrupt_enable: InterruptFlags,
@@ -173,7 +171,6 @@ impl MemoryBus {
             rom_bank_n,
             external_ram: [0; EXTERNAL_RAM_SIZE],
             working_ram: [0; WORKING_RAM_SIZE],
-            oam: [0; OAM_SIZE],
             zero_page: [0; ZERO_PAGE_SIZE],
             gpu: GPU::new(),
             interrupt_enable: InterruptFlags::new(),
@@ -229,7 +226,7 @@ impl MemoryBus {
             }
             WORKING_RAM_BEGIN...WORKING_RAM_END => self.working_ram[address - WORKING_RAM_BEGIN],
             ECHO_RAM_BEGIN...ECHO_RAM_END => self.working_ram[address - ECHO_RAM_BEGIN],
-            OAM_BEGIN...OAM_END => self.oam[address - OAM_BEGIN],
+            OAM_BEGIN...OAM_END => self.gpu.oam[address - OAM_BEGIN],
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => self.read_io_register(address),
             UNUSED_BEGIN...UNUSED_END => {
                 /* Reading this always returns 0*/
@@ -262,7 +259,7 @@ impl MemoryBus {
                 self.working_ram[address - WORKING_RAM_BEGIN] = value;
             }
             OAM_BEGIN...OAM_END => {
-                self.oam[address - OAM_BEGIN] = value;
+                self.gpu.write_oam(address - OAM_BEGIN, value);
             }
             IO_REGISTERS_BEGIN...IO_REGISTERS_END => {
                 self.write_io_register(address, value);
