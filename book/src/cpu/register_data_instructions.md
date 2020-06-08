@@ -93,7 +93,7 @@ There are four flags defined on the flags register:
 * Zero: set to true if the result of the operation is equal to 0.
 * Subtract: set to true if the operation was a subtraction.
 * Carry: set to true if the operation resulted in an overflow.
-* Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elemetry arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.
+* Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elementary arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.
   ```ignore
         lower nibble            lower nibble
            ┌--┐                    ┌--┐
@@ -127,7 +127,7 @@ impl CPU {
 
 ## How Do We Know?
 
-Yout might be wondering, "how do we know what to do given a certain the instruction". The short answer is that this is just how the chip was specified  and manufactured to worked. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a "data sheet"),or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions [in the instruction guide](../appendix/instruction_guide/index.html).
+You might be wondering, "how do we know what to do given a certain instruction". The short answer is that this is just how the chip was specified  and manufactured to work. We know this because people have either read the original user's manual for the Game Boy's CPU chip (known as a "data sheet"), or they've written test programs for the chip that call specific instructions and see what happens. Luckily you don't need to do this. You can find descriptions of all the instructions [in the instruction guide](../appendix/instruction_guide/index.html).
 
 > *Side Note*
 >
@@ -158,12 +158,12 @@ What are the other types of instructions that act on register data?
 * **SRL** (shift right logical) - bit shift a specific register right by 1
 * **RR** (rotate right) - bit rotate a specific register right by 1 through the carry flag
 * **RL** (rotate left) - bit rotate a specific register left by 1 through the carry flag
-* **RRC** (rorate right) - bit rotate a specific register right by 1 (not through the carry flag)
-* **RLC** (rorate left) - bit rotate a specific register left by 1 (not through the carry flag)
+* **RRC** (rotate right) - bit rotate a specific register right by 1 (not through the carry flag)
+* **RLC** (rotate left) - bit rotate a specific register left by 1 (not through the carry flag)
 * **SRA** (shift right arithmetic) - arithmetic shift a specific register right by 1
 * **SLA** (shift left arithmetic) - arithmetic shift a specific register left by 1
 * **SWAP** (swap nibbles) - switch upper and lower nibble of a specific register
 
-Reading through the guide on instructions, should give you enough information to implement all the instructions yourself.
+Reading through the guide on instructions should give you enough information to implement all the instructions yourself.
 
 Next, we'll be looking at how the CPU keeps track of which instructions to execute as well as different types of instructions that can change where we are in a particular program.
