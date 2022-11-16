@@ -20,7 +20,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.3.13",
     "css-loader": "^1.0.0",
-    "source-map-loader": "^0.2.3",
+    "source-map-loader": "^0.2.4",
     "style-loader": "^0.22.1",
     "typescript": "^3.0.1",
     "webpack": "^4.16.5",
