@@ -28,7 +28,7 @@ When disucssing numbers composed of multiple bytes, for example 0xFFA1 (composed
 
 ## Endianess
 
-Let's take the example of two bytes sitting next to each other in memory: first at address 0 there is 0xFF and then at address 1 there is 0x16. If we want to read these two bytes together as a 16 bit number, should it be read as 0xFF16 or as 0x16FF? Even if one way or the other makes more sense to you, the answer is: it depends on the machine. In the case of the Game Boy the order is 0xFF16 - in other words the least significant byte is first in memory. This scheme is known as little-endian and its opposite is known as big-endian.
+Let's take the example of two bytes sitting next to each other in memory: first at address 0 there is 0xFF and then at address 1 there is 0x16. If we want to read these two bytes together as a 16 bit number, should it be read as 0xFF16 or as 0x16FF? Even if one way or the other makes more sense to you, the answer is: it depends on the machine. In the case of the Game Boy it is read as 0x16FF - in other words the least significant byte is first in memory. This scheme is known as little-endian and its opposite is known as big-endian.
 
 ### Signed Numbers
 
