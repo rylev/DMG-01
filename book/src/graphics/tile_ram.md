@@ -34,10 +34,10 @@ The bit value to color mapping is as follows:
 
 ```ignore
 +------+------------+
-| 0b11 | white      |
-| 0b10 | dark-gray  |
-| 0b01 | light-gray |
-| 0b00 | black      |
+| 0b00 | white      |
+| 0b01 | dark-gray  |
+| 0b10 | light-gray |
+| 0b11 | black      |
 +------+------------+
 ```
 
