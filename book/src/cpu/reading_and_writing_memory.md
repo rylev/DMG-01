@@ -100,7 +100,7 @@ struct CPU {
 
 We have a stack pointer now so we know where our stack is, but how do we push and pop from this stack?
 
-The Game Boy's CPU understands two insructions for doing just that. `PUSH` will write the contents of any 16-bit register into the stack and `POP` writes the head of stack into any 16-bit register.
+The Game Boy's CPU understands two instructions for doing just that. `PUSH` will write the contents of any 16-bit register into the stack and `POP` writes the head of stack into any 16-bit register.
 
 Here's what's actually happening when a `PUSH` is performed:
 * _Decrease_ the stack pointer by 1.
@@ -145,7 +145,7 @@ impl CPU {
 }
 ```
 
-We can now push elements on to the stack. Here's what's actually happening when a `PUSH` is performed:
+We can now push elements on to the stack. Here's what's actually happening when a `POP` is performed:
 * Read the least significant byte of the 16 bit value from memory at the location the stack pointer is pointing to
 * _Increase_ the stack pointer by 1.
 * Read the most significant byte of the 16 bit value from memory at the location the stack pointer is now pointing to

@@ -14,7 +14,7 @@ So our memory is simply an long array of 8-bit numbers (0xFFFF or 65,536 of them
 
 ## The Program Counter
 
-Along with the register data, our CPU also holds on to a 16-bit number called the progam counter (often abbreviated as PC) which tells us which instruction the Game Boy is currently executing. This 16-bit number is capable of addressing of the of 0xFFFF numbers that live in memory. In fact, when we talk about the memory array we don't usually use the term "index", but instead the term "address".
+Along with the register data, our CPU also holds on to a 16-bit number called the progam counter (often abbreviated as PC) which tells us which instruction the Game Boy is currently executing. This 16-bit number is capable of addressing of the 0xFFFF numbers that live in memory. In fact, when we talk about the memory array we don't usually use the term "index", but instead the term "address".
 
 Let's add a program counter to our CPU as well as memory that we can address from the CPU.
 
