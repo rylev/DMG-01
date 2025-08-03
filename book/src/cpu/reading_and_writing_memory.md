@@ -75,15 +75,15 @@ Let's take a look at the other types of loads that there are:
 * `AFromByteAddress`: Just like `AFromIndirect` except the memory address is some address in the very last byte of memory.
 * `ByteAddressFromA`: Just like `IndirectFromA` except the memory address is some address in the very last byte of memory.
 
-For more detail on these instructions checkout the [instruction guide](../appendix/instruction_guide/index.html).
+For more detail on these instructions check out the [instruction guide](../appendix/instruction_guide/index.html).
 
-These instructions have been for writing and writing to anywhere in memory, but there are a set of instructions that deal with a specific piece of memory called the stack. Let's take a look at what the stack is and the instructions that are used to manipulate the stack.
+These instructions have been for reading and writing to anywhere in memory, but there are a set of instructions that deal with a specific piece of memory called the stack. Let's take a look at what the stack is and the instructions that are used to manipulate the stack.
 
 ## The Stack
 
 Before we can look at the piece of memory in the Game Boy known as the stack, we need to have a good understanding of what a stack is more generally. A stack is a simple data structure that allows you to add values to it (a.k.a "push" values) and then get these values back (a.k.a pop them off the stack). The key thing to remember with a stack is that you pop items off the stack in reverse order from which you pushed the items on - i.e., if you pushed three items "A", "B", "C" on to a stack in that order, the order you will get them back when poping them off is "C", "B", "A".
 
-The Game Boy CPU has built in support for a stack like data structure in memory. This stack lives somewhere in memory (we'll talk about how it's location in memory is set in just a minute), and it holds on to 16 bit values. How is it built?
+The Game Boy CPU has built-in support for a stack-like data structure in memory. This stack lives somewhere in memory (we'll talk about how its location in memory is set in just a minute), and it holds on to 16 bit values. How is it built?
 
 First, the CPU has an additional 16-bit register on it that indicates the top of the stack. This register is called `SP` or stack pointer because it "points" to where the top of the stack is. Let's add this register to our CPU:
 
@@ -195,7 +195,7 @@ And there we have it! We have a working stack that we can used. But what sort of
 
 In most programming languages when you call a function, the state of the calling function is saved somewhere, execution is allowed to happen for the called function, and then when the called function returns, the state of the called function is restored. It turns out the Game Boy has built in support for this mechanism where the state that is saved is simply just what the program counter was when the called function was called. This means we can "call a function" and that function itself can call functions, and when all of that is done, we'll return right back to the place we left off before we called the function.
 
-This functionality is handled by two types of instructions `CALL` and `RET` (a.k.a return). The way `CALL` works is by using a mixture of two instructions we already know about `PUSH` and `JP` (a.k.a jump). To execute the `CALL` instruction, we must do the following:
+This functionality is handled by two types of instructions `CALL` and `RET` (a.k.a return). The way `CALL` works is by using a mixture of two instructions we already know about: `PUSH` and `JP` (a.k.a jump). To execute the `CALL` instruction, we must do the following:
 * `PUSH` the next program counter (i.e. the program counter we would have if we were not jumping) on to the stack
 * `JP` (a.k.a jump) to the address specified in the next 2 bytes of memory (a.k.a the function).
 

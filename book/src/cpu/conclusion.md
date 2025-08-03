@@ -12,7 +12,7 @@ In this chapter, we'll look at two more instructions: `NOP` and `HALT`
 
 ### HALT
 
-`HALT` is a big more complicated than `NOP`. When the Game Boy is running, it is constantly in a loop executing instructions. The `HALT` instruction gives the game the ability to stop the CPU from executing any more instructions. How the Game Boy eventually continues executing instructions will be discussed later in the book, but for now, we have the ability to stop the Game Boy dead in its tracks. Reasons a game might want to do this include saving battery. If the game doesn't have anything to do, it can halt the CPU and save a bit energy.
+`HALT` is a bit more complicated than `NOP`. When the Game Boy is running, it is constantly in a loop executing instructions. The `HALT` instruction gives the game the ability to stop the CPU from executing any more instructions. How the Game Boy eventually continues executing instructions will be discussed later in the book, but for now, we have the ability to stop the Game Boy dead in its tracks. Reasons a game might want to do this include saving battery. If the game doesn't have anything to do, it can halt the CPU and save some energy.
 
 For now, we'll implement `HALT` by adding a `is_halted` boolean to the CPU. At the beginning of `execute` we can check if the CPU is halted. If it is, we simply return. The `HALT` instruction simply sets this field to true.
 

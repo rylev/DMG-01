@@ -10,7 +10,7 @@ At a very basic level, computers can only read and write two different values th
 >
 > Computers normally represent bits as either one voltage (e.g., five volts) or as some other, typically lower, voltage (e.g., zero volts). Again, a great resource for learning about how computers actually deal with bits, check out Ben Eater's series on [making an 8-bit Breadboard Computer](https://www.youtube.com/user/eaterbc).
 
-Bits can represent only two different values 0 or 1. If we want to numbers larger than one we need to compose bits together. To get to three for instance we would write 0b11. The total count of numbers we can represent is equal to 2^(# of bits). So one bit can represent 2^1 a.k.a two numbers and 7 bits can represent 2^7 a.k.a 128 numbers.
+Bits can represent only two different values: 0 or 1. If we want to numbers larger than one we need to compose bits together. To get to three for instance we would write 0b11. The total count of numbers we can represent is equal to 2^(# of bits). So one bit can represent 2^1 a.k.a two numbers and 7 bits can represent 2^7 a.k.a 128 numbers.
 
 Since being able to manipulate numbers larger than 1 is pretty useful, we normally talk about and the computer typically reads and writes bits in large chunks called bytes.
 
@@ -24,7 +24,7 @@ Bytes are defined as a collection of 8 bits. Our Gameboy, as an 8-bit machine, t
 
 Since writing out bytes in binary can be quite tedious, we normally write out bytes in hexadecimal notation: So while we could write out the byte representing the number 134 as "0b10000110" we typically write it as "0x86". These two notations specify the same number, "0x86" is just shorter so it's more often used.
 
-When disucssing numbers composed of multiple bytes, for example 0xFFA1 (composed of three bytes), we'll often need to talk about which byte is "most significant" (MSB - most significant byte) and which is "least significant" (LSB - least significant byte). Going back to math class, you may remember that when writing numbers like "178", the digit on the right (i.e., the "8") is the least sigificant, it adds the least amount to the total sum of the number (just eight) while the digit on the left (i.e., the "1") is the most significant since it adds the most to the sum of the number (one hundred!). Bytes work the same way - in 0xFFA1, 0xFF is the most significant byte and 0xA1 is the least significant.
+When discussing numbers composed of multiple bytes, for example 0xFFA1 (composed of two bytes), we'll often need to talk about which byte is "most significant" (MSB - most significant byte) and which is "least significant" (LSB - least significant byte). Going back to math class, you may remember that when writing numbers like "178", the digit on the right (i.e., the "8") is the least sigificant, it adds the least amount to the total sum of the number (just eight) while the digit on the left (i.e., the "1") is the most significant since it adds the most to the sum of the number (one hundred!). Bytes work the same way - in 0xFFA1, 0xFF is the most significant byte and 0xA1 is the least significant.
 
 ## Endianess
 
@@ -40,11 +40,11 @@ Let's say we have the number 0b00111011 a.k.a. 59 and we want to represent -59 i
 * Add 1 to the number
   * 0b11000100 becomes 0b11000101
 
-So -59 is 0b11000101. But wait is 0b11000101 already 197? Yes it is! Whether we chose to interpret a byte as a number from 0 to 255 or as two's complement number capable of representing -128 to 127 is up to programmer! Interpreting a number as only positive means it is "unsigned" and interpeting as being possibly negative with two's complement means it is "signed".
+So -59 is 0b11000101. But wait, is 0b11000101 already 197? Yes it is! Whether we chose to interpret a byte as a number from 0 to 255 or as two's complement number capable of representing -128 to 127 is up to programmer! Interpreting a number as only positive means it is "unsigned" and interpeting as being possibly negative with two's complement means it is "signed".
 
 ### Overflow and underflow
 
-When doing arithmetic on numbers, sometimes the result is too large or small to be represented. For example if you add two 8 bit numbers 253 and 9 together you would expect to get 262. But 262 cannot be represented by 8 bits (it requires 9 bits). When this happens the number simply is what the first 8 bits of 262 would be just with the final 9th bit missing: 0b0000_0110 a.k.a 6. This phenomenon is called overflow. The opposite can occur when subtracting. This is called underflow
+When doing arithmetic on numbers, sometimes the result is too large or small to be represented. For example if you add two 8 bit numbers 253 and 9 together you would expect to get 262. But 262 cannot be represented by 8 bits (it requires 9 bits). When this happens the number simply is what the first 8 bits of 262 would be just with the final 9th bit missing: 0b0000_0110 a.k.a 6. This phenomenon is called overflow. The opposite can occur when subtracting. This is called underflow.
 
 ### Rust
 

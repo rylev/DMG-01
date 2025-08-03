@@ -10,9 +10,9 @@ TODO: Graphic showing the difference between the two
 
 So before we look at how pixels on the screen are shown, we first have to see how games manipulate and store tiles.
 
-As we've seen before in our overview of the memory map of the Game Boy, tile data is stored between 0x8000 and 0x97FF (0x1800 or 6144 bytes worth of memory). This area actually contains two seperate tile sets. This allows the game to very quickly switch between two differnt graphic styles without having to switch the tiles out in the time between two screens. We'll explore how the game switches between the two tile sets a bit later.
+As we've seen before in our overview of the memory map of the Game Boy, tile data is stored between 0x8000 and 0x97FF (0x1800 or 6144 bytes worth of memory). This area actually contains two seperate tile sets. This allows the game to very quickly switch between two different graphic styles without having to switch the tiles out in the time between two screens. We'll explore how the game switches between the two tile sets a bit later.
 
-For now, we'll be focusing on the first tile set in memory that resides at 0x8000 to 0x8FFF (for a total of 0x1000 or 4096 bytes worth of data). Each tile is encoded in 16 bytes (we'll talk about exactly what this encoding looks like below). So if we 0x1000 bytes worth of memory and each tile is encoded in 16 bytes, then we have 0x1000 / 0x10 or 0x100 (256) different tiles.
+For now, we'll be focusing on the first tile set in memory that resides at 0x8000 to 0x8FFF (for a total of 0x1000 or 4096 bytes worth of data). Each tile is encoded in 16 bytes (we'll talk about exactly what this encoding looks like below). So if we have 0x1000 bytes worth of memory and each tile is encoded in 16 bytes, then we have 0x1000 / 0x10 or 0x100 (256) different tiles.
 
 An observant reader might wonder why the first tile set takes up 0x1000 of the 0x1800 or two thirds worth of space alloted for tile memory. The truth is that the second tile set starts at 0x8800 and goes to 0x97FF. The chunk between 0x8800 and 0x8FFF is therefore shared by the two tile sets.
 
@@ -43,9 +43,9 @@ The bit value to color mapping is as follows:
 
 So each pixel of our 8x8 pixel (i.e., 64 pixels in total) tile will take 2 bits to represent. That means we'll need 64 * 2 or 128 bits total to represent all the pixels. In terms of number of bytes that's 128 / 8 or 16 bytes total as we've said above.
 
-So this shouldn't be too hard to encode right? Just start from the top left most pixel and every two bits we encode that pixels value right? Unfortunately not. The actual encoding scheme is a little bit more complicated.
+So this shouldn't be too hard to encode right? Just start from the top leftmost pixel and every two bits we encode that pixels value right? Unfortunately not. The actual encoding scheme is a little bit more complicated.
 
-Each row of a tile is 2 bytes worth of data (8 pixels with 2 bits per pixel equals 16 bits or 2 bytes). Instead of each pixels value coming one after the other, each pixel is split between the two bytes. So the first pixel is encoded with the left most (i.e., most significant bit a.k.a bit 7) of each byte.
+Each row of a tile is 2 bytes worth of data (8 pixels with 2 bits per pixel equals 16 bits or 2 bytes). Instead of each pixels value coming one after the other, each pixel is split between the two bytes. So the first pixel is encoded with the leftmost (i.e., most significant bit a.k.a bit 7) of each byte.
 
 For example, let's imagine that the first two bytes of our tile set memory were 0xB5 (0b10110101) and 0x65 (0b01100101). These two bytes together will encode the data for the first tile. Byte 1 contains the value of the upper (a.k.a most significant) bit and byte 2 contains the value of the lower (least significant) bit.
 
@@ -65,9 +65,9 @@ s            D L W D B W B W
 
 Since reading the tile data happens much more often than writing it, we can store the tile data internally in a more friendly way.
 
-Let's write some code to see what we need. First, we're going to create a new struct that will be responsible for all the graphics needs of the Game Boy. This loosely mimics the set up of actual hardware where the CPU knows nothing about graphics and all. There's no one chip responsible for graphics instead there is dedicated video RAM and the screen hardware. It would over complicate things if we tried to too closely mimic this set up. Instead we'll create the `GPU` or "Graphic Processing Unit" to model all of our video needs.
+Let's write some code to see what we need. First, we're going to create a new struct that will be responsible for all the graphics needs of the Game Boy. This loosely mimics the set up of actual hardware where the CPU knows nothing about graphics and all. There's no one chip responsible for graphics. Instead, there is dedicated video RAM and the screen hardware. It would overcomplicate things if we tried to too closely mimic this set up. Instead we'll create the `GPU` or "Graphic Processing Unit" to model all of our video needs.
 
-For now, our GPU will hold on to video RAM and our tile set data. Our video ram is just a long array which holds on to raw byte values. The tile set will also be an array of tiles. A tile is simply an array of 8 rows where a row is an array of 8 `TileValue`s.
+For now, our GPU will hold on to video RAM and our tile set data. Our video RAM is just a long array which holds on to raw byte values. The tile set will also be an array of tiles. A tile is simply an array of 8 rows where a row is an array of 8 `TileValue`s.
 
 ```rust, noplayground
 const VRAM_BEGIN: usize = 0x8000;
@@ -93,7 +93,7 @@ struct GPU{
 }
 ```
 
-Let's go back to our memory bus to redirect any of writes in memory to our video ram to go to the GPU:
+Let's go back to our memory bus to redirect any of writes in memory to our video RAM to go to the GPU:
 
 ```rust, noplayground
 # const VRAM_BEGIN: usize = 0x8000;
@@ -126,9 +126,9 @@ impl MemoryBus {
 }
 ```
 
-Notice how from the `MemoryBus` we don't directly access the vram but instead go through two methods `read_vram` and `write_vram`. This is so we can easily cache our tile set in the `tile_set` field of our CPU. Let's take a look at how these are implemented.
+Notice how from the `MemoryBus` we don't directly access the VRAM but instead go through two methods `read_vram` and `write_vram`. This is so we can easily cache our tile set in the `tile_set` field of our CPU. Let's take a look at how these are implemented.
 
-`read_vram` is very simple as it actually just reads from the vram array:
+`read_vram` is very simple as it actually just reads from the VRAM array:
 ```rust, noplayground
 # struct GPU { vram: Vec<u8> }
 impl GPU {
@@ -177,7 +177,7 @@ impl GPU {
             // As you can see the bit that corresponds to the nth pixel is the bit in the nth
             // position *from the left*. Bits are normally indexed from the right.
             //
-            // To find the first pixel (a.k.a pixel 0) we find the left most bit (a.k.a bit 7). For
+            // To find the first pixel (a.k.a pixel 0) we find the leftmost bit (a.k.a bit 7). For
             // the second pixel (a.k.a pixel 1) we first the second most left bit (a.k.a bit 6) and
             // so on.
             //
@@ -212,6 +212,6 @@ impl GPU {
 TODO: other tile set
 TODO: tile map
 
-We now have a cache of our tile ram so that not only do we have the information directly in VRAM but we also have it in a more accessible format.
+We now have a cache of our tile RAM so that not only do we have the information directly in VRAM but we also have it in a more accessible format.
 
 Next we'll get into the details of rendering.
