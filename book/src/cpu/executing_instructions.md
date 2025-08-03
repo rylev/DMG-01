@@ -75,7 +75,7 @@ impl CPU {
 }
 ```
 
-So there's two things we'll need to add for the above to work. We'll need to change our execute method to return the next program counter, and we'll need to add a function that takes a byte and returns an `Instruction`. Let's start with latter. Decoding our instruction byte as an `Instruction` is very straight-forward. Instructions are uniquely identified by the byte number. For instance, a logical `OR` with the `A` register as its target is identified by the byte 0x87. Want to do an `OR` with the `H` register as the target? That's the number 0xB4. The `SCF` (or Set Carry Flag) instruction is identified by the byte 0x37. We can use our [instruction guide](../appendix/instruction_guide/index.html) to find out which byte value corresponds to which `Instruction`.
+So there's two things we'll need to add for the above to work. We'll need to change our execute method to return the next program counter, and we'll need to add a function that takes a byte and returns an `Instruction`. Let's start with the latter. Decoding our instruction byte as an `Instruction` is very straight-forward. Instructions are uniquely identified by the byte number. For instance, a logical `OR` with the `A` register as its target is identified by the byte 0x87. Want to do an `OR` with the `H` register as the target? That's the number 0xB4. The `SCF` (or Set Carry Flag) instruction is identified by the byte 0x37. We can use our [instruction guide](../appendix/instruction_guide/index.html) to find out which byte value corresponds to which `Instruction`.
 
 ```rust,noplayground
 # enum IncDecTarget { BC, DE }
