@@ -83,7 +83,7 @@ These instructions have been for reading and writing to anywhere in memory, but 
 
 Before we can look at the piece of memory in the Game Boy known as the stack, we need to have a good understanding of what a stack is more generally. A stack is a simple data structure that allows you to add values to it (a.k.a "push" values) and then get these values back (a.k.a pop them off the stack). The key thing to remember with a stack is that you pop items off the stack in reverse order from which you pushed the items on - i.e., if you pushed three items "A", "B", "C" on to a stack in that order, the order you will get them back when poping them off is "C", "B", "A".
 
-The Game Boy CPU has built-in support for a stack-like data structure in memory. This stack lives somewhere in memory (we'll talk about how it's location in memory is set in just a minute), and it holds on to 16 bit values. How is it built?
+The Game Boy CPU has built-in support for a stack-like data structure in memory. This stack lives somewhere in memory (we'll talk about how its location in memory is set in just a minute), and it holds on to 16 bit values. How is it built?
 
 First, the CPU has an additional 16-bit register on it that indicates the top of the stack. This register is called `SP` or stack pointer because it "points" to where the top of the stack is. Let's add this register to our CPU:
 
