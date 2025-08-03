@@ -93,7 +93,7 @@ There are four flags defined on the flags register:
 * Zero: set to true if the result of the operation is equal to 0.
 * Subtract: set to true if the operation was a subtraction.
 * Carry: set to true if the operation resulted in an overflow.
-* Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elementary arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digits place.
+* Half Carry: set to true if there is an overflow from the lower nibble (a.k.a the lower four bits) to the upper nibble (a.k.a the upper four bits). Let's take a look at some examples of what this means. In the following diagram, we have the byte 143 in binary (0b1000_1111). We then add 0b1 to the number. Notice how the 1 from the lower nibble is carried to the upper nibble. You should already be familiar with carries from elementary arithmetic. Whenever there's not enough room for a number in a particular digit's place, we carry over to the next digit's place.
   ```ignore
         lower nibble            lower nibble
            ┌--┐                    ┌--┐
