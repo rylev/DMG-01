@@ -12,7 +12,7 @@ So before we look at how pixels on the screen are shown, we first have to see ho
 
 As we've seen before in our overview of the memory map of the Game Boy, tile data is stored between 0x8000 and 0x97FF (0x1800 or 6144 bytes worth of memory). This area actually contains two seperate tile sets. This allows the game to very quickly switch between two different graphic styles without having to switch the tiles out in the time between two screens. We'll explore how the game switches between the two tile sets a bit later.
 
-For now, we'll be focusing on the first tile set in memory that resides at 0x8000 to 0x8FFF (for a total of 0x1000 or 4096 bytes worth of data). Each tile is encoded in 16 bytes (we'll talk about exactly what this encoding looks like below). So if we 0x1000 bytes worth of memory and each tile is encoded in 16 bytes, then we have 0x1000 / 0x10 or 0x100 (256) different tiles.
+For now, we'll be focusing on the first tile set in memory that resides at 0x8000 to 0x8FFF (for a total of 0x1000 or 4096 bytes worth of data). Each tile is encoded in 16 bytes (we'll talk about exactly what this encoding looks like below). So if we have 0x1000 bytes worth of memory and each tile is encoded in 16 bytes, then we have 0x1000 / 0x10 or 0x100 (256) different tiles.
 
 An observant reader might wonder why the first tile set takes up 0x1000 of the 0x1800 or two thirds worth of space alloted for tile memory. The truth is that the second tile set starts at 0x8800 and goes to 0x97FF. The chunk between 0x8800 and 0x8FFF is therefore shared by the two tile sets.
 
