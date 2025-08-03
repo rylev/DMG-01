@@ -10,7 +10,7 @@ At a very basic level, computers can only read and write two different values th
 >
 > Computers normally represent bits as either one voltage (e.g., five volts) or as some other, typically lower, voltage (e.g., zero volts). Again, a great resource for learning about how computers actually deal with bits, check out Ben Eater's series on [making an 8-bit Breadboard Computer](https://www.youtube.com/user/eaterbc).
 
-Bits can represent only two different values 0 or 1. If we want to numbers larger than one we need to compose bits together. To get to three for instance we would write 0b11. The total count of numbers we can represent is equal to 2^(# of bits). So one bit can represent 2^1 a.k.a two numbers and 7 bits can represent 2^7 a.k.a 128 numbers.
+Bits can represent only two different values: 0 or 1. If we want to numbers larger than one we need to compose bits together. To get to three for instance we would write 0b11. The total count of numbers we can represent is equal to 2^(# of bits). So one bit can represent 2^1 a.k.a two numbers and 7 bits can represent 2^7 a.k.a 128 numbers.
 
 Since being able to manipulate numbers larger than 1 is pretty useful, we normally talk about and the computer typically reads and writes bits in large chunks called bytes.
 
