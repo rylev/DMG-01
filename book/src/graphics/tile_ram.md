@@ -65,7 +65,7 @@ s            D L W D B W B W
 
 Since reading the tile data happens much more often than writing it, we can store the tile data internally in a more friendly way.
 
-Let's write some code to see what we need. First, we're going to create a new struct that will be responsible for all the graphics needs of the Game Boy. This loosely mimics the set up of actual hardware where the CPU knows nothing about graphics and all. There's no one chip responsible for graphics instead there is dedicated video RAM and the screen hardware. It would over complicate things if we tried to too closely mimic this set up. Instead we'll create the `GPU` or "Graphic Processing Unit" to model all of our video needs.
+Let's write some code to see what we need. First, we're going to create a new struct that will be responsible for all the graphics needs of the Game Boy. This loosely mimics the set up of actual hardware where the CPU knows nothing about graphics and all. There's no one chip responsible for graphics. Instead, there is dedicated video RAM and the screen hardware. It would over complicate things if we tried to too closely mimic this set up. Instead we'll create the `GPU` or "Graphic Processing Unit" to model all of our video needs.
 
 For now, our GPU will hold on to video RAM and our tile set data. Our video ram is just a long array which holds on to raw byte values. The tile set will also be an array of tiles. A tile is simply an array of 8 rows where a row is an array of 8 `TileValue`s.
 
