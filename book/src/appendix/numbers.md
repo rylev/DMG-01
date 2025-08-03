@@ -40,7 +40,7 @@ Let's say we have the number 0b00111011 a.k.a. 59 and we want to represent -59 i
 * Add 1 to the number
   * 0b11000100 becomes 0b11000101
 
-So -59 is 0b11000101. But wait is 0b11000101 already 197? Yes it is! Whether we chose to interpret a byte as a number from 0 to 255 or as two's complement number capable of representing -128 to 127 is up to programmer! Interpreting a number as only positive means it is "unsigned" and interpeting as being possibly negative with two's complement means it is "signed".
+So -59 is 0b11000101. But wait, is 0b11000101 already 197? Yes it is! Whether we chose to interpret a byte as a number from 0 to 255 or as two's complement number capable of representing -128 to 127 is up to programmer! Interpreting a number as only positive means it is "unsigned" and interpeting as being possibly negative with two's complement means it is "signed".
 
 ### Overflow and underflow
 
