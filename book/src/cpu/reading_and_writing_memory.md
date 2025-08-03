@@ -195,7 +195,7 @@ And there we have it! We have a working stack that we can used. But what sort of
 
 In most programming languages when you call a function, the state of the calling function is saved somewhere, execution is allowed to happen for the called function, and then when the called function returns, the state of the called function is restored. It turns out the Game Boy has built in support for this mechanism where the state that is saved is simply just what the program counter was when the called function was called. This means we can "call a function" and that function itself can call functions, and when all of that is done, we'll return right back to the place we left off before we called the function.
 
-This functionality is handled by two types of instructions `CALL` and `RET` (a.k.a return). The way `CALL` works is by using a mixture of two instructions we already know about `PUSH` and `JP` (a.k.a jump). To execute the `CALL` instruction, we must do the following:
+This functionality is handled by two types of instructions `CALL` and `RET` (a.k.a return). The way `CALL` works is by using a mixture of two instructions we already know about: `PUSH` and `JP` (a.k.a jump). To execute the `CALL` instruction, we must do the following:
 * `PUSH` the next program counter (i.e. the program counter we would have if we were not jumping) on to the stack
 * `JP` (a.k.a jump) to the address specified in the next 2 bytes of memory (a.k.a the function).
 
