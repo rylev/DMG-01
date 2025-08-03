@@ -77,7 +77,7 @@ Let's take a look at the other types of loads that there are:
 
 For more detail on these instructions check out the [instruction guide](../appendix/instruction_guide/index.html).
 
-These instructions have been for writing and writing to anywhere in memory, but there are a set of instructions that deal with a specific piece of memory called the stack. Let's take a look at what the stack is and the instructions that are used to manipulate the stack.
+These instructions have been for reading and writing to anywhere in memory, but there are a set of instructions that deal with a specific piece of memory called the stack. Let's take a look at what the stack is and the instructions that are used to manipulate the stack.
 
 ## The Stack
 
