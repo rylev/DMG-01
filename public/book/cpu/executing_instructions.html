@@ -142,7 +142,7 @@
 <p>So far we know that the Game Boy has a CPU that executes instructions and it has memory. Memory can be thought of as one very large array of 8-bit numbers.</p>
 <p>At the beginning of this very long array are 255 bytes (from index 0x0000 to index 0x00FF) that are hard coded into the Game Boy's circuitry. These 255 bytes are instructions that tell the Game Boy how to &quot;bootstrap&quot; itself (i.e. get itself ready to execute a game) as well as display the <a href="https://www.youtube.com/watch?v=jCfPojZ_xLw">iconic splash screen</a>. Later in the book we'll be looking at specifically what these instructions do, but for now just imagine them as a collection of instructions many of which we learned in the previous chapter and the rest of which we'll learn in this chapter and the next few to come.</p>
 <p>When the user of a Game Boy inserts a game cartridge, the contents of that cartridge become available to the CPU right after these 255 bytes. We'll talk later about where other things such as the contents of the screen and graphics data live in memory later in the book. For now we just need to know that the contents of memory starting at index 0x100 until index 0x3FFF include the contents of the cartridge.</p>
-<p>So our memory is simply an long array of 8-bit numbers (0xFFFF or 65,536 of them to be exact). Each of these numbers can be decoded as an instruction that our CPU knows how to run. But how does the CPU know which of these to execute?</p>
+<p>So our memory is simply an long array of 8-bit numbers (0xFFFF or 65,535 of them to be exact). The reason we use 1000 instead of FFFF to declare the bus memory is that in rust, if we use FFFF to define the list, then FFFF will not be a valid index. This is beacause indexes start from 0. thus, we have to give a number one value more that the maximum possible index(which is 65,536 or 10000 in hex). Each of these numbers can be decoded as an instruction that our CPU knows how to run. But how does the CPU know which of these to execute?</p>
 <a class="header" href="#the-program-counter" id="the-program-counter"><h2>The Program Counter</h2></a>
 <p>Along with the register data, our CPU also holds on to a 16-bit number called the progam counter (often abbreviated as PC) which tells us which instruction the Game Boy is currently executing. This 16-bit number is capable of addressing of the of 0xFFFF numbers that live in memory. In fact, when we talk about the memory array we don't usually use the term &quot;index&quot;, but instead the term &quot;address&quot;.</p>
 <p>Let's add a program counter to our CPU as well as memory that we can address from the CPU.</p>
@@ -157,7 +157,7 @@ struct CPU {
 }
 
 struct MemoryBus {
-  memory: [u8; 0xFFFF]
+  memory: [u8; 0x10000]
 }
 
 impl MemoryBus {
